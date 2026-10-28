@@ -32,8 +32,6 @@ export const CheckoutModal: React.FC = () => {
 
   if (!isCheckoutModalOpen) return null;
 
-  const shippingCost = cartTotal > 500 || cartTotal === 0 ? 0 : 50;
-  const finalTotal = cartTotal + shippingCost;
 
   const handleConfirmOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,12 +91,12 @@ export const CheckoutModal: React.FC = () => {
 
             <div className="bg-blue-50/60 p-4 rounded-2xl text-xs text-right space-y-2 border border-blue-100">
               <div className="flex justify-between">
-                <span className="text-gray-500">طريقة الدفع:</span>
-                <span className="font-bold text-blue-900">دفع موحد عند الاستلام بعد المعاينة</span>
+                <span className="text-gray-500">طريقة الدفع الموحدة:</span>
+                <span className="font-bold text-blue-900">دفع موحد عند الاستلام بعد المعاينة التامة</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">المبلغ الإجمالي للدفع:</span>
-                <span className="font-black text-red-600 text-sm">{completedOrder.price.toLocaleString()} ج.م</span>
+                <span className="text-gray-500">رسوم حجز المعاينة:</span>
+                <span className="font-black text-emerald-700 text-sm">مجانية بالكامل (0 ج.م)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">موعد التسليم المتوقع:</span>
@@ -107,7 +105,7 @@ export const CheckoutModal: React.FC = () => {
             </div>
 
             <div className="p-3 bg-gray-50 rounded-xl text-center text-[11px] text-gray-600">
-              📞 سيقوم أحد ممثلي خدمة عملاء <strong>طنطاوي جروب (19980)</strong> بالتواصل معك لتأكيد موعد التوصيل.
+              📞 سيقوم أحد ممثلي خدمة عملاء <strong>طنطاوي جروب (15218)</strong> بالتواصل معك لتأكيد الموعد والتفاصيل.
             </div>
 
             <button
@@ -125,8 +123,8 @@ export const CheckoutModal: React.FC = () => {
                 <img src="/logo.png" alt="Tantawy Group Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-gray-900">إتمام الشراء - طنطاوي جروب</h3>
-                <p className="text-xs text-gray-500">طلبك محمي بضمان طنطاوي جروب الذهبي</p>
+                <h3 className="text-lg font-black text-gray-900">حجز طلب المعاينة - طنطاوي جروب</h3>
+                <p className="text-xs text-gray-500">طلبك محمي بضمان طنطاوي جروب المعتمد</p>
               </div>
             </div>
 
@@ -157,7 +155,7 @@ export const CheckoutModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">رقم الهاتف للتواصل وتأكيد الشحن:</label>
+                <label className="block text-gray-700 font-bold mb-1">رقم الهاتف للتواصل وتأكيد المعاينة والشحن:</label>
                 <input
                   type="tel"
                   required
@@ -175,7 +173,7 @@ export const CheckoutModal: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="ميعاد مفضل للاستلام، أو تعليمات خاصة للمندوب"
+                  placeholder="ميعاد مفضل للمعاينة، أو تعليمات خاصة لمندوب التوصيل"
                 />
               </div>
             </div>
@@ -199,9 +197,9 @@ export const CheckoutModal: React.FC = () => {
             {/* Total and Submit */}
             <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
               <div>
-                <span className="text-[11px] text-gray-500 block">إجمالي المبلغ المطلوب:</span>
-                <span className="text-xl font-black text-red-600 font-mono">
-                  {Math.round(finalTotal).toLocaleString()} ج.م
+                <span className="text-[11px] text-gray-500 block">رسوم حجز المعاينة:</span>
+                <span className="text-base font-black text-emerald-700">
+                  مجانية بالكامل (0 ج.م)
                 </span>
               </div>
 
@@ -209,7 +207,7 @@ export const CheckoutModal: React.FC = () => {
                 type="submit"
                 className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-md flex items-center gap-2"
               >
-                <span>تأكيد الطلب الفوري</span>
+                <span>تأكيد حجز المعاينة</span>
                 <Truck size={16} />
               </button>
             </div>

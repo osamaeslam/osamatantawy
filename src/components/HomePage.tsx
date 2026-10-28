@@ -33,47 +33,37 @@ export const HomePage: React.FC = () => {
     searchQuery
   } = useApp();
 
-  // Premium, high-definition promotional banners for Tantawy Group (no old Raneen graphics)
+  // Premium, high-definition promotional banners for Tantawy Group
   const heroBanners = [
     {
       id: 1,
-      title: 'مهرجان التخفيضات الكبرى',
-      subtitle: 'أحدث أطقم الحلل الجرانيت والأجهزة المنزلية بخصومات تصل إلى 45%',
-      badge: 'عروض حصرية',
-      buttonText: 'تسوق عروض المطبخ',
-      category: 'Home & Kitchen',
+      title: 'الأجهزة المنزلية الكبرى',
+      subtitle: 'أحدث موديلات الثلاجات، الغسالات، البوتاجازات، والتكييفات بضمان الوكيل الرسمي وضمان طنطاوي',
+      badge: 'أجهزة أصلية معتمدة',
+      buttonText: 'تصفح الأجهزة الكبرى',
+      category: 'Major Appliances',
       bgGradient: 'from-blue-950 via-blue-900 to-indigo-900',
-      image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1600&auto=format&fit=crop&q=80'
+      image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=1600&auto=format&fit=crop&q=80'
     },
     {
       id: 2,
-      title: 'عالم الشاشات الذكية 4K',
-      subtitle: 'شاشات سامسونج وإل جي مع ريسيفر داخلي وتقسيط بدون فوائد',
-      badge: 'توفير حقيقي',
+      title: 'عالم الشاشات والتلفزيونات الذكية',
+      subtitle: 'شاشات 4K الترا HD، أوليد وكريستال سمارت من سامسونج وإل جي وتوشيبا بريسيفر داخلي',
+      badge: 'تجربة سينمائية',
       buttonText: 'تصفح الشاشات',
-      category: 'Electronics',
+      category: 'Smart TVs',
       bgGradient: 'from-slate-950 via-slate-900 to-blue-950',
       image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=1600&auto=format&fit=crop&q=80'
     },
     {
       id: 3,
-      title: 'أفخم مفروشات وأثاث المنزل',
-      subtitle: 'أطقم ألحفة شتوية وسجاد فاخر بتصميمات عصرية راقية',
-      badge: 'تشكيلة 2026',
-      buttonText: 'استكشف المفروشات',
-      category: 'Home Furniture',
+      title: 'الأجهزة المنزلية الخفيفة والمطبخ',
+      subtitle: 'قلايات هوائية إير فراير، محضرات طعام متكاملة، ميكروويف، مكانس، وماكينات قهوة فاخرة',
+      badge: 'راحة يومية',
+      buttonText: 'تصفح الأجهزة الخفيفة',
+      category: 'Small Appliances',
       bgGradient: 'from-indigo-950 via-blue-950 to-red-950',
-      image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=1600&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 4,
-      title: 'صفقات الموبايلات والإكسسوارات',
-      subtitle: 'أحدث الهواتف الذكية مع شواحن سريعة وسماعات بلوتوث مجانية',
-      badge: 'أجهزة أصلية',
-      buttonText: 'عروض الموبايل',
-      category: 'Mobile Phones',
-      bgGradient: 'from-blue-900 via-indigo-900 to-red-900',
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1600&auto=format&fit=crop&q=80'
+      image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=1600&auto=format&fit=crop&q=80'
     }
   ];
 
@@ -229,7 +219,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div>
             <h4 className="text-xs md:text-sm font-bold text-gray-800">شحن سريع لكافة المحافظات</h4>
-            <p className="text-[11px] text-gray-500">توصيل مجاني للطلبات فوق 500 جنيه</p>
+            <p className="text-[11px] text-gray-500">توصيل مباشر حتى باب منزلك</p>
           </div>
         </div>
         <div className="flex items-center gap-3 p-2">
@@ -256,7 +246,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div>
             <h4 className="text-xs md:text-sm font-bold text-gray-800">استرجاع واستبدال 14 يوم</h4>
-            <p className="text-[11px] text-gray-500">خدمة عملاء طنطاوي 19980</p>
+            <p className="text-[11px] text-gray-500">خدمة عملاء طنطاوي 15218</p>
           </div>
         </div>
       </div>
@@ -277,7 +267,7 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2.5 md:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           {CATEGORIES.map((cat) => (
             <div
               key={cat.name}
@@ -285,17 +275,34 @@ export const HomePage: React.FC = () => {
                 setSelectedCategory(cat.name);
                 setActiveTab('categories');
               }}
-              className="bg-white hover:bg-blue-50/50 border border-gray-100 hover:border-blue-200 rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer transition-all duration-200 group shadow-xs hover:shadow-sm"
+              className="bg-white hover:bg-blue-50/60 border border-gray-200 hover:border-blue-300 rounded-3xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 group shadow-xs hover:shadow-md"
             >
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-tr from-blue-50 to-indigo-50 flex items-center justify-center text-blue-800 group-hover:scale-110 group-hover:bg-blue-800 group-hover:text-white transition duration-200 mb-2">
-                <Sparkles size={24} />
+              <div className="flex items-center gap-3.5 mb-3">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-900 to-indigo-950 flex items-center justify-center text-white group-hover:scale-110 transition duration-300 shadow-sm shrink-0">
+                  <Sparkles size={24} className="text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm md:text-base font-black text-gray-900 group-hover:text-blue-900 transition">
+                    {cat.nameAr}
+                  </h3>
+                  <span className="text-[11px] text-gray-500 font-medium line-clamp-1">
+                    {cat.descriptionAr}
+                  </span>
+                </div>
               </div>
-              <span className="text-xs font-bold text-gray-800 group-hover:text-blue-800 line-clamp-1">
-                {cat.nameAr}
-              </span>
-              <span className="text-[10px] text-gray-400 mt-0.5 hidden md:inline">
-                {cat.subcategories.length} فئات
-              </span>
+
+              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100">
+                {cat.subcategoriesAr.slice(0, 3).map((sub) => (
+                  <span key={sub} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-medium">
+                    {sub}
+                  </span>
+                ))}
+                {cat.subcategoriesAr.length > 3 && (
+                  <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold">
+                    +{cat.subcategoriesAr.length - 3} المزيد
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -332,9 +339,9 @@ export const HomePage: React.FC = () => {
                 key={product.id}
                 className="bg-white text-gray-900 rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative"
               >
-                {/* Discount Badge */}
-                <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded-md shadow-xs">
-                  خصم {product.discountpercent}%
+                {/* Brand Badge */}
+                <div className="absolute top-2 right-2 z-10 bg-blue-900 text-white text-[11px] font-black px-2.5 py-0.5 rounded-md shadow-xs">
+                  {product.brand}
                 </div>
 
                 {/* Wishlist Button */}
@@ -364,7 +371,7 @@ export const HomePage: React.FC = () => {
                 <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
                   <div>
                     <span className="text-[10px] text-blue-700 font-bold block mb-1">
-                      {product.brand || product.categoryAr}
+                      {product.categoryAr}
                     </span>
                     <h3
                       onClick={() => setSelectedProduct(product)}
@@ -374,14 +381,12 @@ export const HomePage: React.FC = () => {
                     </h3>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-base md:text-lg font-black text-red-600">
-                        {discountedPrice.toLocaleString()} ج.م
+                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                        متاح بالمعارض
                       </span>
-                      <span className="text-xs text-gray-400 line-through">
-                        {product.actualprice.toLocaleString()} ج.م
-                      </span>
+                      <span className="text-[10px] text-gray-500 font-medium">معاينة مجانية</span>
                     </div>
 
                     <button
@@ -389,7 +394,7 @@ export const HomePage: React.FC = () => {
                       className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
                     >
                       <ShoppingCart size={14} />
-                      <span>أضف إلى السلة</span>
+                      <span>طلب معاينة الصنف</span>
                     </button>
                   </div>
                 </div>
@@ -403,26 +408,26 @@ export const HomePage: React.FC = () => {
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div 
           onClick={() => {
-            setSelectedCategory('Home & Kitchen');
+            setSelectedCategory('Major Appliances');
             setActiveTab('categories');
           }}
           className="cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-blue-950 to-blue-800 text-white p-6 md:p-8 flex items-center justify-between shadow-md hover:shadow-lg transition group relative"
         >
           <div className="space-y-2 z-10 max-w-[65%]">
             <span className="text-[11px] bg-red-600 font-black px-2.5 py-0.5 rounded-full inline-block">
-              عروض طنطاوي للمطبخ
+              أجهزة منزلية كبرى
             </span>
-            <h3 className="text-lg md:text-xl font-black">أطقم جرانيت وتيتانيوم فاخرة</h3>
-            <p className="text-xs text-blue-200">تجهيز كامل للعرائس بأفضل جودة وسعر جملة</p>
+            <h3 className="text-lg md:text-xl font-black">ثلاجات، غسالات وبوتاجازات</h3>
+            <p className="text-xs text-blue-200">شارب، إل جي، فريش، وكاريير بضمان الوكيل المعتمد</p>
             <span className="text-xs font-bold text-yellow-300 flex items-center gap-1 pt-1">
-              <span>تصفح العروض الآن</span>
+              <span>تصفح الأجهزة الكبرى</span>
               <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition" />
             </span>
           </div>
           <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0">
             <img
-              src="https://images.unsplash.com/photo-1584990347449-397ddc99db15?w=600&auto=format&fit=crop&q=80"
-              alt="Cookware"
+              src="https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80"
+              alt="Major Appliances"
               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
             />
           </div>
@@ -430,19 +435,19 @@ export const HomePage: React.FC = () => {
 
         <div 
           onClick={() => {
-            setSelectedCategory('Electronics');
+            setSelectedCategory('Smart TVs');
             setActiveTab('categories');
           }}
           className="cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 md:p-8 flex items-center justify-between shadow-md hover:shadow-lg transition group relative"
         >
           <div className="space-y-2 z-10 max-w-[65%]">
             <span className="text-[11px] bg-amber-500 font-black text-black px-2.5 py-0.5 rounded-full inline-block">
-              أجهزة منزلية وكهربائية
+              شاشات وتلفزيونات 4K
             </span>
-            <h3 className="text-lg md:text-xl font-black">شاشات وأجهزة ذكية</h3>
-            <p className="text-xs text-gray-300">ضمان سنتين مع صيانة مجانية وخدمة فورية</p>
+            <h3 className="text-lg md:text-xl font-black">شاشات سامسونج وتوشيبا وإل جي</h3>
+            <p className="text-xs text-gray-300">وضوح كريستالي مع ريسيفر داخلي وتوصيل سريع</p>
             <span className="text-xs font-bold text-yellow-300 flex items-center gap-1 pt-1">
-              <span>تصفح الأجهزة الكهربائية</span>
+              <span>تصفح الشاشات الذكية</span>
               <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition" />
             </span>
           </div>
@@ -482,11 +487,11 @@ export const HomePage: React.FC = () => {
                 key={product.id}
                 className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between group relative"
               >
-                {product.discountpercent > 0 && (
-                  <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                    -{product.discountpercent}%
-                  </div>
-                )}
+                {/* Brand Badge */}
+                <div className="absolute top-2 right-2 z-10 bg-blue-900 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                  {product.brand}
+                </div>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -524,23 +529,17 @@ export const HomePage: React.FC = () => {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-sm md:text-base font-black text-gray-900 block">
-                        {discountedPrice.toLocaleString()} ج.م
-                      </span>
-                      {product.discountpercent > 0 && (
-                        <span className="text-[11px] text-gray-400 line-through">
-                          {product.actualprice.toLocaleString()} ج.م
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-[11px] font-bold text-blue-900 bg-blue-50 px-2 py-1 rounded-md">
+                      طلب معاينة
+                    </span>
 
                     <button
                       onClick={() => addToCart(product, 1)}
-                      className="p-2 bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white rounded-xl transition"
-                      title="إضافة إلى السلة"
+                      className="py-1.5 px-3 bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition text-xs font-bold flex items-center gap-1"
+                      title="حجز للمعاينة"
                     >
-                      <ShoppingCart size={16} />
+                      <ShoppingCart size={13} />
+                      <span>حجز</span>
                     </button>
                   </div>
                 </div>
@@ -562,7 +561,7 @@ export const HomePage: React.FC = () => {
               تسوق بثقة تامة مع أكبر صرح للأجهزة والأدوات المنزلية
             </h3>
             <p className="text-xs md:text-sm text-gray-300 leading-relaxed">
-              نوفر لك تشكيلة متكاملة تناسب كل بيت وعروسة مع حق فتح ومعاينة الشحنة بالكامل قبل الدفع عند الاستلام. فريق خدمة العملاء متاح للرد على استفساراتكم طوال اليوم عبر الخط الساخن <strong>19980</strong>.
+              نوفر لك تشكيلة متكاملة تناسب كل بيت وعروسة مع حق فتح ومعاينة الشحنة بالكامل قبل الدفع عند الاستلام. فريق خدمة العملاء متاح للرد على استفساراتكم طوال اليوم عبر الخط الساخن <a href="tel:15218" className="text-yellow-300 font-bold hover:underline">15218</a>.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
               <button

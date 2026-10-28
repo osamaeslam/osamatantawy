@@ -42,16 +42,16 @@ export const ProfilePage: React.FC = () => {
   if (!isLoggedIn) {
     return (
       <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-md mx-auto space-y-4 my-8">
-        <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
+        <div className="w-20 h-20 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center mx-auto">
           <User size={36} />
         </div>
         <h3 className="text-xl font-black text-gray-900">سجل الدخول لحسابك</h3>
         <p className="text-xs text-gray-500">
-          سجل دخولك لمتابعة شحناتك، وطلباتك السابقة، وإدارة عناوينك في رنين.
+          سجل دخولك لمتابعة شحناتك، وطلبات المعاينة السابقة، وإدارة عناوينك في طنطاوي جروب.
         </p>
         <button
           onClick={() => setIsAuthModalOpen(true)}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition text-sm"
+          className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-md"
         >
           تسجيل الدخول / إنشاء حساب
         </button>
@@ -211,8 +211,8 @@ export const ProfilePage: React.FC = () => {
 
               <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                 {getStatusBadge(order.status)}
-                <span className="text-sm md:text-base font-black text-red-600 mt-2 block font-mono">
-                  {order.price.toLocaleString()} ج.م
+                <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-md mt-2 block">
+                  طلب معاينة معتمد
                 </span>
               </div>
             </div>

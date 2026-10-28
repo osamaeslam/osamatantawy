@@ -34,13 +34,13 @@ export const Footer: React.FC = () => {
               </div>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              مجموعة طنطاوي التجارية - الاسم الرائد في تجارة وتوزيع الأجهزة الكهربائية، الأدوات المنزلية، والمفروشات. جودة معتمدة وضمان حقيقي.
+              مجموعة طنطاوي التجارية - الصرح الرائد في تجارة وتوزيع الأجهزة المنزلية الكبرى، الشاشات والتلفزيونات، والأجهزة المنزلية الخفيفة بأعلى ضمانات الجودة في مصر.
             </p>
             <div className="space-y-1.5 text-xs">
-              <div className="flex items-center gap-2 text-yellow-400 font-bold">
+              <a href="tel:15218" className="flex items-center gap-2 text-yellow-400 font-bold hover:underline">
                 <PhoneCall size={14} />
-                <span>الخط الساخن الموحد: 19980</span>
-              </div>
+                <span>الخط الساخن الموحد: 15218</span>
+              </a>
               <div className="flex items-center gap-2 text-gray-400">
                 <Clock size={14} />
                 <span>خدمة العملاء: يومياً من 9 صباحاً حتى 11 مساءً</span>
@@ -66,7 +66,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setActiveTab('deals')}
-                  className="hover:text-red-400 transition"
+                  className="hover:text-blue-400 transition"
                 >
                   عروض وخصومات طنطاوي جروب
                 </button>
@@ -84,7 +84,7 @@ export const Footer: React.FC = () => {
                   onClick={() => setActiveTab('cart')}
                   className="hover:text-blue-400 transition"
                 >
-                  سلة المشتريات والمفضلة
+                  قائمة طلبات المعاينة والمفضلة
                 </button>
               </li>
               <li>
@@ -105,45 +105,34 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Home & Kitchen');
+                    setSelectedCategory('Major Appliances');
                     setActiveTab('categories');
                   }}
                   className="hover:text-blue-400 transition"
                 >
-                  أدوات المطبخ والحلل الفاخرة
+                  أجهزة منزلية كبرى (ثلاجات، غسالات، بوتاجازات)
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Electronics');
+                    setSelectedCategory('Smart TVs');
                     setActiveTab('categories');
                   }}
                   className="hover:text-blue-400 transition"
                 >
-                  شاشات وأجهزة كهربائية
+                  شاشات وتلفزيونات ذكية 4K
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Home Furniture');
+                    setSelectedCategory('Small Appliances');
                     setActiveTab('categories');
                   }}
                   className="hover:text-blue-400 transition"
                 >
-                  مفروشات وسجاد راقي
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    setSelectedCategory('Mobile Phones');
-                    setActiveTab('categories');
-                  }}
-                  className="hover:text-blue-400 transition"
-                >
-                  الموبايلات والإلكترونيات
+                  أجهزة منزلية خفيفة (قلايات، محضرات طعام، ميكروويف)
                 </button>
               </li>
             </ul>
@@ -162,7 +151,7 @@ export const Footer: React.FC = () => {
               onClick={() => setIsAboutModalOpen(true)}
               className="text-xs text-blue-400 hover:text-blue-300 font-bold underline block mt-2"
             >
-              عن مجموعة طنطاوي وفروعنا
+              عن مجموعة طنطاوي وضماناتنا
             </button>
           </div>
         </div>

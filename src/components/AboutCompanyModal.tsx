@@ -3,26 +3,20 @@ import { useApp } from '../context/AppContext';
 import { 
   X, 
   ShieldCheck, 
-  Building2, 
   PhoneCall, 
-  MapPin, 
   Award, 
   Truck, 
   CheckCircle,
-  Clock
+  Clock,
+  Sparkles,
+  MapPinOff,
+  Headphones
 } from 'lucide-react';
 
 export const AboutCompanyModal: React.FC = () => {
   const { isAboutModalOpen, setIsAboutModalOpen } = useApp();
 
   if (!isAboutModalOpen) return null;
-
-  const branches = [
-    { city: 'القاهرة', address: 'مدينة نصر - شارع عباس العقاد الرئيسي', phone: '02-24019980' },
-    { city: 'الجيزة', address: 'شارع الهرم - أمام محطة المترو', phone: '02-35819980' },
-    { city: 'الإسكندرية', address: 'سموحة - ميدان فيكتور عمانويل', phone: '03-42019980' },
-    { city: 'الدلتا - طنطا', address: 'شارع البحر الرئيسي - تقاطع النحاس', phone: '040-33019980' }
-  ];
 
   return (
     <div 
@@ -48,10 +42,10 @@ export const AboutCompanyModal: React.FC = () => {
           </div>
           <div>
             <h2 className="text-xl md:text-2xl font-black text-blue-950">
-              عن مجموعة طنطاوي (TANTAWY GROUP)
+              مجموعة طنطاوي (TANTAWY GROUP)
             </h2>
             <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">
-              الريادة في تجارة وتوزيع الأجهزة المنزلية والكهربائية
+              الصرح الرائد في تجارة وتوزيع الأجهزة المنزلية الكبرى والشاشات والأجهزة الخفيفة
             </p>
           </div>
         </div>
@@ -63,7 +57,7 @@ export const AboutCompanyModal: React.FC = () => {
             <span>رؤيتنا ورسالتنا</span>
           </h3>
           <p className="text-xs text-gray-200 leading-relaxed">
-            انطلقت <strong>مجموعة طنطاوي</strong> بهدف تقديم تجربة تسوق منزلية استثنائية لكافة الأسر المصرية. نلتزم بتوفير أفضل الماركات العالمية والمحلية في عالم الأجهزة الكهربائية، مستلزمات المطبخ، وأفخم المفروشات، بأسعار تنافسية وخدمة عملاء فائقة وضمان رسمي معتمد.
+            انطلقت <strong>مجموعة طنطاوي</strong> بهدف تقديم تجربة شراء أجهزة منزلية موثوقة ومريحة لكافة الأسر في جمهورية مصر العربية. نوفر لكم أفضل الماركات العالمية والمحلية في عالم الثلاجات، الغسالات، البوتاجازات، الشاشات الذكية، والأجهزة المنزلية الخفيفة مع خدمة معاينة حرة ودفع موحد عند الاستلام.
           </p>
         </div>
 
@@ -75,81 +69,74 @@ export const AboutCompanyModal: React.FC = () => {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+            <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
               <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
                 <CheckCircle size={15} className="text-emerald-600" />
                 <span>دفع موحد ومعاينة قبل الاستلام</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                لك كامل الحق في فتح الشحنة وفحص المنتج بالكامل قبل دفع أي جنيه للمندوب.
+                لك كامل الحق في فتح الشحنة وفحص الجهاز والتأكد من مطابقة المواصفات قبل دفع أي جنيه للمندوب.
               </p>
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+            <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
               <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
                 <Truck size={15} className="text-blue-600" />
-                <span>شحن سريع لكافة محافظات مصر</span>
+                <span>شحن وتوصيل لكافة محافظات مصر</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                أسطول سيارات توصيل خاص يصلك أينما كنت خلال 24 - 48 ساعة فقط.
+                خدمة توصيل سريعة ومباشرة إلى باب بيتك في القاهرة الكبرى، الإسكندرية، الدلتا، القناة، والصعيد.
               </p>
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+            <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
               <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
                 <Award size={15} className="text-amber-500" />
                 <span>ضمان الوكيل الرسمي وضمان طنطاوي</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                جميع المنتجات أصلية 100% ومرفقة بشهادات الضمان المعتمدة.
+                جميع الأجهزة أصلية 100% ومرفقة بشهادات الضمان المعتمدة والفاتورة الضريبية.
               </p>
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+            <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
               <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
                 <Clock size={15} className="text-red-500" />
-                <span>استرجاع واستبدال مجاني</span>
+                <span>استبدال واسترجاع مضمون</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                إمكانية استبدال أو استرجاع المنتجات خلال 14 يوماً وفق الشروط القانونية.
+                إمكانية استبدال أو استرجاع الأجهزة خلال 14 يوماً وفق معايير جهاز حماية المستهلك.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Branches */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
-            <Building2 size={18} className="text-blue-700" />
-            <span>فروع ومعارض طنطاوي جروب:</span>
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {branches.map((b) => (
-              <div key={b.city} className="p-3 bg-blue-50/40 rounded-xl border border-blue-100 space-y-1">
-                <span className="font-black text-blue-900 block flex items-center gap-1">
-                  <MapPin size={13} className="text-red-500" />
-                  <span>فرع {b.city}</span>
-                </span>
-                <p className="text-gray-600 text-[11px]">{b.address}</p>
-                <span className="text-[10px] text-gray-500 font-mono block">هاتف: {b.phone}</span>
-              </div>
-            ))}
+        {/* Unified Service Coverage Info */}
+        <div className="p-4 bg-blue-50/70 rounded-2xl border border-blue-200/80 space-y-2 text-xs">
+          <div className="flex items-center gap-2 text-blue-950 font-bold">
+            <Truck size={17} className="text-blue-700" />
+            <span>طلب المعاينة والشحن المباشر لجميع المحافظات:</span>
           </div>
+          <p className="text-gray-600 text-[11px] leading-relaxed">
+            يتم استقبال كافة طلبات المعاينة والاستفسارات عبر منظومة خدمة العملاء والخط الساخن الموحد <strong>15218</strong>، حيث يتولى فريقنا شحن وتوصيل الصنف المطلوب مباشرة إلى موقعك مع إمكانية الفحص الكامل قبل الدفع.
+          </p>
         </div>
 
-        {/* Hotline */}
+        {/* Hotline Bar */}
         <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-600 text-white rounded-xl">
+            <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-xs">
               <PhoneCall size={18} />
             </div>
             <div>
-              <span className="font-bold text-emerald-950 block">الخط الساخن الموحد لخدمة العملاء:</span>
-              <span className="text-emerald-700 text-base font-black tracking-wider">19980</span>
+              <span className="font-bold text-emerald-950 block">الخط الساخن الموحد لخدمة عملاء طنطاوي جروب:</span>
+              <a href="tel:15218" className="text-emerald-700 text-lg font-black tracking-wider hover:underline flex items-center gap-1">
+                <span>15218</span>
+                <span className="text-xs font-normal text-emerald-600">(اتصال مباشر)</span>
+              </a>
             </div>
           </div>
-          <span className="text-gray-500 text-[11px]">متاح يومياً 9:00 ص - 11:00 م</span>
+          <span className="text-gray-600 text-[11px] font-medium">متاح يومياً 9:00 ص - 11:00 م</span>
         </div>
 
         <div className="text-center pt-2">
@@ -157,7 +144,7 @@ export const AboutCompanyModal: React.FC = () => {
             onClick={() => setIsAboutModalOpen(false)}
             className="bg-blue-950 hover:bg-black text-white font-bold text-xs py-2.5 px-8 rounded-xl transition"
           >
-            إغلاق النافذة
+            إغلاق
           </button>
         </div>
       </div>

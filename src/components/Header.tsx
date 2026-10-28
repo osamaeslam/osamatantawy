@@ -40,23 +40,26 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
       {/* Top Banner Announcement */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-red-600 text-white text-xs md:text-sm py-2 px-4 font-medium flex items-center justify-between">
-        <div className="hidden md:flex items-center gap-2">
-          <PhoneCall size={14} className="text-red-400" />
-          <span>خدمة عملاء طنطاوي جروب: <strong className="font-bold tracking-wider text-yellow-300">19980</strong></span>
+      <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 text-white text-xs py-2 px-3 sm:px-4 font-medium flex items-center justify-between border-b border-blue-800/40">
+        <div className="flex items-center gap-2">
+          <PhoneCall size={14} className="text-yellow-400 shrink-0" />
+          <a href="tel:15218" className="hover:underline flex items-center gap-1">
+            <span className="hidden sm:inline text-gray-200">الخط الساخن:</span>
+            <strong className="font-black tracking-wider text-yellow-300 text-xs sm:text-sm">15218</strong>
+          </a>
         </div>
-        <div className="flex items-center justify-center gap-2 mx-auto">
-          <Sparkles size={14} className="text-yellow-300 animate-pulse" />
-          <span>عروض طنطاوي جروب الكبرى: خصومات حصرية، شحن سريع لجميع المحافظات ودفع موحد عند الاستلام!</span>
+        <div className="hidden md:flex items-center justify-center gap-2 text-xs text-gray-100">
+          <Sparkles size={14} className="text-yellow-300 animate-pulse shrink-0" />
+          <span>طنطاوي جروب: أجهزة منزلية كبرى وشاشات وأجهزة خفيفة • شحن لجميع المحافظات • دفع موحد عند الاستلام بعد المعاينة</span>
         </div>
-        <div className="hidden md:flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <PWAInstallButton />
           <button 
             onClick={() => setIsAboutModalOpen(true)}
-            className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition px-3 py-1 rounded-full text-xs font-semibold"
+            className="hidden sm:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition px-2.5 py-1 rounded-full text-[11px] font-semibold text-gray-200"
           >
-            <Building2 size={13} />
-            <span>عن طنطاوي جروب</span>
+            <Building2 size={12} />
+            <span>عن الشركة</span>
           </button>
         </div>
       </div>
@@ -102,7 +105,7 @@ export const Header: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                placeholder="ابحث في طنطاوي جروب: أجهزة كهربائية، حلل، شاشات، مفروشات..."
+                placeholder="ابحث في أجهزة طنطاوي جروب: ثلاجات، غسالات، شاشات، أجهزة خفيفة..."
                 className="w-full py-2.5 text-xs md:text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400 font-medium"
               />
               {searchQuery && (
@@ -128,10 +131,6 @@ export const Header: React.FC = () => {
 
           {/* Action Icons */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            {/* Install button compact on mobile */}
-            <div className="md:hidden">
-              <PWAInstallButton compact />
-            </div>
 
             {/* View Mode Switcher */}
             <button
@@ -166,23 +165,23 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Cart Icon */}
+            {/* Cart / Inspection List Icon */}
             <button
               onClick={() => setActiveTab('cart')}
               className="relative flex items-center gap-2 p-2 md:px-3 md:py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-full transition"
-              title="عربة التسوق"
+              title="قائمة طلبات المعاينة"
             >
               <div className="relative">
                 <ShoppingCart size={21} className="text-blue-800" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-blue-700 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
               </div>
               <div className="hidden lg:flex flex-col text-right">
-                <span className="text-[10px] text-gray-500 font-medium">سلة المشتريات</span>
-                <span className="text-xs font-black text-blue-900">{cartTotal.toLocaleString()} ج.م</span>
+                <span className="text-[10px] text-gray-500 font-medium">قائمة المعاينة</span>
+                <span className="text-xs font-black text-blue-900">{cartCount} أصناف</span>
               </div>
             </button>
 
@@ -237,47 +236,29 @@ export const Header: React.FC = () => {
             <button 
               onClick={() => {
                 setActiveTab('categories');
-                setSelectedCategory('Home & Kitchen');
+                setSelectedCategory('Major Appliances');
               }}
               className="hover:text-blue-700 transition"
             >
-              أدوات وأجهزة منزلية
+              أجهزة منزلية كبرى
             </button>
             <button 
               onClick={() => {
                 setActiveTab('categories');
-                setSelectedCategory('Electronics');
+                setSelectedCategory('Smart TVs');
               }}
               className="hover:text-blue-700 transition"
             >
-              أجهزة كهربائية وشاشات
+              شاشات وتلفزيونات ذكية
             </button>
             <button 
               onClick={() => {
                 setActiveTab('categories');
-                setSelectedCategory('Mobile Phones');
+                setSelectedCategory('Small Appliances');
               }}
               className="hover:text-blue-700 transition"
             >
-              موبايلات وإكسسوارات
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('categories');
-                setSelectedCategory('Home Furniture');
-              }}
-              className="hover:text-blue-700 transition"
-            >
-              مفروشات وسجاد
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('categories');
-                setSelectedCategory('Personal Care');
-              }}
-              className="hover:text-blue-700 transition"
-            >
-              عناية شخصية
+              أجهزة منزلية خفيفة
             </button>
           </div>
 

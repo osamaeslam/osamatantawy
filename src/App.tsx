@@ -2,6 +2,8 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
+import { MobilePWAInstallBanner } from './components/MobilePWAInstallBanner';
+import { FloatingHotlineButton } from './components/FloatingHotlineButton';
 import { HomePage } from './components/HomePage';
 import { CategoriesPage } from './components/CategoriesPage';
 import { DealsPage } from './components/DealsPage';
@@ -41,8 +43,8 @@ const MainLayout: React.FC = () => {
         {/* Top Control Bar for Mobile Mode */}
         <div className="w-full max-w-sm mb-3 flex items-center justify-between text-white text-xs px-2">
           <div className="flex items-center gap-1.5 font-bold">
-            <Smartphone size={16} className="text-red-500" />
-            <span>محاكي تطبيق رنين (Mobile App Shell)</span>
+            <Smartphone size={16} className="text-blue-500" />
+            <span>محاكي تطبيق طنطاوي جروب (Tantawy Group Mobile App)</span>
           </div>
           <button
             onClick={() => setViewMode('web')}
@@ -60,16 +62,22 @@ const MainLayout: React.FC = () => {
             <div className="w-24 h-4 bg-neutral-950 rounded-full" />
           </div>
 
+          {/* Mobile Install Top Banner */}
+          <MobilePWAInstallBanner />
+
           {/* App Header */}
           <Header />
 
           {/* Scrollable Screen Content */}
-          <main className="flex-1 overflow-y-auto px-3 py-4 bg-gray-50 no-scrollbar">
+          <main className="flex-1 overflow-y-auto px-3 py-4 pb-20 bg-gray-50 no-scrollbar relative">
             {renderContent()}
           </main>
 
           {/* Phone Bottom Navigation */}
           <BottomNavigation />
+
+          {/* Floating Hotline Button */}
+          <FloatingHotlineButton />
         </div>
 
         {/* Modals */}
@@ -81,17 +89,21 @@ const MainLayout: React.FC = () => {
     );
   }
 
-  // Full-width Responsive Web View
+  // Full-width Responsive Web & Real Mobile View
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 font-['Cairo',sans-serif]">
+      {/* Mobile PWA Installation Banner */}
+      <MobilePWAInstallBanner />
+
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-8 w-full">
         {renderContent()}
       </main>
 
       <Footer />
       <BottomNavigation />
+      <FloatingHotlineButton />
 
       {/* Global Modals */}
       <ProductDetailModal />

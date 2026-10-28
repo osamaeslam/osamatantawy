@@ -66,11 +66,9 @@ export const ProductDetailModal: React.FC = () => {
             {/* Left Column: Image Gallery */}
             <div className="space-y-3">
               <div className="aspect-square bg-gray-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden">
-                {selectedProduct.discountpercent > 0 && (
-                  <span className="absolute top-3 right-3 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
-                    وفر {selectedProduct.discountpercent}%
-                  </span>
-                )}
+                <span className="absolute top-3 right-3 bg-blue-900 text-white text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
+                  {selectedProduct.brand}
+                </span>
                 <img
                   src={images[activeImageIndex] || selectedProduct.previewimage}
                   alt={selectedProduct.nameAr}
@@ -86,7 +84,7 @@ export const ProductDetailModal: React.FC = () => {
                       key={idx}
                       onClick={() => setActiveImageIndex(idx)}
                       className={`w-14 h-14 rounded-xl border-2 p-1 bg-gray-50 overflow-hidden shrink-0 transition ${
-                        activeImageIndex === idx ? 'border-red-600 shadow-xs' : 'border-gray-200'
+                        activeImageIndex === idx ? 'border-blue-900 shadow-xs' : 'border-gray-200'
                       }`}
                     >
                       <img src={img} alt="thumbnail" className="w-full h-full object-contain" />
@@ -100,7 +98,7 @@ export const ProductDetailModal: React.FC = () => {
             <div className="space-y-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs bg-red-50 text-red-700 font-bold px-2.5 py-0.5 rounded-md">
+                  <span className="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-0.5 rounded-md">
                     {selectedProduct.categoryAr}
                   </span>
                   <div className="flex items-center gap-1 text-amber-500">
@@ -115,29 +113,37 @@ export const ProductDetailModal: React.FC = () => {
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">{selectedProduct.summaryAr}</p>
 
-                {/* Price block */}
-                <div className="bg-red-50/60 border border-red-100 p-3.5 rounded-2xl my-3">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-black text-red-600">
-                      {discountedPrice.toLocaleString()} ج.م
+                {/* Availability and Direct Contact Hotline */}
+                <div className="bg-blue-50/70 border border-blue-100 p-4 rounded-2xl my-3 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 font-bold">العلامة التجارية:</span>
+                    <span className="font-black text-blue-950 bg-white px-2.5 py-1 rounded-md border border-blue-100">
+                      {selectedProduct.brand}
                     </span>
-                    {selectedProduct.discountpercent > 0 && (
-                      <span className="text-sm text-gray-400 line-through">
-                        {selectedProduct.actualprice.toLocaleString()} ج.م
-                      </span>
-                    )}
                   </div>
-                  {savings > 0 && (
-                    <span className="text-xs font-bold text-green-700 block mt-0.5">
-                      وفرت {savings.toLocaleString()} ج.م مع عروض طنطاوي جروب الحالية
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 font-bold">حالة التوفر:</span>
+                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      متوفر بجميع المعارض • متاح للمعاينة الفورية
                     </span>
-                  )}
+                  </div>
+
+                  <a
+                    href="tel:15218"
+                    className="flex items-center justify-between bg-white hover:bg-blue-900 hover:text-white p-2.5 rounded-xl border border-blue-200 text-xs text-blue-900 font-bold transition group"
+                  >
+                    <span>للاستفسار المباشر عن التوافر والسعر الحالي:</span>
+                    <span className="font-mono text-sm bg-yellow-300 text-blue-950 px-2 py-0.5 rounded font-black group-hover:bg-yellow-400">
+                      15218
+                    </span>
+                  </a>
                 </div>
 
                 {/* Variants / Colors */}
                 {selectedProduct.sizevariants?.length > 0 && (
                   <div className="space-y-1.5 my-3">
-                    <span className="text-xs font-bold text-gray-700">اختر اللون أو المقاس:</span>
+                    <span className="text-xs font-bold text-gray-700">الموديل أو السعة:</span>
                     <div className="flex flex-wrap gap-2">
                       {selectedProduct.sizevariants.map((variant) => (
                         <button
@@ -145,7 +151,7 @@ export const ProductDetailModal: React.FC = () => {
                           onClick={() => setSelectedVariant(variant)}
                           className={`text-xs px-3 py-1.5 rounded-xl border font-bold transition ${
                             selectedVariant === variant
-                              ? 'border-red-600 bg-red-50 text-red-700'
+                              ? 'border-blue-900 bg-blue-50 text-blue-900'
                               : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                           }`}
                         >
@@ -158,7 +164,7 @@ export const ProductDetailModal: React.FC = () => {
 
                 {/* Quantity selector */}
                 <div className="flex items-center gap-3 my-3">
-                  <span className="text-xs font-bold text-gray-700">الكمية:</span>
+                  <span className="text-xs font-bold text-gray-700">عدد القطع المطلوبة للمعاينة:</span>
                   <div className="flex items-center border border-gray-300 rounded-xl bg-gray-50 overflow-hidden">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -182,10 +188,10 @@ export const ProductDetailModal: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddToCart}
-                    className="flex-1 bg-red-600 hover:bg-red-700 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
+                    className="flex-1 bg-blue-900 hover:bg-blue-950 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
                   >
                     <ShoppingCart size={18} />
-                    <span>إضافة إلى سلة التسوق</span>
+                    <span>طلب معاينة الصنف</span>
                   </button>
 
                   <button
@@ -198,9 +204,9 @@ export const ProductDetailModal: React.FC = () => {
                 </div>
 
                 {isAddedToast && (
-                  <div className="bg-green-600 text-white text-xs font-bold p-2.5 rounded-xl text-center shadow-md animate-fade-in flex items-center justify-center gap-1.5">
+                  <div className="bg-emerald-600 text-white text-xs font-bold p-2.5 rounded-xl text-center shadow-md animate-fade-in flex items-center justify-center gap-1.5">
                     <Check size={16} />
-                    <span>تمت الإضافة إلى السلة بنجاح!</span>
+                    <span>تمت إضافة الصنف إلى قائمة المعاينة بنجاح!</span>
                   </div>
                 )}
               </div>

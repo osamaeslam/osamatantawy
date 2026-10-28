@@ -1,115 +1,160 @@
-import { Product, CategoryItem, OrderItem, TeamMember, UserProfile } from '../types';
+import { Product, CategoryItem, OrderItem, UserProfile } from '../types';
 
 export const CATEGORIES: CategoryItem[] = [
   {
-    name: 'Home & Kitchen',
-    nameAr: 'أدوات وأجهزة منزلية',
-    icon: 'CookingPot',
-    descriptionAr: 'حلل جرانيت، أطقم عشاء، أجهزة كهربائية ومفروشات',
-    subcategories: ['Cookware & Pots', 'Dinner Sets', 'Kitchen Gadgets', 'Blenders & Mixers', 'Small Appliances'],
-    subcategoriesAr: ['أواني وحلل', 'أطقم صيني وعشاء', 'مستلزمات مطبخ', 'خلاطات ومحضرات طعام', 'أجهزة مطبخ صغيرة']
+    name: 'Major Appliances',
+    nameAr: 'أجهزة منزلية كبرى',
+    icon: 'Refrigerator',
+    descriptionAr: 'ثلاجات، غسالات ملابس وأطباق، بوتاجازات، ديب فريزر وتكييفات',
+    subcategories: ['Refrigerators', 'Washing Machines', 'Cookers & Ovens', 'Deep Freezers', 'Air Conditioners'],
+    subcategoriesAr: ['ثلاجات نوفروست', 'غسالات ملابس فول أوتوماتيك', 'بوتاجازات وأفران بلت إن', 'ديب فريزر رأسي وأفقي', 'تكييفات هواء انفرتر']
   },
   {
-    name: 'Electronics',
-    nameAr: 'الأجهزة الكهربائية',
+    name: 'Smart TVs',
+    nameAr: 'شاشات وتلفزيونات',
     icon: 'Tv',
-    descriptionAr: 'شاشات ذكية، غسالات، ثلاجات، ومكيفات هواء',
-    subcategories: ['Televisions', 'Refrigerators', 'Washing Machines', 'Air Conditioners', 'Microwaves'],
-    subcategoriesAr: ['شاشات تلفزيون', 'ثلاجات وديب فريزر', 'غسالات ملابس', 'مكيفات هواء', 'ميكروويف وفرن']
+    descriptionAr: 'شاشات ذكية 4K، أوليد وكريستال سمارت من أشهر الماركات العالمية',
+    subcategories: ['4K Smart TVs', 'OLED & QLED', 'Standard LED TVs', 'TV Accessories', 'Soundbars'],
+    subcategoriesAr: ['شاشات 4K سمارت ريسيفر داخلي', 'شاشات OLED & QLED فائقة الدقة', 'شاشات LED اقتصادية', 'حوامل وإكسسوارات الشاشات', 'ساوند بار وأنظمة صوت']
   },
   {
-    name: 'Mobile Phones',
-    nameAr: 'الموبايلات والإكسسوارات',
-    icon: 'Smartphone',
-    descriptionAr: 'هواتف ذكية، شواحن، سماعات، وبنوك طاقة',
-    subcategories: ['Smartphones', 'Tablets', 'Chargers & Cables', 'Earphones & Headphones', 'Power Banks'],
-    subcategoriesAr: ['هواتف ذكية', 'أجهزة لوحية', 'شواحن وكابلات', 'سماعات رأس وبلوتوث', 'بنوك طاقة']
-  },
-  {
-    name: 'Home Furniture',
-    nameAr: 'أثاث ومفروشات المنزل',
-    icon: 'Armchair',
-    descriptionAr: 'سجاد، ملايات، ستائر، وأطقم لحاف شتوي وصيفي',
-    subcategories: ['Curtains & Drapes', 'Bed Sheets & Quilts', 'Carpets & Rugs', 'Living Room', 'Towels'],
-    subcategoriesAr: ['ستائر وديكورات', 'ملايات وألحفة', 'سجاد وموكيت', 'أثاث منزلي', 'مناشف وبشاكير']
-  },
-  {
-    name: 'Fashion',
-    nameAr: 'أزياء وملابس وموضة',
-    icon: 'Shirt',
-    descriptionAr: 'ملابس رجالي، حريمي، وأطفال بأفضل الخامات',
-    subcategories: ['Women Fashion', 'Men Fashion', 'Kids Wear', 'Shoes & Bags', 'Winter Collection'],
-    subcategoriesAr: ['أزياء نسائية', 'ملابس رجالية', 'ملابس أطفال', 'أحذية وحقائب', 'كولكشن الشتاء']
-  },
-  {
-    name: 'Personal Care',
-    nameAr: 'العناية الشخصية والجمال',
+    name: 'Small Appliances',
+    nameAr: 'أجهزة منزلية خفيفة',
     icon: 'Sparkles',
-    descriptionAr: 'مجففات شعر، ماكينات حلاقة، وأجهزة تجميل',
-    subcategories: ['Hair Dryers & Stylers', 'Men Grooming', 'Skin Care', 'Oral Care', 'Perfumes'],
-    subcategoriesAr: ['استشوار ومكواة شعر', 'ماكينات حلاقة رجالي', 'عناية بالبشرة', 'عناية بالأسنان', 'عطور']
-  },
-  {
-    name: 'Toys & Baby',
-    nameAr: 'ألعاب وأطفال',
-    icon: 'Baby',
-    descriptionAr: 'ألعاب تعليمية، عربات أطفال ومستلزمات الرضع',
-    subcategories: ['Educational Toys', 'Baby Strollers', 'Feeding Supplies', 'Dolls & Action Figures', 'Outdoor Play'],
-    subcategoriesAr: ['ألعاب تعليمية', 'عربات أطفال', 'مستلزمات رضاعة', 'دمى وشخصيات', 'ألعاب حدائق']
+    descriptionAr: 'قلايات هوائية، محضرات طعام، ميكروويف، مكانس، وماكينات قهوة',
+    subcategories: ['Air Fryers', 'Food Processors & Blenders', 'Microwaves & Electric Ovens', 'Vacuum Cleaners', 'Coffee Makers & Kettles', 'Irons & Steamers'],
+    subcategoriesAr: ['قلايات هوائية بدون زيت', 'خلاطات ومحضرات طعام', 'ميكروويف وأفران كهربائية', 'مكانس كهربائية', 'ماكينات قهوة وغلايات', 'مكاوي بخار']
   }
 ];
 
 export const PRODUCTS: Product[] = [
+  // Major Appliances (أجهزة منزلية كبرى)
   {
     id: '1',
-    name: 'Tefal Titanium Granite Cookware Set 10 Pcs',
-    nameAr: 'طقم جرانيت تيفال تيتانيوم 10 قطع - غير لاصق فاخر',
-    category: 'Home & Kitchen',
-    categoryAr: 'أدوات وأجهزة منزلية',
-    summary: 'Premium 10-piece non-stick granite cookware set with heat-resistant tempered glass lids.',
-    summaryAr: 'طقم أواني طهي جرانيت تركي غير لاصق 10 قطع مع أغطية زجاج حراري ومقابض عازلة للحرارة.',
-    description: 'Manufactured with high-durability titanium particles for effortless food release and scratch resistance. Ideal for healthy low-fat cooking and compatible with all stovetops.',
-    descriptionAr: 'مصنوع بتقنية التيتانيوم المقاومة للخدش بأعلى جودة. توزيع متساوي للحرارة لطهي مثالي بدون زيت أو دهون زائدة. آمن لغسالة الأطباق.',
-    actualprice: 3499,
-    discountpercent: 30,
-    overallrating: 4.8,
-    previewimage: 'https://images.unsplash.com/photo-1584990347449-397ddc99db15?w=800&auto=format&fit=crop&q=80',
+    name: 'Sharp Refrigerator 450L NoFrost Digital Inverter - J-Tech',
+    nameAr: 'ثلاجة شارب 450 لتر ديجيتال نوفروست انفرتر بتقنية البلازما كلاستر',
+    category: 'Major Appliances',
+    categoryAr: 'أجهزة منزلية كبرى',
+    summary: 'High-efficiency J-Tech inverter motor with Plasmacluster ion technology and AG+ nano deodorizer.',
+    summaryAr: 'موتور انفرتر موفر للكهرباء مع تقنية البلازما كلاستر لمنع الروائح والبكتيريا وضمان العربي 10 سنوات.',
+    description: 'تحافظ على الأطعمة طازجة لفترات طويلة مع تبريد متساوي في كل ركن، أرفف زجاجية شديدة التحمل، وشاشة لمس ديجيتال خارجية للتحكم في درجات الحرارة بدقة.',
+    descriptionAr: 'تحافظ على الأطعمة طازجة لفترات طويلة مع تبريد متساوي في كل ركن، أرفف زجاجية شديدة التحمل، وشاشة لمس ديجيتال خارجية للتحكم في درجات الحرارة بدقة.',
+    actualprice: 32500,
+    discountpercent: 15,
+    overallrating: 4.9,
+    previewimage: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=800&auto=format&fit=crop&q=80',
     previewimages: [
-      'https://images.unsplash.com/photo-1584990347449-397ddc99db15?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=800&auto=format&fit=crop&q=80'
     ],
     reviews: [
       {
-        customername: 'سارة عبد الله',
-        comment: 'خامة ممتازة جداً وأصلية 100% والتوصيل كان سريع خلال 48 ساعة.',
+        customername: 'م. أحمد فتحي',
+        comment: 'ثلاجة ممتازة جداً تبريد سريع جداً وصوتها هادي تماماً وضمان العربي معتمد.',
         rating: 5,
-        revieweddate: '2024-03-15'
-      },
-      {
-        customername: 'منى محمود',
-        comment: 'حقيقي تحفة وأحسن من الصورة بكتير.. شكراً رنين!',
-        rating: 5,
-        revieweddate: '2024-03-10'
+        revieweddate: '2024-03-20'
       }
     ],
-    quantities: ['1', '2', '3', '5'],
-    sizevariants: ['رمادي فحمي', 'وردي باستيل', 'أسود ملكي'],
+    quantities: ['1', '2'],
+    sizevariants: ['فضي ستانلس ستيل', 'أسود زجاجي ديجيتال'],
     isDeal: true,
-    dealEndsIn: '14:25:40',
+    dealEndsIn: '16:40:00',
     inStock: true,
-    brand: 'Tefal'
+    brand: 'Sharp'
   },
   {
     id: '2',
-    name: 'Samsung 55-inch 4K UHD Smart Crystal TV',
-    nameAr: 'شاشة سامسونج 55 بوصة سمارت 4K كريستال الترا HD مع ريموت ذكي',
-    category: 'Electronics',
-    categoryAr: 'الأجهزة الكهربائية',
-    summary: 'Ultra-thin bezels, Dynamic Crystal Color with HDR10+ and built-in Tizen OS.',
-    summaryAr: 'شاشة سمارت ريسيفر داخلي بدقة 4K وتقنية الألوان الكريستالية مع دعم نتفليكس وشاهد ويوتيوب.',
-    description: 'Immerse yourself in picture with one billion shades of color. Crystal Processor 4K delivers true-to-life color expressions and fluid motion.',
-    descriptionAr: 'معالج كريستال 4K يرفع جودة المحتوى إلى دقة فائقة الوضوح. صوت تكيفي ومنافذ متعددة HDMI و USB.',
+    name: 'LG Front Load Washing Machine 9KG AI DD with Steam',
+    nameAr: 'غسالة ملابس إل جي 9 كجم بالموتور المباشر AI DD وتقنية البخار',
+    category: 'Major Appliances',
+    categoryAr: 'أجهزة منزلية كبرى',
+    summary: '9KG capacity with AI Inverter Direct Drive, TurboWash 360 and allergy care steam.',
+    summaryAr: 'ذكاء اصطناعي لاختيار الدورة المناسبة ونظام البخار لتعقيم الملابس وإزالة 99.9% من مسببات الحساسية.',
+    description: 'موتور دفع مباشر بدون سيور فائق الهدوء وموفر للطاقة بدرجة A+++، باب زجاجي مقوى، وحلة استانلس ستيل مضادة للبكتيريا.',
+    descriptionAr: 'موتور دفع مباشر بدون سيور فائق الهدوء وموفر للطاقة بدرجة A+++، باب زجاجي مقوى، وحلة استانلس ستيل مضادة للبكتيريا.',
+    actualprice: 27900,
+    discountpercent: 18,
+    overallrating: 4.8,
+    previewimage: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [
+      {
+        customername: 'مدام جيهان',
+        comment: 'غسالة رائعة وبتطلع الهدوم مكوية تقريباً بالبخار، شكراً طنطاوي جروب.',
+        rating: 5,
+        revieweddate: '2024-03-12'
+      }
+    ],
+    quantities: ['1', '2'],
+    sizevariants: ['سيلفر غامق', 'أبيض ناصع'],
+    isDeal: true,
+    dealEndsIn: '12:15:00',
+    inStock: true,
+    brand: 'LG'
+  },
+  {
+    id: '3',
+    name: 'Fresh Professional Cooker 5 Burners 90x60 Stainless Full Safety',
+    nameAr: 'بوتاجاز فريش بروفيشنال 5 شعلة 90×60 سم ستانلس أمان كامل مع مروحة فرن',
+    category: 'Major Appliances',
+    categoryAr: 'أجهزة منزلية كبرى',
+    summary: 'Cast iron supports, triple burner, full safety valves with dual oven fans.',
+    summaryAr: 'شعلات نحاسية إيطالية، حوامل زهر ثقيلة، إشعال ذاتي كامل، ومروحة لتوزيع الحرارة داخل الفرن.',
+    description: 'شعلة وسطى ثلاثية سريعة جداً، شواية دوارة، تايمر ديجيتال، وباب زجاجي هيدروليك عاكس للحرارة لسهولة الاستخدام والتنظيف.',
+    descriptionAr: 'شعلة وسطى ثلاثية سريعة جداً، شواية دوارة، تايمر ديجيتال، وباب زجاجي هيدروليك عاكس للحرارة لسهولة الاستخدام والتنظيف.',
+    actualprice: 15800,
+    discountpercent: 12,
+    overallrating: 4.7,
+    previewimage: 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [],
+    quantities: ['1'],
+    sizevariants: ['ستانلس ستيل بالكامل'],
+    isDeal: false,
+    inStock: true,
+    brand: 'Fresh'
+  },
+  {
+    id: '4',
+    name: 'Carrier Optimax Inverter Air Conditioner 1.5 HP Cool/Heat',
+    nameAr: 'تكييف كاريير أوبتيماكس انفرتر 1.5 حصان بارد/ساخن بلازما جرين',
+    category: 'Major Appliances',
+    categoryAr: 'أجهزة منزلية كبرى',
+    summary: 'Energy-saving inverter compressor with ionizer plasma green filter and smart display.',
+    summaryAr: 'توفير حتى 50% من استهلاك الكهرباء، تنقية هواء شاملة، وتبريد فائق السرعة مع تدفق هواء رباعي الاتجاهات.',
+    description: 'يعمل بكفاءة عالية في درجات الحرارة المرتفعة، وظيفة التنظيف الذاتي ومبادل حراري معالج ضد الصدأ والتآكل.',
+    descriptionAr: 'يعمل بكفاءة عالية في درجات الحرارة المرتفعة، وظيفة التنظيف الذاتي ومبادل حراري معالج ضد الصدأ والتآكل.',
+    actualprice: 26500,
+    discountpercent: 10,
+    overallrating: 4.9,
+    previewimage: 'https://images.unsplash.com/photo-1614633833026-0820552978b6?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1614633833026-0820552978b6?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [],
+    quantities: ['1', '2'],
+    sizevariants: ['1.5 حصان بارد/ساخن'],
+    isDeal: true,
+    dealEndsIn: '08:45:00',
+    inStock: true,
+    brand: 'Carrier'
+  },
+
+  // Smart TVs (شاشات وتلفزيونات)
+  {
+    id: '5',
+    name: 'Samsung 55-inch Crystal UHD 4K Smart TV CU7000',
+    nameAr: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت بريسيفر داخلي',
+    category: 'Smart TVs',
+    categoryAr: 'شاشات وتلفزيونات',
+    summary: 'Dynamic Crystal Color with Crystal Processor 4K, HDR10+ and Tizen OS.',
+    summaryAr: 'ألوان كريستالية نقية بدقة 4K فائقة الوضوح مع نظام تايزن الذكي، يوتيوب، نتفليكس وشاهد مدمجة.',
+    description: 'شاشة بدون حواف بتصميم نحيف للغاية، نظام صوت محيطي تكيفي، ريموت تحكم ذكي، مع منافذ متعددة HDMI و USB.',
+    descriptionAr: 'شاشة بدون حواف بتصميم نحيف للغاية، نظام صوت محيطي تكيفي، ريموت تحكم ذكي، مع منافذ متعددة HDMI و USB.',
     actualprice: 18499,
     discountpercent: 22,
     overallrating: 4.9,
@@ -121,228 +166,241 @@ export const PRODUCTS: Product[] = [
     reviews: [
       {
         customername: 'أحمد شريف',
-        comment: 'شاشة خرافية ألوانها مبهرة والصوت نقي جداً، وضمان العربي الأصلي.',
+        comment: 'شاشة خرافية ألوانها مبهرة والصوت نقي جداً، ضمان الوكيل الأصلي وسعر طنطاوي الأفضل.',
         rating: 5,
-        revieweddate: '2024-02-28'
+        revieweddate: '2024-03-10'
       }
     ],
     quantities: ['1', '2'],
-    sizevariants: ['55 بوصة', '65 بوصة'],
+    sizevariants: ['55 بوصة 4K', '65 بوصة 4K'],
     isDeal: true,
-    dealEndsIn: '08:12:15',
+    dealEndsIn: '09:20:15',
     inStock: true,
     brand: 'Samsung'
   },
   {
-    id: '3',
-    name: 'Kenwood MultiPro Food Processor 1000W',
-    nameAr: 'محضر طعام كينوود مالتي برو 1000 واط - 34 وظيفة متعددة',
-    category: 'Home & Kitchen',
-    categoryAr: 'أدوات وأجهزة منزلية',
-    summary: 'Heavy-duty 1000W motor with 3L bowl, thermo-resist blender and citrus press.',
-    summaryAr: 'محضر طعام متكامل 34 وظيفة مع دورق زجاج مقاوم للحرارة، مطحنة توابل، وعصارة حمضيات.',
-    description: 'Designed to handle tough doughs, rapid chopping, shredding, and velvety smoothies with dual-drive tech.',
-    descriptionAr: 'شفرات من الفولاذ المقاوم للصدأ مع سرعتين ونبضات لحظية لإعداد جميع الوجبات المنزلية والعصائر بسهولة.',
-    actualprice: 4999,
-    discountpercent: 25,
-    overallrating: 4.7,
-    previewimage: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=800&auto=format&fit=crop&q=80',
-    previewimages: [
-      'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=800&auto=format&fit=crop&q=80'
-    ],
-    reviews: [
-      {
-        customername: 'هدير كمال',
-        comment: 'عملي جدا ومريح في الاستخدام وفر عليا وقت ومجهود كبير في المطبخ.',
-        rating: 5,
-        revieweddate: '2024-01-20'
-      }
-    ],
-    quantities: ['1', '2', '3'],
-    sizevariants: ['سيلفر ستانلس'],
-    isDeal: false,
-    inStock: true,
-    brand: 'Kenwood'
-  },
-  {
-    id: '4',
-    name: 'Xiaomi Redmi Note 13 Pro 4G - 256GB / 8GB RAM',
-    nameAr: 'شاومي ريدمي نوت 13 برو - 256 جيجا، 8 رام مع كاميرا 200 ميجابكسل',
-    category: 'Mobile Phones',
-    categoryAr: 'الموبايلات والإكسسوارات',
-    summary: '200MP camera with OIS, 120Hz AMOLED display and 67W Turbo charging.',
-    summaryAr: 'كاميرا خارقة بدقة 200 ميجابكسل، شاشة أموليد 120 هرتز فائقة النعومة، وشاحن سريع بقوة 67 واط.',
-    description: 'Exceptional photography experience with flagship-grade sensor. Fast battery charging 0 to 100% in 45 minutes.',
-    descriptionAr: 'أحدث هواتف الفئة المتوسطة العليا من شاومي ببطارية 5000 مللي أمبير تدوم يومين عمل كاملين.',
-    actualprice: 13999,
-    discountpercent: 15,
-    overallrating: 4.8,
-    previewimage: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
-    previewimages: [
-      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80'
-    ],
-    reviews: [
-      {
-        customername: 'إسلام عصام',
-        comment: 'الموبايل طيارة والشاحن صاروخ في العلبة، رنين دايما عروضهم صادقة.',
-        rating: 5,
-        revieweddate: '2024-03-02'
-      }
-    ],
-    quantities: ['1', '2'],
-    sizevariants: ['أسود كربوني', 'أزرق محيطي', 'أخضر غابات'],
-    isDeal: true,
-    dealEndsIn: '18:50:00',
-    inStock: true,
-    brand: 'Xiaomi'
-  },
-  {
-    id: '5',
-    name: 'Tornado Turkish Coffee Maker 330ml 735W',
-    nameAr: 'ماكينة قهوة تركي تورنيدو 735 واط - سعة 4 فناجين مع سينسور ضد الفوران',
-    category: 'Home & Kitchen',
-    categoryAr: 'أدوات وأجهزة منزلية',
-    summary: 'Prepares classic Turkish coffee with rich crema and smart overflow protection.',
-    summaryAr: 'تحضير القهوة التركية مع رغوة كريمية غنية ونظام أمان ذكي يمنع فوران القهوة.',
-    description: 'Cordless kettle convenience with 360-degree base and touch LED control indicator.',
-    descriptionAr: 'قاعدة ستانلس ستيل وإضاءة تنبيه عند انتهاء القهوة بلمسة واحدة سريعة ومثالية للمنزل والمكتب.',
-    actualprice: 1799,
-    discountpercent: 28,
-    overallrating: 4.6,
-    previewimage: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80',
-    previewimages: [
-      'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80'
-    ],
-    reviews: [
-      {
-        customername: 'ياسمين حسن',
-        comment: 'وش القهوة بيطلع مظبوط جداً زي الكنكة النحاس بالظبط.',
-        rating: 5,
-        revieweddate: '2024-02-14'
-      }
-    ],
-    quantities: ['1', '2', '3'],
-    sizevariants: ['أحمر نبيتي', 'بني قهوة', 'أبيض ثلجي'],
-    isDeal: true,
-    dealEndsIn: '05:30:20',
-    inStock: true,
-    brand: 'Tornado'
-  },
-  {
     id: '6',
-    name: 'Luxurious Winter Microfiber Comforter Set 5 Pcs',
-    nameAr: 'طقم لحاف شتوي سرير كبير فايبر دبل فيس 5 قطع - ألوان عصرية',
-    category: 'Home Furniture',
-    categoryAr: 'أثاث ومفروشات المنزل',
-    summary: 'Ultra-soft microfiber winter comforter with 2 pillowcases and 2 cushions.',
-    summaryAr: 'طقم لحاف شتوي دافئ ناعم بوجهين، مقاس 240×260 سم مع خداديات أنيقة.',
-    description: 'Hypoallergenic fiber filling that gives deep warmth while remaining breathable and lightweight.',
-    descriptionAr: 'خامات تركي معالجة ضد الانكماش والوبر مع ألوان مبهجة تناسب أحدث ديكورات غرف النوم.',
-    actualprice: 1850,
-    discountpercent: 35,
-    overallrating: 4.7,
-    previewimage: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&auto=format&fit=crop&q=80',
+    name: 'LG 65-inch OLED 4K Cinema Screen Smart webOS with Magic Remote',
+    nameAr: 'شاشة إل جي 65 بوصة OLED 4K سينمائية سمارت بالريموت السحري ومعدل 120Hz',
+    category: 'Smart TVs',
+    categoryAr: 'شاشات وتلفزيونات',
+    summary: 'Self-lit OLED pixels for infinite contrast, Dolby Vision IQ & Atmos with α7 AI Gen6.',
+    summaryAr: 'بكسلات ذاتية الإضاءة تمنح سواداً مطلقاً وألواناً واقعية مع دعم الألعاب 120 هرتز وتقنية دولبي أتموس.',
+    description: 'أقوى تجربة مشاهدة سينمائية منزلية مع معالج الذكاء الاصطناعي من إل جي، نظام webOS السلس والريموت السحري بالماوس الهوائي.',
+    descriptionAr: 'أقوى تجربة مشاهدة سينمائية منزلية مع معالج الذكاء الاصطناعي من إل جي، نظام webOS السلس والريموت السحري بالماوس الهوائي.',
+    actualprice: 48900,
+    discountpercent: 16,
+    overallrating: 5.0,
+    previewimage: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=800&auto=format&fit=crop&q=80',
     previewimages: [
-      'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=800&auto=format&fit=crop&q=80'
     ],
     reviews: [],
-    quantities: ['1', '2'],
-    sizevariants: ['كشمير x رمادي', 'بترولي x سكري', 'موف x فضي'],
+    quantities: ['1'],
+    sizevariants: ['65 بوصة OLED'],
     isDeal: false,
     inStock: true,
-    brand: 'Raneen Home'
+    brand: 'LG'
   },
   {
     id: '7',
-    name: 'Philips Hair Dryer DryCare Essential 2100W',
-    nameAr: 'مجفف شعر فيليبس دراي كير 2100 واط مع تقنية الأيونات وخاصية الهواء البارد',
-    category: 'Personal Care',
-    categoryAr: 'العناية الشخصية والجمال',
-    summary: 'Ionic conditioning for shiny, frizz-free hair with ThermoProtect heat setting.',
-    summaryAr: 'تجفيف سريع وحماية متطورة للشعر من درجات الحرارة العالية مع تدفق أيوني يمنع الهيشان.',
-    description: '6 flexible speed and temperature settings for complete control and cool shot for style fixation.',
-    descriptionAr: 'تصميم مريح مع فوهة تركيز رفيعة لتصفيف دقيق ونتائج صالونات احترافية.',
-    actualprice: 1450,
-    discountpercent: 20,
-    overallrating: 4.9,
-    previewimage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
+    name: 'Toshiba 43-inch Full HD Smart Android TV with Voice Remote',
+    nameAr: 'شاشة توشيبا 43 بوصة سمارت أندرويد Full HD بريموت صوتي بلوتوث',
+    category: 'Smart TVs',
+    categoryAr: 'شاشات وتلفزيونات',
+    summary: 'Official Android TV with Google Assistant, Chromecast built-in and DTS Virtual:X.',
+    summaryAr: 'نظام تشغيل أندرويد الرسمي متجر جوجل بلاي، أوامر صوتية، وصوت سينمائي مجسم بضمان العربي 3 سنوات.',
+    description: 'شاشة مثالية لغرف النوم والمعيشة، تدعم تشغيل كافة التطبيقات والألعاب بدقة Full HD واضحة وألوان ساطعة.',
+    descriptionAr: 'شاشة مثالية لغرف النوم والمعيشة، تدعم تشغيل كافة التطبيقات والألعاب بدقة Full HD واضحة وألوان ساطعة.',
+    actualprice: 11499,
+    discountpercent: 14,
+    overallrating: 4.8,
+    previewimage: 'https://images.unsplash.com/photo-1461151304267-38535e780c79?w=800&auto=format&fit=crop&q=80',
     previewimages: [
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1461151304267-38535e780c79?w=800&auto=format&fit=crop&q=80'
     ],
     reviews: [],
-    quantities: ['1', '2'],
-    sizevariants: ['أسود لامع x ذهبي'],
+    quantities: ['1', '2', '3'],
+    sizevariants: ['43 بوصة سمارت'],
     isDeal: true,
-    dealEndsIn: '11:15:00',
+    dealEndsIn: '18:10:00',
     inStock: true,
-    brand: 'Philips'
+    brand: 'Toshiba'
   },
+
+  // Small & Light Appliances (أجهزة منزلية خفيفة)
   {
     id: '8',
-    name: 'Sharp Air Fryer XL 5.5L Digital Touch 1800W',
-    nameAr: 'قلاية هوائية ديجيتال شارب بدون زيت 5.5 لتر 1800 واط - 8 برامج ذكية',
-    category: 'Home & Kitchen',
-    categoryAr: 'أدوات وأجهزة منزلية',
-    summary: 'Healthier crispy meals with up to 90% less oil and rapid air circulation.',
-    summaryAr: 'قلي وتحمير وشوي صحي بدون زيت بفضل دوران الهواء الساخن السريع مع شاشة لمس ديجيتال.',
-    description: 'Large capacity suitable for entire family. Easy-to-clean non-stick basket and auto-shutoff timer.',
-    descriptionAr: 'سعة 5.5 لتر تكفي حتى 1.5 كجم بطاطس أو دجاجة كاملة، موفرة للطاقة وسهلة الغسيل.',
-    actualprice: 4500,
-    discountpercent: 32,
-    overallrating: 4.8,
+    name: 'Philips XXL Air Fryer 7.3L 2225W Digital with Fat Removal',
+    nameAr: 'قلاية هوائية فيليبس XXL سعة 7.3 لتر 2225 واط ديجيتال بتقنية إزالة الدهون',
+    category: 'Small Appliances',
+    categoryAr: 'أجهزة منزلية خفيفة',
+    summary: 'Rapid Air technology for 90% less oil cooking with Twin TurboStar fat removal.',
+    summaryAr: 'سعة عائلية ضخمة تسع دجاجة كاملة أو 1.4 كجم بطاطس، طعام مقرمش وصحي بدون زيت وشاشة لمس ديجيتال.',
+    description: 'أفضل قلاية هوائية رقم 1 عالمياً مع 5 برامج طهي مسبقة الإعداد، خاصية حفظ السخونة وسهلة الغسيل في غسالة الأطباق.',
+    descriptionAr: 'أفضل قلاية هوائية رقم 1 عالمياً مع 5 برامج طهي مسبقة الإعداد، خاصية حفظ السخونة وسهلة الغسيل في غسالة الأطباق.',
+    actualprice: 9999,
+    discountpercent: 25,
+    overallrating: 4.9,
     previewimage: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop&q=80',
     previewimages: [
       'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop&q=80'
     ],
     reviews: [
       {
-        customername: 'كريم عادل',
-        comment: 'ممتازة جدا في البطاطس والستربس والسمبوسة من غير نقطة زيت.',
+        customername: 'سارة عبد الرحمن',
+        comment: 'تحفة بجد وسريعة جداً وبتطلع الأكل مقرمش وخفيف من غير دهون خالص.',
         rating: 5,
-        revieweddate: '2024-03-01'
+        revieweddate: '2024-03-15'
       }
     ],
     quantities: ['1', '2', '3'],
-    sizevariants: ['أسود ديجيتال'],
+    sizevariants: ['أسود لامع ديجيتال'],
     isDeal: true,
-    dealEndsIn: '03:45:10',
+    dealEndsIn: '05:30:00',
+    inStock: true,
+    brand: 'Philips'
+  },
+  {
+    id: '9',
+    name: 'Kenwood MultiPro Food Processor 1000W 34 Functions',
+    nameAr: 'محضر طعام كينوود مالتي برو 1000 واط - 34 وظيفة مع خلاط زجاج ومطحنة',
+    category: 'Small Appliances',
+    categoryAr: 'أجهزة منزلية خفيفة',
+    summary: 'Heavy-duty 1000W motor with 3L bowl, thermo-resist blender and citrus press.',
+    summaryAr: 'جهاز مطبخ متكامل للعجن، التقطيع، الفرم، الخفق، وعصر الفواكه بموتور نحاسي قوي وشفرات ستانلس حادة.',
+    description: 'يتحمل المهام الشاقة وسهل الاستخدام، أداء استثنائي لفرم اللحوم وإعداد المعجنات والعصائر الطازجة بثوانٍ.',
+    descriptionAr: 'يتحمل المهام الشاقة وسهل الاستخدام، أداء استثنائي لفرم اللحوم وإعداد المعجنات والعصائر الطازجة بثوانٍ.',
+    actualprice: 4999,
+    discountpercent: 20,
+    overallrating: 4.8,
+    previewimage: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [],
+    quantities: ['1', '2', '3'],
+    sizevariants: ['ستانلس ستيل x أسود'],
+    isDeal: true,
+    dealEndsIn: '14:20:00',
+    inStock: true,
+    brand: 'Kenwood'
+  },
+  {
+    id: '10',
+    name: 'Sharp Microwave 25L with Grill 1000W Digital Mirror Finish',
+    nameAr: 'ميكروويف شارب 25 لتر بالشواية 1000 واط ديجيتال باب مرآة فاخر',
+    category: 'Small Appliances',
+    categoryAr: 'أجهزة منزلية خفيفة',
+    summary: 'Digital touch controls, 8 auto cooking menus, defrost by weight and child lock.',
+    summaryAr: 'تسخين وطهي وشواء سريع، 8 برامج طهي تلقائية، إذابة التجميد بالوزن والوقت، وضمان العربي سنتين.',
+    description: 'تصميم أنيق بباب مرآة، صينية دوارة زجاجية متينة، وتحكم دقيق في مستويات الطاقة مع قفل أمان للأطفال.',
+    descriptionAr: 'تصميم أنيق بباب مرآة، صينية دوارة زجاجية متينة، وتحكم دقيق في مستويات الطاقة مع قفل أمان للأطفال.',
+    actualprice: 6850,
+    discountpercent: 18,
+    overallrating: 4.7,
+    previewimage: 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [],
+    quantities: ['1', '2'],
+    sizevariants: ['فضي باب مرآة'],
+    isDeal: false,
     inStock: true,
     brand: 'Sharp'
+  },
+  {
+    id: '11',
+    name: 'Panasonic Vacuum Cleaner 2000W Heavy Duty Drum Japan C-20E',
+    nameAr: 'مكنسة باناسونيك برميل 2000 واط سعة 18 لتر موتور ياباني أصلي',
+    category: 'Small Appliances',
+    categoryAr: 'أجهزة منزلية خفيفة',
+    summary: '2000W high-power motor with 18L dust capacity, anti-bacterial filter and blower function.',
+    summaryAr: 'قوة شفط جبارة للمنازل الواسعة والسجاد، سعة تانك ضخمة، فلتر معالج ضد البكتيريا، وخاصية طرد الهواء (Blower).',
+    description: 'صناعة متينة بهيكل معدني ثقيل، كابل طويل بمدى حركة واسع، ملحقات للأركان والستائر والفرش لتنظيف عميق.',
+    descriptionAr: 'صناعة متينة بهيكل معدني ثقيل، كابل طويل بمدى حركة واسع، ملحقات للأركان والستائر والفرش لتنظيف عميق.',
+    actualprice: 7900,
+    discountpercent: 15,
+    overallrating: 4.9,
+    previewimage: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [],
+    quantities: ['1', '2'],
+    sizevariants: ['أحمر نبيتي معدني'],
+    isDeal: true,
+    dealEndsIn: '11:10:00',
+    inStock: true,
+    brand: 'Panasonic'
+  },
+  {
+    id: '12',
+    name: 'DeLonghi Dedica Espresso Coffee Machine 15 Bar Stainless Steel',
+    nameAr: 'ماكينة قهوة اسبريسو ديلونجي ديديكا 15 بار ستانلس ستيل مع مبخر الحليب',
+    category: 'Small Appliances',
+    categoryAr: 'أجهزة منزلية خفيفة',
+    summary: '15-bar professional pressure with ThermoBlock heating system and adjustable cappuccino frother.',
+    summaryAr: 'تحضير الاسبريسو، الكابتشينو واللاتيه بكريمة غنية مثل الكافيهات الإيطالية بجسم ستانلس ستيل مدمج.',
+    description: 'تسخين سريع في 35 ثانية فقط، تسع للأكواب العالية وتدعم استخدام البن المطحون أو كبسولات ESE.',
+    descriptionAr: 'تسخين سريع في 35 ثانية فقط، تسع للأكواب العالية وتدعم استخدام البن المطحون أو كبسولات ESE.',
+    actualprice: 8400,
+    discountpercent: 22,
+    overallrating: 4.9,
+    previewimage: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80',
+    previewimages: [
+      'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80'
+    ],
+    reviews: [
+      {
+        customername: 'محمود عبد المنعم',
+        comment: 'قهوة ممتازة ورغوة حليب كريمية جداً، ماكينة عملية وجميلة على رخامة المطبخ.',
+        rating: 5,
+        revieweddate: '2024-03-05'
+      }
+    ],
+    quantities: ['1', '2'],
+    sizevariants: ['فضي كروم', 'أحمر ميتاليك'],
+    isDeal: true,
+    dealEndsIn: '06:15:30',
+    inStock: true,
+    brand: 'DeLonghi'
   }
 ];
 
 export const INITIAL_ORDERS: OrderItem[] = [
   {
     orderid: 'TG-83533963',
-    name: 'Tefal Titanium Granite Cookware Set 10 Pcs',
-    nameAr: 'طقم جرانيت تيفال تيتانيوم 10 قطع',
-    description: 'Delivery expected within 2-3 business days.',
-    descriptionAr: 'قيد الشحن مع مندوب طنطاوي جروب - متوقع التسليم غداً.',
+    name: 'Samsung 55-inch Crystal UHD 4K Smart TV',
+    nameAr: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت',
+    description: 'Delivery expected within 24-48 business hours.',
+    descriptionAr: 'قيد الشحن مع مندوب طنطاوي جروب - متوقع التسليم غداً مع حق المعاينة.',
     status: 'Dispatched',
-    productimage: 'https://images.unsplash.com/photo-1584990347449-397ddc99db15?w=800&auto=format&fit=crop&q=80',
-    price: 2449,
+    productimage: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+    price: 14429,
     date: '2024-04-12'
   },
   {
     orderid: 'TG-63428737',
-    name: 'Tornado Turkish Coffee Maker',
-    nameAr: 'ماكينة قهوة تركي تورنيدو',
+    name: 'Philips XXL Air Fryer 7.3L',
+    nameAr: 'قلاية هوائية فيليبس XXL سعة 7.3 لتر ديجيتال',
     description: 'Order was cancelled per customer request.',
     descriptionAr: 'تم إلغاء الطلب بناء على طلب العميل.',
     status: 'Cancelled',
-    productimage: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80',
-    price: 1295,
+    productimage: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop&q=80',
+    price: 7499,
     date: '2024-03-18'
   },
   {
     orderid: 'TG-83658319',
-    name: 'Luxurious Winter Comforter Set 5 Pcs',
-    nameAr: 'طقم لحاف شتوي سرير كبير 5 قطع',
+    name: 'Sharp Refrigerator 450L NoFrost Digital Inverter',
+    nameAr: 'ثلاجة شارب 450 لتر ديجيتال نوفروست انفرتر',
     description: 'Delivered successfully and signed by customer.',
-    descriptionAr: 'تم التسليم بنجاح مع حق المعاينة وتم تقييم الطلب بـ 5 نجوم.',
+    descriptionAr: 'تم التسليم بنجاح والمعاينة وتم تقييم الطلب بـ 5 نجوم.',
     status: 'Completed',
-    productimage: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&auto=format&fit=crop&q=80',
-    price: 1202,
+    productimage: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=800&auto=format&fit=crop&q=80',
+    price: 27625,
     date: '2024-02-25'
   }
 ];
@@ -362,4 +420,3 @@ export const PROMO_CODES: Record<string, number> = {
   VIP30: 30,
   WELCOME: 15
 };
-
