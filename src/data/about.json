@@ -1,0 +1,29 @@
+{
+  "productDescription": "A Xamarin Project for ITI 9-month scholarship, A mandatory requirement for passing the Xamarin framework course with Eng.Nasr. Was done using Syncfusion Xamarin Essential UI Kit and SQLite.",
+  "productIcon": "Icon.png",
+  "productVersion": "1.0",
+  "bannerImage": "Mask.png",
+
+  "employeeDetails": [
+    {
+      "employeeName": "Maryam Gamal",
+      "image": "mg.png",
+      "designation": "Team Leader"
+    },
+    {
+      "employeeName": "Randa Omar",
+      "image": "rh.png",
+      "designation": "Team Member"
+    },
+    {
+      "employeeName": "Khaled Waleed",
+      "image": "kw.png",
+      "designation": "Team Member"
+    },
+    {
+      "employeeName": "Mostafa Refaat",
+      "image": "mr.png",
+      "designation": "Team Member"
+    }
+  ]
+}

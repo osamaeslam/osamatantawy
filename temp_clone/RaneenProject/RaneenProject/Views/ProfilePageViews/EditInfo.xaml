@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             xmlns:control="clr-namespace:RaneenProject.Controls" 
+             xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+             x:Class="RaneenProject.Views.ProfilePageViews.EditInfo"
+             Title="Edit Account Info"
+             BackgroundColor="#F0F3F8">
+
+    <ContentPage.ControlTemplate>
+        <ControlTemplate>
+            <StackLayout Spacing="0">
+                <!--  Title View  -->
+                <control:TitleView Title="Account Information">
+                    <!--  Back button command  -->
+                    <control:TitleView.LeadingView>
+                        <buttons:SfButton
+                            x:Name="backButton"      
+                            Clicked="backButton"
+                            Style="{StaticResource IconButtonStyle}"
+                            Text="{StaticResource Back}" />
+                    </control:TitleView.LeadingView>
+                </control:TitleView>
+                <ContentPresenter />
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.ControlTemplate>
+    
+    <ContentPage.Content>
+        <StackLayout BackgroundColor="#F0F3F8">
+            <Label Text="First Name"
+                   TextColor="Black"
+                   Padding="30, 50, 0, 0"/>
+            <Frame CornerRadius="5"
+                   Padding="0"
+                   Margin="30, 0, 30, 0">
+                <Entry BackgroundColor="white"
+                   TextColor="Black"
+                   FontSize="14"/>
+            </Frame>
+            <Label Text="Last Name"
+                   TextColor="Black"
+                   Padding="30, 30, 0, 0"/>
+            <Frame CornerRadius="5"
+                   Padding="0"
+                   Margin="30, 0, 30, 0">
+                <Entry BackgroundColor="white"
+                   TextColor="Black"
+                   FontSize="14"/>
+            </Frame>
+            <Label Text="Confirm Password"
+                   TextColor="Black"
+                   Padding="30, 30, 0, 0"/>
+            <!--TODO: Show/hide password-->
+            <Frame CornerRadius="5"
+                   Padding="0"
+                   Margin="30, 0, 30, 0">
+                <Entry BackgroundColor="white"
+                   TextColor="Black"
+                   FontSize="14"
+                       IsPassword="True"/>
+            </Frame>
+            <Button Text="Edit Information"
+                    BackgroundColor="red" 
+                    CornerRadius="5"
+                    Margin="30, 30, 30, 20" />
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

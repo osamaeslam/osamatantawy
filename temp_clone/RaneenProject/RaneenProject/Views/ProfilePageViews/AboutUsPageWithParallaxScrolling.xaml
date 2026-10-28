@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="RaneenProject.Views.AboutUsWithScrollPage"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:behaviour="clr-namespace:RaneenProject.Behaviors"
+    xmlns:border="clr-namespace:Syncfusion.XForms.Border;assembly=Syncfusion.Core.XForms"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:control="clr-namespace:RaneenProject.Controls"
+    xmlns:listView="clr-namespace:Syncfusion.ListView.XForms;assembly=Syncfusion.SfListView.XForms"
+    x:Name="aboutUsScrollPage"
+    Title="About Us"
+    BackgroundColor="{DynamicResource Gray-Bg}"
+    NavigationPage.HasNavigationBar="False">
+
+    <ContentPage.ControlTemplate>
+        <ControlTemplate>
+            <StackLayout Spacing="0">
+                <!--  Title View  -->
+                <control:TitleView Title="About Us">
+                    <!--  Back button command  -->
+                    <control:TitleView.LeadingView>
+                        <buttons:SfButton
+                            x:Name="backButton"
+                            Command="{Binding BindingContext.BackButtonCommand, Source={x:Reference aboutUsScrollPage}}"
+                            CommandParameter="{x:Reference backButton}"
+                            Style="{StaticResource IconButtonStyle}"
+                            Text="{StaticResource Back}" />
+                    </control:TitleView.LeadingView>
+                </control:TitleView>
+                <ContentPresenter />
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.ControlTemplate>
+
+    <ContentPage.Content>
+        <ScrollView>
+            <Grid RowDefinitions="Auto, *" RowSpacing="0">
+                <!--  Background image  -->
+                <Image
+                    Grid.Row="0"
+                    Aspect="Fill"
+                    BackgroundColor="{DynamicResource Gray-200}"
+                    BindingContext="{x:Reference AboutUs}"
+                    HeightRequest="{Binding Height}"
+                    Source="About.png" />
+
+                <!--  Product details  -->
+                <StackLayout
+                    x:Name="AboutUs"
+                    Grid.Row="0"
+                    Margin="0,0,0,23"
+                    VerticalOptions="Start">
+
+                    <!--  Header  -->
+                    <Label
+                        Margin="0,24,0,16"
+                        FontSize="20"
+                        LineHeight="{OnPlatform Android=1.25,
+                                                Default=-1}"
+                        Style="{StaticResource TitleLabelStyle}"
+                        Text="About Us"
+                        TextColor="#333942" />
+
+                    <!--  Product description  -->
+                    <Label
+                        Margin="16,0,16,0"
+                        HorizontalOptions="Start"
+                        HorizontalTextAlignment="Center"
+                        Style="{StaticResource DescriptionLabelStyle}"
+                        Text="{Binding ProductDescription}"
+                        TextColor="#606a7b" />
+                </StackLayout>
+
+                <!--  Background image  -->
+                <Image
+                    Grid.Row="1"
+                    Aspect="AspectFill"
+                    BackgroundColor="{DynamicResource Gray-200}"
+                    HorizontalOptions="Fill"
+                    Source="OurTeam.png"
+                    VerticalOptions="Fill"/>
+
+                <!--  To display the team member's details  -->
+                <listView:SfListView
+                    x:Name="OurTeam"
+                    Grid.Row="1"
+                    AutoFitMode="Height"
+                    ItemsSource="{Binding EmployeeDetails}"
+                    SelectionMode="None"
+                    TapCommand="{Binding ItemSelectedCommand}"
+                    VerticalOptions="Start"
+                    Margin="0,30,0,0">
+
+                    <listView:SfListView.HeaderTemplate>
+                        <DataTemplate>
+                            <!--  Header  -->
+                            <Label
+                                Margin="0,60,0,10"
+                                FontSize="20"
+                                LineHeight="{OnPlatform Android=1.25,
+                                                        Default=-1}"
+                                Style="{StaticResource TitleLabelStyle}"
+                                Text="Our Team"
+                                TextColor="{DynamicResource Gray-White}" />
+                        </DataTemplate>
+                    </listView:SfListView.HeaderTemplate>
+
+                    <listView:SfListView.ItemTemplate>
+                        <DataTemplate>
+
+                            <!--  Details of each employee  -->
+                            <StackLayout Margin="15,15,15,24" Spacing="0">
+
+                                <!--  Profile image  -->
+                                <border:SfBorder
+                                    Margin="0,0,0,8"
+                                    BorderWidth="0"
+                                    CornerRadius="32"
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center">
+                                    <Image
+                                        BackgroundColor="{DynamicResource Gray-200}"
+                                        HeightRequest="72"
+                                        WidthRequest="72"
+                                        Source="{Binding Image}"
+                                        >
+                                        <!--<Image.Source>
+                                            <UriImageSource
+                                                CacheValidity="14"
+                                                CachingEnabled="true"
+                                                Uri="{Binding Image}" />
+                                        </Image.Source>-->
+                                    </Image>
+                                </border:SfBorder>
+
+                                <!--  Employee name  -->
+                                <Label
+                                    FontSize="14"
+                                    Style="{StaticResource TitleLabelStyle}"
+                                    Text="{Binding EmployeeName}"
+                                    TextColor="{DynamicResource Gray-White}" />
+
+                                <!--  Designation  -->
+                                <Label
+                                    HorizontalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Style="{StaticResource SimpleLabelStyle}"
+                                    Text="{Binding Designation}"
+                                    TextColor="White"
+                                    VerticalOptions="Start"
+                                    VerticalTextAlignment="Start" />
+
+                            </StackLayout>
+                        </DataTemplate>
+                    </listView:SfListView.ItemTemplate>
+
+                    <listView:SfListView.LayoutManager>
+                        <listView:GridLayout SpanCount="2" />
+                    </listView:SfListView.LayoutManager>
+
+                    <!--  Behavior added to handle scrolling of ListView  -->
+                    <listView:SfListView.Behaviors>
+                        <behaviour:SfListViewExtendHeightBehavior />
+                    </listView:SfListView.Behaviors>
+                </listView:SfListView>
+            </Grid>
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>

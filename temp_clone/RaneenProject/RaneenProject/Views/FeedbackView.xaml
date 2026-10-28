@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<StackLayout
+    x:Class="RaneenProject.Views.FeedbackView"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:template="clr-namespace:RaneenProject.Views.Templates"
+    BackgroundColor="{DynamicResource Gray-Bg}"
+    Spacing="0"
+    VerticalOptions="Start">
+
+    <StackLayout Spacing="0">
+        <!--  Rating and Reviews Header  -->
+        <StackLayout Padding="{OnIdiom Default='16', Desktop='0,0,0,10'}" Orientation="Horizontal">
+
+            <Label
+                HorizontalOptions="StartAndExpand"
+                Style="{StaticResource TitleLabelStyle}"
+                Text="Rating and Reviews"
+                VerticalOptions="Center" />
+
+            <!--  See all review button  -->
+            <buttons:SfButton
+                x:Name="ShowButton"
+                Padding="0"
+                Command="{Binding LoadMoreCommand}"
+                CommandParameter="{x:Reference ShowButton}"
+                FontSize="{OnIdiom Default=12,
+                                   Desktop=14}"
+                HorizontalOptions="End"
+                IsVisible="{OnIdiom Default=True,
+                                    Desktop=False}"
+                Style="{StaticResource TransparentButtonStyle}"
+                Text="SHOW LESS"
+                VerticalOptions="Center" />
+
+        </StackLayout>
+        <BoxView HeightRequest="{OnIdiom Default=1, Desktop=0}" Style="{StaticResource HorizontalSeparatorStyle}" />
+    </StackLayout>
+
+    <StackLayout x:Name="StackLayout" BindableLayout.ItemsSource="{Binding Reviews}">
+        <BindableLayout.ItemTemplate>
+            <DataTemplate>
+                <StackLayout Spacing="0">
+
+                    <template:ReviewTemplate Padding="16,8,16,0" ColumnSpacing="0" />
+
+                    <BoxView HeightRequest="{OnIdiom Default=1, Desktop=0}" Style="{StaticResource HorizontalSeparatorStyle}" />
+
+                    <StackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Path=BindingContext.ItemSelectedCommand, Source={x:Reference StackLayout}}" CommandParameter="{Binding .}" />
+                    </StackLayout.GestureRecognizers>
+
+                </StackLayout>
+            </DataTemplate>
+        </BindableLayout.ItemTemplate>
+    </StackLayout>
+
+    <!--  See all reviews Button  -->
+    <buttons:SfButton
+        Margin="0,10,0,0"
+        Command="{Binding LoadMoreCommand}"
+        IsVisible="{OnIdiom Default=False,
+                            Desktop=True}"
+        Style="{StaticResource TransparentButtonStyle}"
+        Text="See all 532 reviews"
+        VerticalOptions="Center"
+        WidthRequest="152" />
+
+</StackLayout>

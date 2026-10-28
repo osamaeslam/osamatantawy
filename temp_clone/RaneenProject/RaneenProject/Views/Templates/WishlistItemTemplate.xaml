@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Grid
+    x:Class="RaneenProject.Views.Templates.WishlistItemTemplate"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:behaviors="clr-namespace:RaneenProject.Behaviors"
+    xmlns:border="clr-namespace:Syncfusion.XForms.Border;assembly=Syncfusion.Core.XForms"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:combobox="clr-namespace:Syncfusion.XForms.ComboBox;assembly=Syncfusion.SfComboBox.XForms"
+    xmlns:helper="clr-namespace:RaneenProject.Helpers"
+    x:Name="wishlistItemTemplate">
+
+    <Grid
+        BackgroundColor="{DynamicResource Gray-Bg}"
+        ColumnDefinitions="Auto, *"
+        ColumnSpacing="0"
+        RowSpacing="0">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="{OnIdiom Default=1, Phone=0}" />
+        </Grid.RowDefinitions>
+
+        <!--  Product image  -->
+        <Image
+            Grid.Row="0"
+            Grid.RowSpan="4"
+            Grid.Column="0"
+            Margin="16,0"
+            Aspect="Fill"
+            BackgroundColor="{DynamicResource Gray-200}"
+            HeightRequest="120"
+            WidthRequest="120">
+            <Image.Source>
+                <UriImageSource
+                    CacheValidity="14"
+                    CachingEnabled="true"
+                    Uri="{Binding PreviewImage}" />
+            </Image.Source>
+        </Image>
+
+        <!--  Product name  -->
+        <Label
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="0,8,0,4"
+            FontSize="14"
+            HorizontalOptions="StartAndExpand"
+            LineBreakMode="TailTruncation"
+            MaxLines="1"
+            Style="{StaticResource TitleLabelStyle}"
+            Text="{Binding Name}" />
+
+        <StackLayout
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="0,0,0,8"
+            Padding="0"
+            Orientation="Horizontal"
+            Spacing="4">
+
+            <!--  Product price  -->
+            <Label
+                FontSize="20"
+                HorizontalOptions="Start"
+                Style="{StaticResource TitleLabelStyle}"
+                Text="{Binding DiscountPrice, StringFormat='${0:0 }'}"
+                TextColor="{DynamicResource PrimaryColor}" />
+
+            <Label
+                Style="{StaticResource SimpleLabelStyle}"
+                Text="{Binding ActualPrice, StringFormat='${0:0.00}'}"
+                TextDecorations="Strikethrough" />
+
+            <Label
+                Style="{StaticResource SimpleLabelStyle}"
+                Text="{Binding DiscountPercent, StringFormat=' ({0}% OFF)'}"
+                TextColor="{DynamicResource PrimaryColor}" />
+
+        </StackLayout>
+
+        <StackLayout
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="0"
+            Padding="0"
+            HorizontalOptions="Start"
+            Orientation="Horizontal"
+            Spacing="0"
+            VerticalOptions="Start">
+
+            <border:SfBorder
+                Margin="0"
+                Padding="0"
+                BorderColor="{DynamicResource Gray-300}"
+                CornerRadius="3"
+                HasShadow="False"
+                HeightRequest="32"
+                HorizontalOptions="Start"
+                WidthRequest="87">
+
+                <!--  Product quantity dropdown  -->
+                <combobox:SfComboBox
+                    x:Name="QuantityComboBox"
+                    BorderColor="{DynamicResource Gray-300}"
+                    DataSource="{Binding Quantities}"
+                    DropDownBackgroundColor="{DynamicResource Gray-Bg}"
+                    DropDownBorderColor="{DynamicResource Gray-300}"
+                    DropDownTextColor="{DynamicResource Gray-700}"
+                    HeightRequest="32"
+                    HorizontalOptions="StartAndExpand"
+                    MaximumDropDownHeight="200"
+                    SelectedDropDownItemColor="Transparent"
+                    SelectedItem="{Binding TotalQuantity, Mode=TwoWay}"
+                    ShowBorder="False"
+                    Style="{StaticResource SimpleComboBoxStyle}"
+                    TextColor="Transparent"
+                    WidthRequest="90">
+
+                    <combobox:SfComboBox.CustomView>
+                        <Label
+                            Margin="10,0,24,0"
+                            BackgroundColor="Transparent"
+                            FontFamily="Montserrat-Regular"
+                            Style="{StaticResource DescriptionLabelStyle}"
+                            Text="{Binding Source={x:Reference QuantityComboBox}, Path=SelectedItem, StringFormat='QTY: {0}'}"
+                            VerticalTextAlignment="Center" />
+                    </combobox:SfComboBox.CustomView>
+
+                    <combobox:SfComboBox.DropDownButtonSettings>
+                        <combobox:DropDownButtonSettings Width="30" Height="30">
+                            <combobox:DropDownButtonSettings.View>
+                                <Label
+                                    Margin="0"
+                                    FontFamily="FontIcons"
+                                    FontSize="20"
+                                    HorizontalTextAlignment="Center"
+                                    Text="{StaticResource DropDownButtonIcon}"
+                                    TextColor="{DynamicResource Gray-600}"
+                                    VerticalTextAlignment="Center" />
+                            </combobox:DropDownButtonSettings.View>
+                        </combobox:DropDownButtonSettings>
+                    </combobox:SfComboBox.DropDownButtonSettings>
+
+                    <combobox:SfComboBox.Behaviors>
+                        <behaviors:SfComboBoxDropDownBehavior Command="{Binding Source={x:Reference wishlistItemTemplate}, Path=ParentBindingContext.QuantitySelectedCommand}" />
+                    </combobox:SfComboBox.Behaviors>
+                </combobox:SfComboBox>
+
+            </border:SfBorder>
+
+            <!--  Remove button  -->
+            <buttons:SfButton
+                helper:RTLHelper.Margin="{OnIdiom Default='44,0,16,0',
+                                                  Phone='8,0,0,0'}"
+                Command="{Binding Path=ParentBindingContext.AddToCartCommand, Source={x:Reference wishlistItemTemplate}}"
+                CommandParameter="{Binding .}"
+                HeightRequest="32"
+                Style="{StaticResource TransparentButtonStyle}"
+                VerticalOptions="Center">
+
+                <Label
+                    Margin="16,5"
+                    BackgroundColor="Transparent"
+                    FontFamily="Montserrat-SemiBold"
+                    FontSize="14"
+                    LineHeight="{OnPlatform Android=1.5,
+                                            Default=-1}"
+                    Text="Add to Cart"
+                    TextColor="{DynamicResource HyperLink}" />
+            </buttons:SfButton>
+        </StackLayout>
+
+    </Grid>
+</Grid>

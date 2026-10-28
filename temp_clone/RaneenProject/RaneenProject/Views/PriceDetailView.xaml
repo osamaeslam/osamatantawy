@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView
+    x:Class="RaneenProject.Views.PriceDetailView"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    x:Name="This">
+
+    <StackLayout
+        Orientation="Horizontal"
+        BackgroundColor="White">
+
+        <StackLayout>
+            
+            <!--  Total price  -->
+            <Label
+                Margin="16,0,0,0"
+                HorizontalOptions="Start"
+                LineHeight="{OnPlatform Android=1.25,
+                                        Default=-1}"
+                Style="{StaticResource TitleLabelStyle}"
+                Text="Total cost:" />
+            <Label
+                HorizontalOptions="EndAndExpand"
+                HorizontalTextAlignment="End"
+                LineHeight="{OnPlatform Android=1.25,
+                                        Default=-1}"
+                Style="{StaticResource TitleLabelStyle}"
+                Text="{Binding DiscountPrice, StringFormat='EGP {0}'}" />
+            
+        </StackLayout>
+
+        <!--  Place order button  -->
+        <buttons:SfButton
+            Margin="{OnIdiom Default=2,
+                             Tablet='24,24,16,24'}"
+            Command="{Binding PlaceOrderCommand}"
+            HorizontalOptions="{OnIdiom Default=FillAndExpand,
+                                        Phone=CenterAndExpand,
+                                        Tablet=End}"
+            Style="{StaticResource SimpleButtonStyle}"
+            Text="{Binding ActionText, Source={x:Reference This}}"
+            WidthRequest="{OnIdiom Tablet=240,
+                                   Phone=240,
+                                   Default=-1}" />
+
+    </StackLayout>
+
+</ContentView>

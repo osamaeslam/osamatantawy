@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RaneenProject.Views.HomePage">
+    <StackLayout Spacing="2">
+        <!-- Search Bar -->
+        <SearchBar Placeholder="Search Raneen"
+                   x:Name="searchBar"
+                   TextChanged="searchBar_TextChanged"
+                   />
+        <!--Horizontal View-->
+        <RefreshView x:Name="myRefreshView" Refreshing="RefreshView_Refreshing">
+            <ScrollView VerticalOptions="FillAndExpand">
+                <StackLayout>
+                    <CollectionView x:Name="CVwideOffers" 
+                        HeightRequest="170"
+                        Margin="5">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Source}">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <!--Full Image-->
+                    <Image x:Name="secFull" Source="wideFull1.png" Margin="5">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                        </Image.GestureRecognizers>
+                    </Image>
+                    <!--Horizontal View-->
+                    <CollectionView x:Name="CVwideOffers2" 
+                        HeightRequest="130"
+                        Margin="5">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Source}">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <!--Full Image-->
+                    <Image Source="wideFull2.png" Margin="5">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                        </Image.GestureRecognizers>
+                    </Image>
+                    <!--Full Image-->
+                    <Image Source="wideFull3.png" Margin="5">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                        </Image.GestureRecognizers>
+                    </Image>
+                    <!--Two Images-->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Image Grid.Column="0" Source="halfFit1.png"  Margin="5,0,5,0">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                            </Image.GestureRecognizers>
+                        </Image>
+                        <Image Grid.Column="1" Source="halfFit2.png"  Margin="5,0,5,0">
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer
+                               Tapped="OnImageNameTapped"
+                                NumberOfTapsRequired="1" />
+                            </Image.GestureRecognizers>
+                        </Image>
+                    </Grid>
+                    
+                        <!--<ListView x:Name="lstProducts">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextCell Text="{Binding Name}"></TextCell>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>-->
+                    
+
+                </StackLayout>
+            </ScrollView>
+        </RefreshView>
+    </StackLayout>
+</ContentPage>

@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Grid
+    x:Class="RaneenProject.Views.Templates.ProductTileTemplate"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:converter="clr-namespace:RaneenProject.Converters"
+    xmlns:core="clr-namespace:Syncfusion.XForms.Core;assembly=Syncfusion.Core.XForms"
+    x:Name="productTileTemplate">
+
+    <Grid.Resources>
+        <ResourceDictionary>
+            <converter:BooleanToStringConverter x:Key="boolToStringConverter" />
+            <converter:BooleanToColorConverter x:Key="boolToColorConverter" />
+        </ResourceDictionary>
+    </Grid.Resources>
+
+    <Frame CornerRadius="10" BackgroundColor="White" HasShadow="False" Padding="8,0,8,16">
+        <Grid
+        Margin="0"
+        RowDefinitions="Auto, Auto, Auto,Auto,Auto"
+        RowSpacing="0">
+
+
+            <!--  Product Image  -->
+            <Image
+            Grid.Row="1"     
+            Margin="0,0,0,8"
+            Aspect="AspectFit"
+            BackgroundColor="{DynamicResource Transparent}"
+            HeightRequest="140"
+            
+            HorizontalOptions="{core:OnPlatformOrientationLayoutOptions AndroidPhonePortrait=FillAndExpand,
+                                                                        AndroidPhoneLandscape=StartAndExpand,
+                                                                        iOSPhonePortrait=FillAndExpand,
+                                                                        iOSPhoneLandscape=StartAndExpand,
+                                                                        AndroidTabletPortrait=FillAndExpand,
+                                                                        AndroidTabletLandscape=StartAndExpand,
+                                                                        iOSTabletPortrait=FillAndExpand,
+                                                                        iOSTabletLandscape=StartAndExpand}"
+            WidthRequest="{OnIdiom Phone=183,
+                                   Tablet=224,
+                                   Desktop=224}">
+                <Image.Source>
+                    <UriImageSource
+                    CacheValidity="14"
+                    CachingEnabled="true"
+                    Uri="{Binding PreviewImage}" />
+                </Image.Source>
+            </Image>
+
+            <!--  Favourite Icon  -->
+            <buttons:SfButton
+             Grid.Row="0"
+             Padding="0"
+             Margin="0"
+             HorizontalOptions="EndAndExpand"
+             VerticalOptions="StartAndExpand"
+             Command="{Binding ParentBindingContext.AddFavouriteCommand, Source={x:Reference productTileTemplate}}"
+             CommandParameter="{Binding}"
+             FontSize="20"
+             HeightRequest="-1"
+             Style="{StaticResource IconButtonStyle}"
+             Text="{Binding IsFavourite, Converter={StaticResource boolToStringConverter}, ConverterParameter=1}"
+             TextColor="{Binding IsFavourite, Converter={x:StaticResource boolToColorConverter}, ConverterParameter=4}" />
+
+
+
+            <!--  Product Name  -->
+            <Label
+            Grid.Row="2"
+            FontSize="14"
+            HorizontalOptions="StartAndExpand"
+            LineBreakMode="TailTruncation"
+            MaxLines="2"
+            Style="{StaticResource DescriptionLabelStyle}"
+            Text="{Binding Name}" />
+
+
+            <StackLayout
+            Grid.Row="3"
+            Margin="0,0,0,8"
+            Orientation="Vertical"
+            Spacing="2">
+
+                <!--  Product Price  -->
+                <Label
+                Margin="0,4,0,0"
+                Style="{StaticResource SimpleLabelStyle}"
+                Text="{Binding ActualPrice, StringFormat='EGP {0:0.00}'}"
+                TextDecorations="Strikethrough" />
+
+                <Label
+                FontFamily="Montserrat-SemiBold"
+                FontSize="16"
+                LineHeight="{OnPlatform Android=1.25,
+                                        Default=-1}"
+                Style="{StaticResource SimpleLabelStyle}"
+                Text="{Binding DiscountPrice, StringFormat='EGP {0:0 }'}"
+                TextColor="{DynamicResource Gray-Black}" />
+
+            </StackLayout>
+
+            <!--  Add to cart Button  -->
+            <buttons:SfButton
+            Grid.Row="4"
+            Margin="0,0,4,0"
+            Padding="0,12,0,12"
+            HorizontalOptions="FillAndExpand"
+            VerticalOptions="CenterAndExpand"
+            Command="{Binding ParentBindingContext.AddToCartCommand, Source={x:Reference productTileTemplate}}"
+            CommandParameter="{Binding}"
+            FontSize="15"
+            Style="{StaticResource SimpleButtonStyle}"
+            Text="ADD TO CART"/>
+
+
+        </Grid>
+    </Frame>
+</Grid>

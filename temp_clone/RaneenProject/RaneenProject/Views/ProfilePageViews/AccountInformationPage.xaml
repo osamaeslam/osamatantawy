@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             xmlns:control="clr-namespace:RaneenProject.Controls" 
+             xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+             x:Class="RaneenProject.Views.ProfilePageViews.AccountInformationPage"                          
+             Title="Account Information"
+             Background="#F0F3F8">
+    
+    <ContentPage.ControlTemplate>
+        <ControlTemplate>
+            <StackLayout Spacing="0">
+                <!--  Title View  -->
+                <control:TitleView Title="Account Information">
+                    <!--  Back button command  -->
+                    <control:TitleView.LeadingView>
+                        <buttons:SfButton
+                            x:Name="backButton"      
+                            Clicked="backButton"
+                            Style="{StaticResource IconButtonStyle}"
+                            Text="{StaticResource Back}" />
+                    </control:TitleView.LeadingView>
+                </control:TitleView>
+                <ContentPresenter />
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.ControlTemplate>
+    
+    <ContentPage.Content>
+        <StackLayout BackgroundColor="#F0F3F8">
+            <Frame BackgroundColor="White"
+                   Margin="20"
+                   CornerRadius="5">
+                <StackLayout>
+                    <Label Text="First Name"
+                       TextColor="Black"
+                       FontSize="16"/>
+                    <Label Text="User First Name"
+                           x:Name="MyUserFName"
+                       TextColor="Black"
+                       FontSize="14"
+                       Margin="0,0,0,10"/>
+                    <Label Text="Last Name"
+                       TextColor="Black"
+                       FontSize="16"/>
+                    <Label Text="User Last Name"
+                           x:Name="MyUserLName"
+                       TextColor="Black"
+                       FontSize="14"
+                           Margin="0,0,0,10"/>
+                    <Label Text="Email"
+                       TextColor="Black"
+                       FontSize="16"/>
+                    <Label Text="UserEmail@gmail.com"
+                           x:Name="MyUserEmail"
+                       TextColor="Black"
+                       FontSize="14"/>
+                </StackLayout>
+            </Frame>
+            <Label Text="Edit Information"
+                   TextColor="black"
+                   FontAttributes="Bold"
+                   Margin="25,0,0,0"/>
+            <Frame BackgroundColor="White"
+                   Margin="20"
+                   CornerRadius="5">
+                <StackLayout>
+                    <Button
+                        Text="Edit Email"
+                        TextColor="Gray"
+                        BackgroundColor="White"
+                        BorderColor="Gray"
+                        BorderWidth="1"
+                        Margin="10"
+                        Clicked="EditEmail">
+                        <Button.BorderRadius>
+                            <!-- HACK: fixes a bug where border doesn't get draw unless there is a radius. -->
+                            <OnPlatform x:TypeArguments="x:Int32">
+                                <OnPlatform.Android>6</OnPlatform.Android>
+                            </OnPlatform>
+                        </Button.BorderRadius>
+                    </Button>
+                    <Button
+                        Text="Edit Account Info"
+                        TextColor="Gray"
+                        BackgroundColor="White"
+                        BorderColor="Gray"
+                        BorderWidth="1"
+                        Margin="10"
+                        Clicked="EditInfo">
+                        <Button.BorderRadius>
+                            <!-- HACK: fixes a bug where border doesn't get draw unless there is a radius. -->
+                            <OnPlatform x:TypeArguments="x:Int32">
+                                <OnPlatform.Android>6</OnPlatform.Android>
+                            </OnPlatform>
+                        </Button.BorderRadius>
+                    </Button>
+                </StackLayout>
+            </Frame>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

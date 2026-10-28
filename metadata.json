@@ -1,0 +1,6 @@
+{
+  "name": "Raneen E-Commerce - رنين للتسوق",
+  "description": "منصة وتطبيق متجر رنين الإلكتروني للتسوق والعروض - Raneen E-Shopping Platform ported from RaneenProject with full catalogue, flash deals, cart, wishlist, and user account.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

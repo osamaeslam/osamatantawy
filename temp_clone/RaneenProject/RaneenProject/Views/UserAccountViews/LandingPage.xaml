@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RaneenProject.Views.UserAccountViews.LandingPage"
+             BackgroundImageSource="background.jpg">
+    <ContentPage.Content>
+        <StackLayout>
+
+            <Frame BackgroundColor="Azure"
+                   CornerRadius="10"
+                     Margin="40"
+                     Padding="25, 35, 25, 35"                         
+                     HorizontalOptions="Fill"
+                     VerticalOptions="CenterAndExpand">
+                <StackLayout>
+
+                    <Label  Text="If You Already Have an Account"
+                            TextColor="Black"
+                            HorizontalOptions="Center"
+                            Margin="0, 0, 0, 10"/>
+                    <Button Text="SIGN IN" 
+                            BackgroundColor="red" 
+                            CornerRadius="5"
+                            Margin="0, 0, 0, 20"
+                            Clicked="signinPage"/>
+                    <Label  Text="OR"
+                            TextColor="Black"
+                            HorizontalOptions="Center"
+                            Margin="0, 0, 0, 20"/>
+                    <Button Text="SIGN UP" 
+                            BackgroundColor="gray" 
+                            CornerRadius="5"
+                            Margin="0, 0, 0, 30"
+                            Clicked="signupPage"/>
+
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

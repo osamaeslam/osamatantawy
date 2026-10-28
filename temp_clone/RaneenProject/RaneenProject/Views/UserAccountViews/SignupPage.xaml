@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:control="clr-namespace:RaneenProject.Controls" xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+             x:Class="RaneenProject.Views.UserAccountViews.SignupPage"
+             Title="Sign up"
+             BackgroundColor="#F0F3F8">
+
+    <ContentPage.ControlTemplate>
+        <ControlTemplate>
+            <StackLayout Spacing="0">
+                <!--  Title View  -->
+                <control:TitleView Title="Signup">
+                    <!--  Back button command  -->
+                    <control:TitleView.LeadingView>
+                        <buttons:SfButton
+                            x:Name="backButton"      
+                            Clicked="backButton"
+                            Style="{StaticResource IconButtonStyle}"
+                            Text="{StaticResource Back}" />
+                    </control:TitleView.LeadingView>
+                </control:TitleView>
+                <ContentPresenter />
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.ControlTemplate>
+
+    <ContentPage.Content>
+        <ScrollView>
+            <StackLayout BackgroundColor="#F0F3F8" Margin="0,0,0,40">
+
+                <Button Text="Sign in with Google"
+                        BackgroundColor="Red" 
+                        CornerRadius="5"
+                        Margin="30, 20, 30, 20"
+                        Padding="20,0,80,0"
+                        Image="googleicon15.png"/>
+                <!--<Rectangle Background="darkgray"/>-->
+                <Line BackgroundColor="LightGray"
+                      HeightRequest="1"/>
+
+                <Label Text="First Name"
+                       TextColor="Black"
+                       Padding="30, 20, 0, 0"/>
+                <Frame CornerRadius="5"
+                       Padding="0"
+                       Margin="30, 0, 30, 0">
+                    <Entry BackgroundColor="white"
+                           TextColor="Black"
+                           x:Name="UserNewFirstName"
+                           FontSize="14"/>
+                </Frame>
+
+                <Label Text="Last Name"
+                       TextColor="Black"
+                       Padding="30, 20, 0, 0"/>
+                <Frame CornerRadius="5"
+                       Padding="0"
+                       Margin="30, 0, 30, 0">
+                    <Entry BackgroundColor="white"
+                           TextColor="Black"
+                           x:Name="UserNewLastName"
+                           FontSize="14"/>
+                </Frame>
+
+                <Label Text="Email"
+                       TextColor="Black"
+                       Padding="30, 20, 0, 0"/>
+                <Frame CornerRadius="5"
+                       Padding="0"
+                       Margin="30, 0, 30, 0">
+                    <Entry BackgroundColor="White"
+                           x:Name="UserNewEmail"
+                           TextColor="Black"
+                           FontSize="14"/>
+                </Frame>
+
+                <Label Text="Phone"
+                       TextColor="Black"
+                       Padding="30, 20, 0, 0"/>
+                <Frame CornerRadius="5"
+                       Padding="0"
+                       Margin="30, 0, 30, 0">
+                    <Entry BackgroundColor="white"
+                           TextColor="Black"
+                           x:Name="UserNewPhone"
+                           FontSize="14"/>
+                </Frame>
+
+                <Label Text="Password"
+                       TextColor="Black"
+                       Padding="30, 20, 0, 0"/>
+                <!--TODO: Show/hide password-->
+                <Frame CornerRadius="5"
+                   Padding="0"
+                   Margin="30, 0, 30, 0">
+                    <Entry BackgroundColor="white"
+                           x:Name="UserNewPassword"
+                           TextColor="Black"
+                           FontSize="14"/>
+                </Frame>
+
+                <Label Text=""
+                   x:Name="errormssg"
+                   Padding="30,10,0,0"
+                   TextColor="red"
+                   IsVisible="false"/>
+
+                <Button Text="Sign up"
+                        Clicked="signupbutton_Clicked"
+                        BackgroundColor="Green" 
+                        CornerRadius="5"
+                        Margin="30, 30, 30, 20"/>
+                <StackLayout 
+                    Orientation="Horizontal"
+                    HorizontalOptions="Center" >
+                    <Label Text="Don't have an account?"
+                           TextColor="DarkGray"
+                           Padding="0, 0, 0, 0"
+                           HorizontalOptions="Center"/>
+                    <Label Text="sign in"
+                           x:Name="signin"
+                           TextColor="Gray"
+                           Padding="10, 0, 0, 10"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>

@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RaneenProject.Views.ProfilePageViews.ProfilePage"
+             Title="Profile"
+             NavigationPage.HasNavigationBar="False">
+    <!--TODO: Show btmNavBar-->
+    <ContentPage.Content>
+        <Grid BackgroundColor="#F0F3F8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Frame Grid.Row="0" 
+                   Grid.ColumnSpan="2"
+                   CornerRadius="50"
+                   Padding="0"
+                   Margin="0,40,0,0"
+                   IsClippedToBounds="True"
+                   HorizontalOptions="Center"
+                   BorderColor="Black">
+                <Image
+                       Source="images.jpg"
+                       x:Name="Img"
+                       WidthRequest="100"
+                       HeightRequest="100"
+                       HorizontalOptions="Center" />
+            </Frame>
+
+            <StackLayout Grid.Row="1"
+                         Grid.ColumnSpan="2"                         
+                         Orientation="Vertical">
+                <Label x:Name="MyUserName"
+                       TextColor="Black"
+                       HorizontalOptions="Center"
+                       FontSize="16"
+                       Margin="0,20,0,0"/>
+                <Label x:Name="MyUserEmail"
+                       TextColor="Gray"
+                       HorizontalOptions="Center"
+                       FontSize="14"
+                       Margin="0,0,0,20"/>
+            </StackLayout>
+            
+            <ContentView Grid.Row="2"
+                         Grid.ColumnSpan="2"
+                         Padding="0,10,0,10" >
+                <StackLayout Orientation="Horizontal">
+                    <Frame BackgroundColor="LightGray"
+                           Padding="10"
+                           CornerRadius="5"
+                           Margin="50,0,20,0">
+                        <Image Source="user2.png"                   
+                               HeightRequest="20"
+                               WidthRequest="20"/>
+                    </Frame>
+                    <Label Text="Account Information"
+                           VerticalOptions="Center"
+                           TextColor="Black"
+                           FontSize="14"
+                           FontAttributes="Bold" />
+                </StackLayout>
+                <ContentView.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding TapCommandAccount}"/>
+                </ContentView.GestureRecognizers>
+            </ContentView>
+
+            <Frame Grid.Row="3"
+                   Grid.Column="0"
+                   BackgroundColor="LightGray"
+                   Padding="10"
+                   CornerRadius="5"
+                   Margin="50,10,20,10">
+                <Image Source="locationpin.png"                   
+                          HeightRequest="20"
+                          WidthRequest="20"/>
+            </Frame>
+            <Label Grid.Row="3"
+                   Grid.Column="1"
+                   Text="My Address"
+                   VerticalOptions="Center"
+                   TextColor="Black"
+                   FontSize="14"
+                   FontAttributes="Bold" />
+
+            <Frame Grid.Row="4"
+                   Grid.Column="0"
+                   BackgroundColor="LightGray"
+                   Padding="10"
+                   CornerRadius="5"
+                   Margin="50,10,20,10">
+                <Image Source="store.png"                   
+                          HeightRequest="20"
+                          WidthRequest="20"/>
+            </Frame>
+            <Label Grid.Row="4"
+                   Grid.Column="1"
+                   Text="My Orders"
+                   VerticalOptions="Center"
+                   TextColor="Black"
+                   FontSize="14"
+                   FontAttributes="Bold" />
+
+            <ContentView Grid.Row="5"
+                         Grid.ColumnSpan="2"
+                         Padding="0,10,0,10" >
+                <StackLayout Orientation="Horizontal">
+                    <Frame BackgroundColor="LightGray"
+                           Padding="10"
+                           CornerRadius="5"
+                           Margin="50,0,20,0">
+                        <Image Source="love.png"                   
+                               HeightRequest="20"
+                               WidthRequest="20"/>
+                    </Frame>
+                    <Label Text="My Wishlist"
+                           VerticalOptions="Center"
+                           TextColor="Black"
+                           FontSize="14"
+                           FontAttributes="Bold" />
+                </StackLayout>
+                <ContentView.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding TapCommandWishlist}"/>
+                </ContentView.GestureRecognizers>
+            </ContentView>
+
+            <ContentView Grid.Row="6"
+                         Grid.ColumnSpan="2"
+                         Padding="0,10,0,10" >
+                <StackLayout Orientation="Horizontal">
+                    <Frame  BackgroundColor="LightGray"
+                            Padding="10"
+                            CornerRadius="5"
+                            Margin="50,0,20,0">
+                        <Image Source="info1.png"                   
+                               HeightRequest="20"
+                               WidthRequest="20"/>
+                    </Frame>
+                    <Label Text="About us"
+                           VerticalOptions="Center"
+                           TextColor="Black"
+                           FontSize="14"
+                           FontAttributes="Bold" />
+                </StackLayout>
+                <ContentView.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding TapCommandAboutus}"/>
+                </ContentView.GestureRecognizers>
+            </ContentView>
+
+            <ContentView Grid.Row="7"
+                         Grid.ColumnSpan="2"
+                         Padding="0,10,0,10">
+                <StackLayout Orientation="Horizontal">
+                    <Frame BackgroundColor="LightGray"
+                           Padding="10"
+                           CornerRadius="5"
+                           Margin="50,0,20,0">
+                        <Image Source="logout.png"                   
+                               HeightRequest="20"
+                               WidthRequest="20"/>
+                    </Frame>
+                    <Label Text="Logout"
+                           VerticalOptions="Center"
+                           TextColor="Black"
+                           FontSize="14"
+                           FontAttributes="Bold" />
+                </StackLayout>
+                <ContentView.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding TapCommandLandingPage}"/>
+                </ContentView.GestureRecognizers>
+            </ContentView>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>

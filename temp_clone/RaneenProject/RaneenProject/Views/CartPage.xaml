@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="RaneenProject.Views.CartPage"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:controls="clr-namespace:RaneenProject.Controls"
+    xmlns:converter="clr-namespace:RaneenProject.Converters"
+    xmlns:local="clr-namespace:RaneenProject.Views"
+    xmlns:syncEffectsView="clr-namespace:Syncfusion.XForms.EffectsView;assembly=Syncfusion.Core.XForms"
+    xmlns:template="clr-namespace:RaneenProject.Views.Templates"
+    x:Name="cartPage"
+    Title="Cart"
+    BackgroundColor="#F0F3F8"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converter:DynamicResourceToColorConverter x:Key="DynamicResourceToColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.ControlTemplate>
+        <ControlTemplate>
+            <StackLayout Spacing="0">
+
+                <!--  Title View  -->
+                <controls:TitleView Title="Cart">
+                    
+                </controls:TitleView>
+
+                <ContentPresenter />
+
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.ControlTemplate>
+
+    <ContentPage.Content>
+
+        <AbsoluteLayout>
+
+            <ScrollView VerticalScrollBarVisibility="Never"
+                        AbsoluteLayout.LayoutBounds="0,0,1,1"
+                        AbsoluteLayout.LayoutFlags="SizeProportional">
+
+                <!--  Cart Details  -->
+                <Grid
+                Margin="{OnIdiom Default='0,16,0,0',
+                                 Desktop='16'}"
+                BackgroundColor="{OnIdiom Default={StaticResource Transparent},
+                                          Desktop={DynamicResource Gray-Bg},
+                                          Converter={StaticResource DynamicResourceToColorConverter}}"
+                ColumnSpacing="0"
+                HorizontalOptions="{OnIdiom Default=Fill,
+                                            Desktop=FillAndExpand}"
+                RowSpacing="0">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="{OnIdiom Default=Auto, Phone=0}" />
+                        <RowDefinition Height="{OnIdiom Default=Auto, Phone=0}" />
+                        <RowDefinition Height="{OnIdiom Default=Auto, Desktop=*}" />
+                        <RowDefinition Height="{OnIdiom Default=*, Desktop=0}" />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{OnIdiom Default=*, Desktop=3*}" />
+                        <ColumnDefinition Width="{OnIdiom Default=0, Desktop=Auto}" />
+                        <ColumnDefinition Width="{OnIdiom Default=0, Desktop=1*}" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  Cart Header  -->
+                    <StackLayout
+                    Padding="16"
+                    BackgroundColor="{DynamicResource Gray-Bg}"
+                    Orientation="Horizontal">
+                        <Label
+                        HorizontalOptions="Start"
+                        Style="{StaticResource TitleLabelStyle}"
+                        Text="My Cart" />
+
+                        <Label
+                        BackgroundColor="{DynamicResource Gray-Bg}"
+                        HorizontalOptions="EndAndExpand"
+                        HorizontalTextAlignment="End"
+                        Style="{StaticResource TitleLabelStyle}"
+                        Text="{Binding TotalPrice, StringFormat='Total: ${0}'}" />
+                    </StackLayout>
+
+                    <BoxView
+                    Grid.Row="1"
+                    HeightRequest="1"
+                    Style="{StaticResource HorizontalSeparatorStyle}" />
+
+                    <!--  Cart items  -->
+                    <StackLayout
+                    x:Name="CartLayout"
+                    Grid.Row="2"
+                    BackgroundColor="{OnIdiom Default={StaticResource Transparent},
+                                              Desktop={StaticResource Gray-Bg},
+                                              Converter={StaticResource DynamicResourceToColorConverter}}"
+                    BindableLayout.ItemsSource="{Binding CartDetails}"
+                    Spacing="16"
+                    VerticalOptions="Start">
+
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <syncEffectsView:SfEffectsView
+                                RippleColor="{DynamicResource Gray-300}"
+                                TouchDownEffects="Ripple"
+                                TouchUpCommand="{Binding Path=BindingContext.ItemTappedCommand, Source={x:Reference cartPage}}"
+                                TouchUpCommandParameter="{Binding}">
+                                    <template:CartItemListTemplate
+                                    x:Name="template"
+                                    ChildElement="{Binding Source={x:Reference template}}"
+                                    ParentBindingContext="{Binding Path=BindingContext, Source={x:Reference cartPage}}"
+                                    ParentElement="{Binding Source={x:Reference CartLayout}}" />
+                                </syncEffectsView:SfEffectsView>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </StackLayout>
+
+                    <!--  Separator  -->
+                    <BoxView
+                    Grid.Row="0"
+                    Grid.RowSpan="4"
+                    Grid.Column="1"
+                    Style="{StaticResource HorizontalSeparatorStyle}"
+                    VerticalOptions="Fill"
+                    WidthRequest="{OnIdiom Default=0,
+                                           Desktop=16}"
+                    Color="{DynamicResource Gray-100}" />
+
+                    <BoxView
+                                    Grid.Row="3"
+                                    HeightRequest="{OnIdiom Tablet=24,
+                                                            Default=110}"
+                                    Style="{StaticResource HorizontalSeparatorStyle}"
+                                    Color="#F0F3F8" />
+                </Grid>
+            </ScrollView>
+
+
+            <!--  Price Details  -->
+            <StackLayout
+                    Orientation="Horizontal"
+                    BackgroundColor="White"
+                    AbsoluteLayout.LayoutBounds="0,1,1,80"
+                    AbsoluteLayout.LayoutFlags="WidthProportional,YProportional"
+                    Padding="10">
+
+                <StackLayout>
+
+                    <!--  Total price  -->
+                    <Label
+                        HorizontalOptions="Start"                        
+                        Style="{StaticResource DescriptionLabelStyle}"
+                        Text="Total cost:" />
+                    <Label
+                        HorizontalOptions="EndAndExpand"
+                        HorizontalTextAlignment="Start"
+                        LineHeight="{OnPlatform Android=1.25,
+                                                Default=-1}"
+                        FontSize="20"
+                        Style="{StaticResource TitleLabelStyle}"
+                        Text="{Binding DiscountPrice, StringFormat='EGP {0:0.00}'}" />
+
+                </StackLayout>
+
+                <!--  Place order button  -->
+                <buttons:SfButton
+                    Margin="{OnIdiom Default=4,
+                                     Tablet='24,24,16,24'}"
+                    Command="{Binding PlaceOrderCommand}"
+                    HorizontalOptions="{OnIdiom Default=FillAndExpand,
+                                                Phone=CenterAndExpand,
+                                                Tablet=End}"
+                    Style="{StaticResource SimpleButtonStyle}"
+                    Text="PLACE ORDER"
+                    WidthRequest="{OnIdiom Tablet=240,
+                                           Phone=240,
+                                           Default=-1}" />
+
+            </StackLayout>
+
+        </AbsoluteLayout>
+    </ContentPage.Content>
+</ContentPage>

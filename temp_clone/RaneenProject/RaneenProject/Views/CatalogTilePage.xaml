@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="RaneenProject.Views.CatalogTilePage"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:badge="clr-namespace:Syncfusion.XForms.BadgeView;assembly=Syncfusion.SfBadgeView.XForms"
+    xmlns:behavior="clr-namespace:RaneenProject.Behaviors"
+    xmlns:buttons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
+    xmlns:controls="clr-namespace:RaneenProject.Controls"
+    xmlns:converter="clr-namespace:RaneenProject.Converters"
+    xmlns:core="clr-namespace:Syncfusion.XForms.Core;assembly=Syncfusion.Core.XForms"
+    xmlns:listView="clr-namespace:Syncfusion.ListView.XForms;assembly=Syncfusion.SfListView.XForms"
+    xmlns:syncEffectsView="clr-namespace:Syncfusion.XForms.EffectsView;assembly=Syncfusion.Core.XForms"
+    xmlns:template="clr-namespace:RaneenProject.Views.Templates"
+    x:Name="catalogTilePage"
+    Title="Catalog Tile page"
+    BackgroundColor="{OnIdiom Default={DynamicResource Gray-Bg},
+                              Desktop={DynamicResource Gray-100},
+                              Converter={StaticResource DynamicResourceToColorConverter}}"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Behaviors>
+        <behavior:CartBehavior />
+    </ContentPage.Behaviors>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+
+            <OnIdiom x:Key="ListItemMargin" x:TypeArguments="Thickness" />
+            <converter:BooleanToColorConverter x:Key="BoolToColorConverter" />
+            <converter:BooleanToStringConverter x:Key="BoolToStringConverter" />
+            <converter:IntToThicknessConverter x:Key="intToThicknessConverter" />
+            <converter:DynamicResourceToColorConverter x:Key="DynamicResourceToColorConverter" />
+
+            <!--  Header Template for Catalog SfListView  -->
+            <DataTemplate x:Key="CatalogDefaultHeaderTemplate">
+                <StackLayout
+                    HorizontalOptions="FillAndExpand"
+                    Orientation="Horizontal"
+                    Margin="0,8,0,0"
+                    HeightRequest="45"
+                    VerticalOptions="CenterAndExpand">
+                    <!--  Position Button  -->
+                    <buttons:SfButton
+                        BackgroundColor="White"
+                        Command="{Binding SortCommand}"
+                        CornerRadius="5"
+                        Margin="0,0,0,0"
+                        Padding="16,0,16,0"
+                        VerticalOptions="CenterAndExpand"
+                        HorizontalOptions="StartAndExpand"
+                        TextColor="{DynamicResource Gray-Black}">
+                        <buttons:SfButton.Content>
+                            <StackLayout
+                                Padding="16,5,8,6"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <Label
+                                    FontFamily="FontIcons"
+                                    FontSize="18"
+                                    Style="{StaticResource DescriptionLabelStyle}"
+                                    Text="{StaticResource Sort}"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="End" />
+                                <Label
+                                    FontFamily="Montserrat-SemiBold"
+                                    Style="{StaticResource DescriptionLabelStyle}"
+                                    Text="Position"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </StackLayout>
+                        </buttons:SfButton.Content>
+                    </buttons:SfButton>
+
+
+                    <!--  Filter Button  -->
+                    <buttons:SfButton
+                        BackgroundColor="White"
+                        Command="{Binding FilterCommand}"
+                        CornerRadius="5"
+                        Margin="0,0,0,0"
+                        Padding="16,0,16,0"
+                        HorizontalOptions="EndAndExpand"
+                        VerticalOptions="CenterAndExpand"
+                        TextColor="{DynamicResource Gray-Black}">
+                        <buttons:SfButton.Content>
+                            <StackLayout
+                                Padding="16,5,16,6"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalOptions="Center">
+                                <Label
+                                    FontFamily="FontIcons"
+                                    FontSize="18"
+                                    Style="{StaticResource DescriptionLabelStyle}"
+                                    Text="{StaticResource Filter}"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="End" />
+                                <Label
+                                    FontFamily="Montserrat-SemiBold"
+                                    Style="{StaticResource DescriptionLabelStyle}"
+                                    Text="Filter By"
+                                    VerticalOptions="Center"
+                                    VerticalTextAlignment="Center" />
+                            </StackLayout>
+                        </buttons:SfButton.Content>
+                    </buttons:SfButton>
+
+
+                </StackLayout>
+            </DataTemplate>
+
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Content>
+
+        <Grid
+            ColumnSpacing="0"
+            RowDefinitions="Auto, *"
+            RowSpacing="0">
+
+            <!--  App bar  -->
+            <controls:TitleView Title="Something" Grid.Row="0" FontSize="20">
+                <controls:TitleView.LeadingView>
+                    <buttons:SfButton
+                        x:Name="backButton"
+                        Command="{Binding BindingContext.BackButtonCommand, Source={x:Reference ListViewTile}}"
+                        CommandParameter="{x:Reference backButton}"
+                        Style="{StaticResource IconButtonStyle}"
+                        Text="{StaticResource Back}" />
+                </controls:TitleView.LeadingView>
+
+            </controls:TitleView>
+
+            <!--  ListView for catalog  -->
+            <listView:SfListView
+                x:Name="ListViewTile"
+                Grid.Row="1"
+                Padding="0,0,16,0"
+                AutoFitMode="Height"
+                HeaderTemplate="{StaticResource CatalogDefaultHeaderTemplate}"
+                HorizontalOptions="FillAndExpand"
+                IsStickyHeader="True"
+                ItemSpacing="12, 0, 0, 10"
+                ItemsSource="{Binding Products}"
+                Style="{StaticResource TransparentSelectionListView}">
+                <listView:SfListView.ItemTemplate>
+                    <DataTemplate>
+                        <syncEffectsView:SfEffectsView
+                            RippleColor="{DynamicResource Gray-300}"
+                            TouchDownEffects="Ripple"
+                            TouchUpCommand="{Binding Path=BindingContext.ItemSelectedCommand, Source={x:Reference catalogTilePage}}"
+                            TouchUpCommandParameter="{Binding}">
+                            <template:ProductTileTemplate ParentBindingContext="{Binding Path=BindingContext, Source={x:Reference catalogTilePage}}" />
+                        </syncEffectsView:SfEffectsView>
+                    </DataTemplate>
+                </listView:SfListView.ItemTemplate>
+
+                <!--  Layout to customize number of columns in SfListView  -->
+                <listView:SfListView.LayoutManager>
+                    <listView:GridLayout SpanCount="{core:OnPlatformOrientationIntValue Desktop=5, PhonePortrait=2, PhoneLandscape=4, TabletPortrait=4, TabletLandscape=5}" />
+                </listView:SfListView.LayoutManager>
+
+            </listView:SfListView>
+
+        </Grid>
+    </ContentPage.Content>
+
+</ContentPage>
