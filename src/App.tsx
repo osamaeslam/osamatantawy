@@ -15,10 +15,17 @@ import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthModal } from './components/AuthModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
+import { AdminDashboard } from './components/AdminDashboard';
 import { Smartphone, Monitor } from 'lucide-react';
+import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
   const { activeTab, viewMode, setViewMode } = useApp();
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  React.useEffect(() => {
+    visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -108,6 +115,36 @@ const MainLayout: React.FC = () => {
 
       {/* WhatsApp Chat Widget */}
       <WhatsAppChatWidget phoneNumber="+201521800000" />
+
+      {/* Admin Access Button (floating bottom-left) */}
+      <button
+        onClick={() => setShowAdmin(true)}
+        className="fixed bottom-6 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition flex items-center gap-2 text-xs font-bold"
+        title="لوحة التحكم الإدارية"
+      >
+        ⚙️ أدمن
+      </button>
+
+      {/* Admin Dashboard Overlay */}
+      {showAdmin && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">لوحة التحكم - طنطاوي جروب</h2>
+              <button
+                onClick={() => setShowAdmin(false)}
+                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                title="إغلاق"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <AdminDashboard />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Modals */}
       <ProductDetailModal />

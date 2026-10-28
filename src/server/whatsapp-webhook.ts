@@ -1,7 +1,8 @@
 import express from "express";
 import { WhatsAppBot } from "../services/whatsapp-bot";
-import { productService } from "../firebase/products.service";
-import { orderService } from "../firebase/orders.service";
+import { productService } from "../supabase/products.service";
+import { orderService } from "../supabase/orders.service";
+import { whatsappClickService } from "../supabase/whatsapp-click.service";
 import type { FirebaseProduct, FirebaseOrder } from "../types/firebase";
 
 const router = express.Router();
@@ -100,9 +101,14 @@ router.post("/webhook/whatsapp", express.json(), async (req, res) => {
     const products = await getProducts();
     const response = await bot.handleMessage(phone, message, products);
 
-    // لو البوت رجع بيانات طلب، نحفظها في Firebase
+    // لو البوت رجع بيانات طلب، نحفظها في Supabase
     if (response.orderData) {
       await saveOrder(response.orderData);
+    }
+
+    // تتبع نقرات الواتساب إذا كانت الرسالة تحتوي على طلب شراء أو رابط واتساب
+    if (/واتساب|شراء|رابط|اتصل|طلب/i.test(message)) {
+      await whatsappClickService.trackClick(undefined, message, phone);
     }
 
     // TODO: هنا يتم إرسال الرد الفعلي عبر WhatsApp Business API (Meta / Twilio / مزود مصري)
