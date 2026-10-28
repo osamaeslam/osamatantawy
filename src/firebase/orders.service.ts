@@ -14,10 +14,18 @@ import type { FirebaseOrder } from "../types/firebase";
 
 const ORDERS_COLLECTION = "orders";
 
+function requireDb() {
+  if (!db) {
+    throw new Error("Firebase is not configured. Set your Firebase config in src/firebase/config.ts");
+  }
+  return db;
+}
+
 export const orderService = {
   /** جلب كل الطلبات */
   async getAll(): Promise<FirebaseOrder[]> {
-    const q = query(collection(db, ORDERS_COLLECTION), orderBy("createdAt", "desc"));
+    requireDb();
+    const q = query(collection(db!, ORDERS_COLLECTION), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map((docSnap) => ({
       id: docSnap.id,
@@ -27,8 +35,9 @@ export const orderService = {
 
   /** جلب طلبات رقم تليفون معين */
   async getByPhone(phone: string): Promise<FirebaseOrder[]> {
+    requireDb();
     const q = query(
-      collection(db, ORDERS_COLLECTION),
+      collection(db!, ORDERS_COLLECTION),
       where("customerPhone", "==", phone),
       orderBy("createdAt", "desc")
     );
@@ -41,7 +50,8 @@ export const orderService = {
 
   /** إضافة طلب جديد */
   async create(data: Omit<FirebaseOrder, "id">): Promise<string> {
-    const docRef = await addDoc(collection(db, ORDERS_COLLECTION), {
+    requireDb();
+    const docRef = await addDoc(collection(db!, ORDERS_COLLECTION), {
       ...data,
       createdAt: new Date(),
     });
@@ -50,6 +60,7 @@ export const orderService = {
 
   /** تعديل حالة طلب */
   async updateStatus(id: string, status: FirebaseOrder["status"]): Promise<void> {
-    await updateDoc(doc(db, ORDERS_COLLECTION, id), { status });
+    requireDb();
+    await updateDoc(doc(db!, ORDERS_COLLECTION, id), { status });
   },
 };

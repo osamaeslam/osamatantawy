@@ -1,5 +1,10 @@
-import type { FirebaseProduct } from "../types/firebase";
+import type { FirebaseProduct, FirebaseOrder } from "../types/firebase";
 import type { UserSession, BotState } from "../types/firebase";
+
+export interface BotResponse {
+  reply: string;
+  orderData?: Omit<FirebaseOrder, "id">;
+}
 
 export class WhatsAppBot {
   private sessions = new Map<string, UserSession>();
@@ -17,20 +22,20 @@ export class WhatsAppBot {
   }
 
   /** نقطة الدخول الرئيسية لكل رسالة واردة */
-  async handleMessage(phone: string, text: string, products: FirebaseProduct[]): Promise<string> {
+  async handleMessage(phone: string, text: string, products: FirebaseProduct[]): Promise<BotResponse> {
     const session = this.getSession(phone);
     const trimmed = text.trim();
 
     // حالات الخروج أو البدء من جديد
     if (trimmed === "القائمة" || trimmed === "البدء" || trimmed === "مرحبا") {
       this.setSession(phone, { state: "menu" });
-      return this.welcomeMessage();
+      return { reply: this.welcomeMessage() };
     }
 
     switch (session.state) {
       case "welcome":
         this.setSession(phone, { state: "menu" });
-        return this.welcomeMessage();
+        return { reply: this.welcomeMessage() };
 
       case "menu":
         return this.handleMenu(phone, trimmed, products);
@@ -49,7 +54,7 @@ export class WhatsAppBot {
 
       default:
         this.setSession(phone, { state: "menu" });
-        return this.welcomeMessage();
+        return { reply: this.welcomeMessage() };
     }
   }
 
@@ -64,18 +69,18 @@ export class WhatsAppBot {
 أو اكتب "القائمة" في أي وقت للعودة هنا.`;
   }
 
-  private handleMenu(phone: string, text: string, products: FirebaseProduct[]): string {
+  private handleMenu(phone: string, text: string, products: FirebaseProduct[]): BotResponse {
     if (text === "1") {
       this.setSession(phone, { state: "selecting_product" });
-      return this.listProducts(products);
+      return { reply: this.listProducts(products) };
     }
     if (text === "2") {
-      return "أرسل رقم تليفونك لاستعراض طلباتك.";
+      return { reply: "أرسل رقم تليفونك لاستعراض طلباتك." };
     }
     if (text === "3") {
-      return "سيتم التواصل معك قريباً عبر رقم الخط الساخن 15218.";
+      return { reply: "سيتم التواصل معك قريباً عبر رقم الخط الساخن 15218." };
     }
-    return "اختيار غير صحيح. يرجى اختيار 1 أو 2 أو 3.";
+    return { reply: "اختيار غير صحيح. يرجى اختيار 1 أو 2 أو 3." };
   }
 
   private listProducts(products: FirebaseProduct[]): string {
@@ -88,71 +93,79 @@ export class WhatsAppBot {
     return `إليك منتجاتنا المتاحة:\n\n${list}\n\nأرسل رقم المنتج اللي عايزه.`;
   }
 
-  private handleSelectProduct(phone: string, text: string, products: FirebaseProduct[]): string {
+  private handleSelectProduct(phone: string, text: string, products: FirebaseProduct[]): BotResponse {
     const index = parseInt(text, 10) - 1;
     if (isNaN(index) || index < 0 || index >= products.length) {
-      return "الرقم غير صحيح. يرجى إرسال رقم منتج من القائمة.";
+      return { reply: "الرقم غير صحيح. يرجى إرسال رقم منتج من القائمة." };
     }
     const product = products[index];
     this.setSession(phone, { state: "selecting_color", selectedProduct: product });
 
     const colors = product.colors.join("، ");
-    return `اخترت: ${product.nameAr}\nالألوان المتاحة: ${colors}\nأرسل اسم اللون اللي عايزه.`;
+    return { reply: `اخترت: ${product.nameAr}\nالألوان المتاحة: ${colors}\nأرسل اسم اللون اللي عايزه.` };
   }
 
-  private handleSelectColor(phone: string, text: string): string {
+  private handleSelectColor(phone: string, text: string): BotResponse {
     const session = this.getSession(phone);
     const product = session.selectedProduct;
     if (!product) {
       this.setSession(phone, { state: "menu" });
-      return "حدث خطأ، يرجى بدء العملية من جديد.";
+      return { reply: "حدث خطأ، يرجى بدء العملية من جديد." };
     }
     if (!product.colors.includes(text)) {
-      return `اللون غير متاح. الألوان المتاحة: ${product.colors.join("، ")}`;
+      return { reply: `اللون غير متاح. الألوان المتاحة: ${product.colors.join("، ")}` };
     }
     this.setSession(phone, { state: "selecting_size", selectedColor: text });
 
     const sizes = product.sizes.join("، ");
-    return `تم اختيار اللون: ${text}\nالمقاسات المتاحة: ${sizes}\nأرسل اسم المقاس اللي عايزه.`;
+    return { reply: `تم اختيار اللون: ${text}\nالمقاسات المتاحة: ${sizes}\nأرسل اسم المقاس اللي عايزه.` };
   }
 
-  private handleSelectSize(phone: string, text: string): string {
+  private handleSelectSize(phone: string, text: string): BotResponse {
     const session = this.getSession(phone);
     const product = session.selectedProduct;
     if (!product || !session.selectedColor) {
       this.setSession(phone, { state: "menu" });
-      return "حدث خطأ، يرجى بدء العملية من جديد.";
+      return { reply: "حدث خطأ، يرجى بدء العملية من جديد." };
     }
     if (!product.sizes.includes(text)) {
-      return `المقاس غير متاح. المقاسات المتاحة: ${product.sizes.join("، ")}`;
+      return { reply: `المقاس غير متاح. المقاسات المتاحة: ${product.sizes.join("، ")}` };
     }
     this.setSession(phone, { state: "confirming", selectedSize: text });
 
     const total = (product.discountedPrice ?? product.price) * (session.quantity || 1);
-    return `ملخص طلبك:
-🛍️ المنتج: ${product.nameAr}
-🎨 اللون: ${session.selectedColor}
-📏 المقاس: ${text}
-💰 السعر: ${total} جنيه
-
-أرسل "تأكيد" لتسجيل الطلب، أو "إلغاء" للرجوع.`;
+    return {
+      reply: `ملخص طلبك:\n🛍️ المنتج: ${product.nameAr}\n🎨 اللون: ${session.selectedColor}\n📏 المقاس: ${text}\n💰 السعر: ${total} جنيه\n\nأرسل "تأكيد" لتسجيل الطلب، أو "إلغاء" للرجوع.`,
+    };
   }
 
-  private handleConfirm(phone: string, text: string): string {
+  private handleConfirm(phone: string, text: string): BotResponse {
     if (text === "تأكيد") {
       const session = this.getSession(phone);
       const product = session.selectedProduct;
       if (!product || !session.selectedColor || !session.selectedSize) {
-        return "حدث خطأ في بيانات الطلب.";
+        return { reply: "حدث خطأ في بيانات الطلب." };
       }
       const total = (product.discountedPrice ?? product.price) * (session.quantity || 1);
       const orderId = `TG-${Date.now().toString().slice(-6)}`;
 
-      // هنا يتم استدعاء خدمة حفظ الطلب في Firebase
-      // await orderService.create({ ... });
+      const orderData: Omit<FirebaseOrder, "id"> = {
+        orderId,
+        customerPhone: phone,
+        customerName: "عميل واتساب",
+        productId: product.id!,
+        productNameAr: product.nameAr,
+        selectedColor: session.selectedColor,
+        selectedSize: session.selectedSize!,
+        quantity: session.quantity || 1,
+        totalPrice: total,
+        status: "pending",
+        whatsappMessageId: text,
+      };
 
       this.setSession(phone, { state: "completed" });
-      return `✅ تم تسجيل طلبك بنجاح!
+      return {
+        reply: `✅ تم تسجيل طلبك بنجاح!
 
 📋 رقم الطلب: ${orderId}
 🛍️ المنتج: ${product.nameAr}
@@ -160,12 +173,14 @@ export class WhatsAppBot {
 📏 المقاس: ${session.selectedSize}
 💰 المبلغ: ${total} جنيه
 
-سيتم التواصل معك خلال ساعة على رقم تليفونك لتأكيد التوصيل والدفع عند الاستلام.`;
+سيتم التواصل معك خلال ساعة على رقم تليفونك لتأكيد التوصيل والدفع عند الاستلام.`,
+        orderData,
+      };
     }
     if (text === "إلغاء") {
       this.setSession(phone, { state: "menu" });
-      return "تم إلغاء الطلب. عايز حاجة تانية؟";
+      return { reply: "تم إلغاء الطلب. عايز حاجة تانية؟" };
     }
-    return "أرسل 'تأكيد' لتسجيل الطلب أو 'إلغاء' للرجوع.";
+    return { reply: "أرسل 'تأكيد' لتسجيل الطلب أو 'إلغاء' للرجوع." };
   }
 }

@@ -1,11 +1,13 @@
 import express from "express";
 import { WhatsAppBot } from "../services/whatsapp-bot";
-import type { FirebaseProduct } from "../types/firebase";
+import { productService } from "../firebase/products.service";
+import { orderService } from "../firebase/orders.service";
+import type { FirebaseProduct, FirebaseOrder } from "../types/firebase";
 
 const router = express.Router();
 const bot = new WhatsAppBot();
 
-// قائمة منتجات مؤقتة — في النهاية تجلبها من Firebase عبر productService.getAll()
+// قائمة منتجات افتراضية تُستخدم فقط لو Firebase غير مضبوط بعد
 const MOCK_PRODUCTS: FirebaseProduct[] = [
   {
     id: "P001",
@@ -69,6 +71,24 @@ const MOCK_PRODUCTS: FirebaseProduct[] = [
   },
 ];
 
+async function getProducts(): Promise<FirebaseProduct[]> {
+  try {
+    return await productService.getAll();
+  } catch {
+    // Firebase غير مضبوط — نستخدم المنتجات الوهمية مؤقتاً
+    return MOCK_PRODUCTS;
+  }
+}
+
+async function saveOrder(orderData: Omit<FirebaseOrder, "id">): Promise<string | null> {
+  try {
+    return await orderService.create(orderData);
+  } catch {
+    console.warn("Firebase not configured — order not saved to database");
+    return null;
+  }
+}
+
 router.post("/webhook/whatsapp", express.json(), async (req, res) => {
   try {
     const { phone, message } = req.body;
@@ -77,9 +97,15 @@ router.post("/webhook/whatsapp", express.json(), async (req, res) => {
       return res.status(400).json({ error: "phone and message are required" });
     }
 
-    const reply = await bot.handleMessage(phone, message, MOCK_PRODUCTS);
+    const products = await getProducts();
+    const response = await bot.handleMessage(phone, message, products);
 
-    // TODO: هنا يتم إرسال الرد عبر WhatsApp Business API (Meta/Twilio/مزود مصري)
+    // لو البوت رجع بيانات طلب، نحفظها في Firebase
+    if (response.orderData) {
+      await saveOrder(response.orderData);
+    }
+
+    // TODO: هنا يتم إرسال الرد الفعلي عبر WhatsApp Business API (Meta / Twilio / مزود مصري)
     // await sendWhatsAppMessage(phone, reply);
 
     console.log(`WhatsApp Bot -> ${phone}: ${reply}`);

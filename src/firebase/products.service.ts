@@ -14,10 +14,18 @@ import type { FirebaseProduct } from "../types/firebase";
 
 const PRODUCTS_COLLECTION = "products";
 
+function requireDb() {
+  if (!db) {
+    throw new Error("Firebase is not configured. Set your Firebase config in src/firebase/config.ts");
+  }
+  return db;
+}
+
 export const productService = {
   /** جلب كل المنتجات */
   async getAll(): Promise<FirebaseProduct[]> {
-    const q = query(collection(db, PRODUCTS_COLLECTION), orderBy("createdAt", "desc"));
+    requireDb();
+    const q = query(collection(db!, PRODUCTS_COLLECTION), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map((docSnap) => ({
       id: docSnap.id,
@@ -27,14 +35,16 @@ export const productService = {
 
   /** جلب منتج by ID */
   async getById(id: string): Promise<FirebaseProduct | null> {
-    const docSnap = await getDoc(doc(db, PRODUCTS_COLLECTION, id));
+    requireDb();
+    const docSnap = await getDoc(doc(db!, PRODUCTS_COLLECTION, id));
     if (!docSnap.exists()) return null;
     return { id: docSnap.id, ...(docSnap.data() as FirebaseProduct) };
   },
 
   /** إضافة منتج جديد */
   async create(data: Omit<FirebaseProduct, "id">): Promise<string> {
-    const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), {
+    requireDb();
+    const docRef = await addDoc(collection(db!, PRODUCTS_COLLECTION), {
       ...data,
       createdAt: new Date(),
     });
@@ -43,11 +53,13 @@ export const productService = {
 
   /** تعديل منتج */
   async update(id: string, data: Partial<FirebaseProduct>): Promise<void> {
-    await updateDoc(doc(db, PRODUCTS_COLLECTION, id), data);
+    requireDb();
+    await updateDoc(doc(db!, PRODUCTS_COLLECTION, id), data);
   },
 
   /** حذف منتج */
   async delete(id: string): Promise<void> {
-    await deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
+    requireDb();
+    await deleteDoc(doc(db!, PRODUCTS_COLLECTION, id));
   },
 };
