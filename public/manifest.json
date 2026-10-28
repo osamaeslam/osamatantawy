@@ -63,7 +63,7 @@
       "name": "الاتصال بالخط الساخن",
       "short_name": "الخط الساخن",
       "description": "اتصال مباشر بخط طنطاوي جروب الساخن 15218",
-      "url": "tel:15218",
+      "url": "/?source=pwa-hotline",
       "icons": [
         {
           "src": "/pwa-192x192.png",
