@@ -32,6 +32,15 @@ export class WhatsAppBot {
       return { reply: this.welcomeMessage() };
     }
 
+    // إذا كان المستخدم يسأل عن سعر منتج مباشرة باسمه (أي حالة)
+    const productByName = products.find((p) =>
+      p.nameAr.toLowerCase().includes(trimmed.toLowerCase()) ||
+      p.nameEn.toLowerCase().includes(trimmed.toLowerCase())
+    );
+    if (productByName && trimmed !== "1" && trimmed !== "2" && trimmed !== "3" && trimmed !== "4") {
+      return this.sendProductPrice(productByName);
+    }
+
     switch (session.state) {
       case "welcome":
         this.setSession(phone, { state: "menu" });
@@ -65,8 +74,28 @@ export class WhatsAppBot {
 1️⃣ عرض المنتجات
 2️⃣ تتبع طلبك
 3️⃣ التحدث مع خدمة العملاء
+4️⃣ معرفة سعر منتج (أكتب اسم المنتج مباشرة)
 
 أو اكتب "القائمة" في أي وقت للعودة هنا.`;
+  }
+
+  /** إرسال سعر ومعلومات منتج مباشرة للواتساب */
+  private sendProductPrice(product: FirebaseProduct): BotResponse {
+    const price = product.discountedPrice ?? product.price;
+    const colors = product.colors.length ? product.colors.join("، ") : "غير محدد";
+    const sizes = product.sizes.length ? product.sizes.join("، ") : "غير محدد";
+
+    return {
+      reply: `💰 سعر منتج: ${product.nameAr}
+
+💵 السعر: ${price} جنيه${product.discountedPrice ? ` (بخصم من ${product.price} جنيه)` : ""}
+🎨 الألوان المتاحة: ${colors}
+📏 المقاسات المتاحة: ${sizes}
+📦 الحالة: ${product.inStock ? "متوفر" : "غير متوفر"}
+
+للبطلك، اكتب رقم المنتج من القائمة أو أرسل "تأكيد" بعد اختيار اللون والمقاس.
+أو اكتب "القائمة" للعودة للقائمة الرئيسية.`,
+    };
   }
 
   private handleMenu(phone: string, text: string, products: FirebaseProduct[]): BotResponse {
@@ -80,7 +109,10 @@ export class WhatsAppBot {
     if (text === "3") {
       return { reply: "سيتم التواصل معك قريباً عبر رقم الخط الساخن 15218." };
     }
-    return { reply: "اختيار غير صحيح. يرجى اختيار 1 أو 2 أو 3." };
+    if (text === "4") {
+      return { reply: "أرسل اسم المنتج اللي عايز تعرف سعره، وهرد عليك بالسعر والمواصفات فوراً." };
+    }
+    return { reply: "اختيار غير صحيح. يرجى اختيار 1 أو 2 أو 3 أو 4." };
   }
 
   private listProducts(products: FirebaseProduct[]): string {
@@ -90,7 +122,7 @@ export class WhatsAppBot {
     const list = products
       .map((p, i) => `${i + 1}. ${p.nameAr} - ${p.discountedPrice ?? p.price} جنيه`)
       .join("\n");
-    return `إليك منتجاتنا المتاحة:\n\n${list}\n\nأرسل رقم المنتج اللي عايزه.`;
+    return `إليك منتجاتنا المتاحة:\n\n${list}\n\nأرسل رقم المنتج اللي عايزه، أو أرسل اسم المنتج مباشرة لمعرفة سعره.`;
   }
 
   private handleSelectProduct(phone: string, text: string, products: FirebaseProduct[]): BotResponse {

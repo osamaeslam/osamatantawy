@@ -3,6 +3,7 @@ import { WhatsAppBot } from "../services/whatsapp-bot";
 import { productService } from "../supabase/products.service";
 import { orderService } from "../supabase/orders.service";
 import { whatsappClickService } from "../supabase/whatsapp-click.service";
+import { fetchProductsFromGoogleSheets } from "../services/google-sheets.service";
 import type { FirebaseProduct, FirebaseOrder } from "../types/firebase";
 
 const router = express.Router();
@@ -73,10 +74,19 @@ const MOCK_PRODUCTS: FirebaseProduct[] = [
 ];
 
 async function getProducts(): Promise<FirebaseProduct[]> {
+  //اولوية: جوجل شيت (المصدر الأساسي المحدث يومياً)
+  try {
+    const sheetProducts = await fetchProductsFromGoogleSheets();
+    if (sheetProducts.length > 0) return sheetProducts;
+  } catch {
+    //继续
+  }
+
+  //ثانياً: محاولة جلب من سوتبايز
   try {
     return await productService.getAll();
   } catch {
-    // Firebase غير مضبوط — نستخدم المنتجات الوهمية مؤقتاً
+    // إذا فشل، نستخدم المنتجات الوهمية مؤقتاً
     return MOCK_PRODUCTS;
   }
 }
