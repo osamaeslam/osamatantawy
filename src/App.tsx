@@ -14,6 +14,7 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthModal } from './components/AuthModal';
+import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { Smartphone, Monitor } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -104,6 +105,9 @@ const MainLayout: React.FC = () => {
       <Footer />
       <BottomNavigation />
       <FloatingHotlineButton />
+
+      {/* WhatsApp Chat Widget */}
+      <WhatsAppChatWidget phoneNumber="+201521800000" />
 
       {/* Global Modals */}
       <ProductDetailModal />
