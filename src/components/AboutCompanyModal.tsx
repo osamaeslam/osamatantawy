@@ -10,7 +10,8 @@ import {
   Clock,
   Sparkles,
   MapPinOff,
-  Headphones
+  Headphones,
+  User,
 } from 'lucide-react';
 
 export const AboutCompanyModal: React.FC = () => {
@@ -137,6 +138,22 @@ export const AboutCompanyModal: React.FC = () => {
             </div>
           </div>
           <span className="text-gray-600 text-[11px] font-medium">متاح يومياً 9:00 ص - 11:00 م</span>
+        </div>
+
+        {/* Engineer Saji Osama Section */}
+        <div className="bg-pink-50 border border-pink-200 rounded-2xl p-5 space-y-3 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="p-2 bg-pink-400 text-white rounded-lg shadow-sm">
+              <User size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-pink-900">المهندسة سجي اسامه</h3>
+              <p className="text-xs text-pink-700 font-bold">المسؤولة عن مجموعة طنطاوي</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-700 leading-relaxed">
+            المهندسة <strong>سجي اسامه</strong> هي المسؤولة عن إدارة وتطوير مجموعة طنطاوي للأجهزة المنزلية والتجارة بالجملة. تشرف على جودة المنتجات وخدمة العملاء وضمان رضا التجار والعملاء في جميع المحافظات.
+          </p>
         </div>
 
         <div className="text-center pt-2">
