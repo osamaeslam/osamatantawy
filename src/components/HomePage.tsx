@@ -19,6 +19,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { Product } from '../types';
+import { BrandsGrid } from './BrandsGrid';
 
 export const HomePage: React.FC = () => {
   const { 
@@ -30,7 +31,8 @@ export const HomePage: React.FC = () => {
     setActiveTab, 
     setSelectedCategory,
     setIsAboutModalOpen,
-    searchQuery
+    searchQuery,
+    setSelectedBrand
   } = useApp();
 
   // Premium, high-definition promotional banners for Tantawy Group
@@ -91,6 +93,7 @@ export const HomePage: React.FC = () => {
   const deals = products.filter((p) => p.isDeal);
   const newArrivals = products.slice(2, 7);
 
+      <BrandsGrid />
   return (
     <div className="space-y-6 md:space-y-10 pb-16">
       {/* Search Result Notification if user searched */}

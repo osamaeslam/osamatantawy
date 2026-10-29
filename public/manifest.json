@@ -2,14 +2,16 @@
   "id": "/",
   "name": "طنطاوي جروب - Tantawy Group",
   "short_name": "طنطاوي جروب",
-  "description": "تطبيق طنطاوي جروب الرسمي للأجهزة المنزلية والشاشات - الخط الساخن 15218",
-  "start_url": "/",
+  "description": "تطبيق طنطاوي جروب الرسمي للأجهزة المنزلية الكبرى والشاشات والأجهزة الخفيفة - الخط الساخن 15218 - معاينة مجانية ودفع عند الاستلام",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#1e3a8a",
-  "categories": ["shopping", "business"],
+  "categories": ["shopping", "business", "lifestyle"],
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -28,6 +30,47 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "الصفحة الرئيسية",
+      "short_name": "الرئيسية",
+      "description": "افتح تطبيق طنطاوي جروب من الصفحة الرئيسية",
+      "url": "/?source=pwa-shortcut-home",
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "الأقسام والمنتجات",
+      "short_name": "الأقسام",
+      "description": "تصفح الأجهزة المنزلية والشاشات والعروض الحالية",
+      "url": "/categories?source=pwa-shortcut-categories",
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "الاتصال بالخط الساخن",
+      "short_name": "الخط الساخن",
+      "description": "اتصال مباشر بخط طنطاوي جروب الساخن 15218",
+      "url": "/?source=pwa-hotline",
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
@@ -14,10 +14,79 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthModal } from './components/AuthModal';
-import { Smartphone, Monitor } from 'lucide-react';
+import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
+import { AdminDashboard } from './components/AdminDashboard';
+import { BrandPage } from './components/BrandPage';
+import { Smartphone, Monitor, ArrowLeft, Building2 } from 'lucide-react';
+import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
   const { activeTab, viewMode, setViewMode } = useApp();
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+
+  // تتبع الزائر عند تحميل الصفحة
+  React.useEffect(() => {
+    visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
+  }, []);
+
+  // إذا تم اختيار ماركة، عرض صفحة المarka مباشرة
+  if (selectedBrand) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-['Cairo',sans-serif]">
+        <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <button
+              onClick={() => setSelectedBrand(null)}
+              className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+            >
+              <ArrowLeft size={18} /> العودة
+            </button>
+            <h1 className="text-xl font-black text-blue-900">{selectedBrand}</h1>
+            <button
+              onClick={() => setShowAdmin(true)}
+              className="hidden md:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition px-2.5 py-1 rounded-full text-[11px] font-semibold text-gray-200"
+            >
+              <Building2 size={12} />
+              <span>عن الشركة</span>
+            </button>
+          </div>
+        </header>
+
+        <BrandPage brandName={selectedBrand} />
+
+        {/* Admin Dashboard Overlay */}
+        {showAdmin && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">لوحة التحكم - طنطاوي جروب</h2>
+                <button
+                  onClick={() => setShowAdmin(false)}
+                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                  title="إغلاق"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <AdminDashboard />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* زر أدمن عائم */}
+        <button
+          onClick={() => setShowAdmin(true)}
+          className="fixed bottom-6 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition flex items-center gap-2 text-xs font-bold"
+          title="لوحة التحكم الإدارية"
+        >
+          ⚙️ أدمن
+        </button>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -104,6 +173,39 @@ const MainLayout: React.FC = () => {
       <Footer />
       <BottomNavigation />
       <FloatingHotlineButton />
+
+      {/* WhatsApp Chat Widget */}
+      <WhatsAppChatWidget phoneNumber="+201521800000" />
+
+      {/* Admin Access Button (floating bottom-left) */}
+      <button
+        onClick={() => setShowAdmin(true)}
+        className="fixed bottom-6 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition flex items-center gap-2 text-xs font-bold"
+        title="لوحة التحكم الإدارية"
+      >
+        ⚙️ أدمن
+      </button>
+
+      {/* Admin Dashboard Overlay */}
+      {showAdmin && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">لوحة التحكم - طنطاوي جروب</h2>
+              <button
+                onClick={() => setShowAdmin(false)}
+                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                title="إغلاق"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <AdminDashboard />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Modals */}
       <ProductDetailModal />

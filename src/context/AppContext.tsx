@@ -45,6 +45,8 @@ interface AppContextType {
   cartSubtotal: number;
   cartDiscount: number;
   cartCount: number;
+  selectedBrand: string | null;
+  setSelectedBrand: (brand: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS);
   const [viewMode, setViewMode] = useState<'mobile' | 'web'>('web');
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
 
@@ -229,7 +232,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cartTotal,
         cartSubtotal,
         cartDiscount,
-        cartCount
+        cartCount,
+        selectedBrand,
+        setSelectedBrand,
       }}
     >
       {children}
