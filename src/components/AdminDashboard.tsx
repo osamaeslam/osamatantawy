@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { ExcelUpload } from './ExcelUpload';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { visitorService } from '../supabase/visitor.service';
+import { adminAuthService } from '../supabase/admin-auth.service';
 import { whatsappClickService } from '../supabase/whatsapp-click.service';
 import { orderService } from '../supabase/orders.service';
 import { productService } from '../supabase/products.service';
 import type { FirebaseProduct } from '../types/firebase';
 import type { FirebaseOrder } from '../types/firebase';
-import { Package } from 'lucide-react';
+import { Package, Building2 } from 'lucide-react';
 import { StatCard } from './StatCard';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel'>('overview');
+  const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const { stats, loading } = useDashboardStats();
   const [products, setProducts] = useState<FirebaseProduct[]>([]);
@@ -41,28 +44,66 @@ export const AdminDashboard: React.FC = () => {
     loadData();
   }, []);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoggingIn(true);
+    try {
+      const admin = await adminAuthService.login(adminUsername, adminPassword);
+      if (admin) {
+        setIsAuthenticated(true);
+      } else {
+        alert('اسم المستخدم أو كلمة المرور غير صحيحة');
+      }
+    } catch (err: any) {
+      alert('حدث خطأ أثناء الاتصال بالخادم: ' + err.message);
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-          <h1 className="text-2xl font-black text-gray-900 mb-2">لوحة تحكم طنطاوي جروب</h1>
-          <p className="text-gray-600 mb-6">يرجى إدخال كلمة المرور للدخول</p>
-          <input
-            type="password"
-            value={adminPassword}
-            onChange={(e) => setAdminPassword(e.target.value)}
-            placeholder="كلمة المرور"
-            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-          <button
-            onClick={() => {
-              if (adminPassword === 'tantawy123') setIsAuthenticated(true);
-              else alert('كلمة مرور خاطئة');
-            }}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition"
-          >
-            تسجيل الدخول
-          </button>
+          <div className="flex items-center justify-center mb-4">
+            <Building2 size={32} className="text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 text-center mb-2">لوحة تحكم طنطاوي جروب</h1>
+          <p className="text-center text-gray-600 text-sm mb-6">تسجيل دخول مسؤول النظام</p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">اسم المستخدم</label>
+              <input
+                type="text"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                placeholder="أدخل اسم المستخدم"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">كلمة المرور</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="أدخل كلمة المرور"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loggingIn}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+            >
+              {loggingIn ? 'جاري التحقق...' : 'تسجيل الدخول'}
+            </button>
+          </form>
+
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            اسم المستخدم: <span className="font-bold">saja</span> | كلمة المرور: <span className="font-bold">osama442</span>
+          </div>
         </div>
       </div>
     );
