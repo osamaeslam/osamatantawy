@@ -6,15 +6,15 @@ export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setIsAuthModalOpen, login } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('customer@raneen.com');
-  const [password, setPassword] = useState('123456');
-  const [name, setName] = useState('عميل رنين');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
   if (!isAuthModalOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, mode === 'signup' ? name : undefined);
+    login(email || 'customer@tantawy.com', mode === 'signup' ? name : undefined);
   };
 
   return (
@@ -43,11 +43,16 @@ export const AuthModal: React.FC = () => {
             />
           </div>
           <h3 className="text-lg font-black text-gray-900 pt-1">
-            {mode === 'login' ? 'مرحباً بك في طنطاوي جروب' : 'حساب جديد في طنطاوي جروب'}
+            {mode === 'login' ? 'تسجيل الدخول - طنطاوي جروب' : 'إنشاء حساب عميل جديد'}
           </h3>
           <p className="text-xs text-gray-500">
-            {mode === 'login' ? 'سجل دخولك لمتابعة مشترياتك وعروضك الخاصة' : 'سجل الآن واستمتع بخصومات حصرية على طلباتك'}
+            {mode === 'login' ? 'سجل دخولك لمتابعة طلبات المعاينة السابقة وحفظ بياناتك' : 'سجل لتسهيل طلب المعاينات القادمة ومتابعة الشحنات'}
           </p>
+        </div>
+
+        {/* Guest reassurance banner */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-2.5 text-center text-[11px] text-blue-900 font-medium">
+          💡 يمكنك التسوق وطلب المعاينة مجاناً والدفع عند الاستلام كزائر مباشرة دون الحاجة لأي تسجيل!
         </div>
 
         {/* Tab switch */}
@@ -55,7 +60,7 @@ export const AuthModal: React.FC = () => {
           <button
             onClick={() => setMode('login')}
             className={`flex-1 py-2 rounded-lg transition ${
-              mode === 'login' ? 'bg-white text-red-600 shadow-xs' : 'text-gray-500 hover:text-gray-800'
+              mode === 'login' ? 'bg-white text-blue-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
             تسجيل الدخول
@@ -63,7 +68,7 @@ export const AuthModal: React.FC = () => {
           <button
             onClick={() => setMode('signup')}
             className={`flex-1 py-2 rounded-lg transition ${
-              mode === 'signup' ? 'bg-white text-red-600 shadow-xs' : 'text-gray-500 hover:text-gray-800'
+              mode === 'signup' ? 'bg-white text-blue-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
             حساب جديد
@@ -84,26 +89,26 @@ export const AuthModal: React.FC = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-500 font-medium"
-                  placeholder="محمد أحمد"
+                  className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-700 font-medium"
+                  placeholder="مثال: محمد أحمد"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-gray-700 font-bold mb-1">البريد الإلكتروني:</label>
+            <label className="block text-gray-700 font-bold mb-1">البريد الإلكتروني أو رقم الهاتف:</label>
             <div className="relative flex items-center">
               <div className="pr-3 pl-2 text-gray-400 absolute right-0">
                 <Mail size={16} />
               </div>
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-500 font-medium"
-                placeholder="user@example.com"
+                className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-700 font-medium"
+                placeholder="name@example.com أو رقم الموبايل"
               />
             </div>
           </div>
@@ -119,7 +124,7 @@ export const AuthModal: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-500 font-medium"
+                className="w-full pr-9 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-700 font-medium"
                 placeholder="••••••••"
               />
             </div>
@@ -127,17 +132,20 @@ export const AuthModal: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3 rounded-xl transition text-xs shadow-md mt-2 flex items-center justify-center gap-1.5"
+            className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-bold py-3 rounded-xl transition text-xs shadow-md mt-2 flex items-center justify-center gap-1.5"
           >
-            <span>{mode === 'login' ? 'دخول فوري' : 'إتمام التسجيل'}</span>
+            <span>{mode === 'login' ? 'دخول' : 'إتمام إنشاء الحساب'}</span>
             <ArrowRight size={14} className="rotate-180" />
           </button>
         </form>
 
-        <div className="text-center">
-          <span className="text-[11px] text-gray-400">
-            بيانات تجريبية مسجلة مسبقاً، يمكنك الضغط مباشرة على الزر للدخول
-          </span>
+        <div className="text-center pt-1">
+          <button
+            onClick={() => setIsAuthModalOpen(false)}
+            className="text-xs text-gray-500 hover:text-blue-900 font-medium underline"
+          >
+            متابعة التسوق كزائر الآن
+          </button>
         </div>
       </div>
     </div>

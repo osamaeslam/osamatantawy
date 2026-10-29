@@ -16,10 +16,12 @@ import {
   ArrowRight,
   Flame,
   Award,
-  PhoneCall
+  PhoneCall,
+  MessageCircle
 } from 'lucide-react';
 import { Product } from '../types';
 import { BrandsGrid } from './BrandsGrid';
+import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 
 export const HomePage: React.FC = () => {
   const { 
@@ -392,13 +394,24 @@ export const HomePage: React.FC = () => {
                       <span className="text-[10px] text-gray-500 font-medium">معاينة مجانية</span>
                     </div>
 
-                    <button
-                      onClick={() => addToCart(product, 1)}
-                      className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
-                    >
-                      <ShoppingCart size={14} />
-                      <span>طلب معاينة الصنف</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 w-full">
+                      <button
+                        onClick={() => addToCart(product, 1)}
+                        className="flex-1 bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-2 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                      >
+                        <ShoppingCart size={13} />
+                        <span>طلب معاينة</span>
+                      </button>
+                      <a
+                        href={createProductWhatsAppUrl(product)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-xs flex items-center justify-center"
+                        title="طلب فوري واستفسار عبر واتساب"
+                      >
+                        <MessageCircle size={15} />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -531,19 +544,24 @@ export const HomePage: React.FC = () => {
                     </h3>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-blue-900 bg-blue-50 px-2 py-1 rounded-md">
-                      طلب معاينة
-                    </span>
-
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-1.5">
                     <button
                       onClick={() => addToCart(product, 1)}
-                      className="py-1.5 px-3 bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition text-xs font-bold flex items-center gap-1"
+                      className="flex-1 py-1.5 px-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition text-[11px] font-bold flex items-center justify-center gap-1 shadow-xs"
                       title="حجز للمعاينة"
                     >
                       <ShoppingCart size={13} />
-                      <span>حجز</span>
+                      <span>حجز معاينة</span>
                     </button>
+                    <a
+                      href={createProductWhatsAppUrl(product)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-xs flex items-center justify-center"
+                      title="طلب فوري واستفسار عبر واتساب"
+                    >
+                      <MessageCircle size={14} />
+                    </a>
                   </div>
                 </div>
               </div>

@@ -15,7 +15,8 @@ import {
   Users, 
   ChevronLeft,
   Save,
-  Building2
+  Building2,
+  Truck
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
@@ -26,7 +27,9 @@ export const ProfilePage: React.FC = () => {
     updateUserProfile, 
     setIsAboutModalOpen, 
     setIsAuthModalOpen,
-    isLoggedIn 
+    setActiveTab,
+    isLoggedIn,
+    setIsOrderTrackingOpen
   } = useApp();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -41,20 +44,37 @@ export const ProfilePage: React.FC = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-md mx-auto space-y-4 my-8">
+      <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-md mx-auto space-y-5 my-8 shadow-sm">
         <div className="w-20 h-20 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center mx-auto">
-          <User size={36} />
+          <User size={38} className="text-blue-900" />
         </div>
-        <h3 className="text-xl font-black text-gray-900">سجل الدخول لحسابك</h3>
-        <p className="text-xs text-gray-500">
-          سجل دخولك لمتابعة شحناتك، وطلبات المعاينة السابقة، وإدارة عناوينك في طنطاوي جروب.
-        </p>
-        <button
-          onClick={() => setIsAuthModalOpen(true)}
-          className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-md"
-        >
-          تسجيل الدخول / إنشاء حساب
-        </button>
+        <div className="space-y-2">
+          <h3 className="text-xl font-black text-gray-900">أهلاً بك في طنطاوي جروب</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            التسوق وطلب المعاينة مجاني بالكامل والدفع عند الاستلام متاح كزائر بدون الحاجة لتسجيل دخول أو إنشاء حساب!
+          </p>
+        </div>
+        <div className="space-y-2.5 pt-2">
+          <button
+            onClick={() => setIsOrderTrackingOpen(true)}
+            className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black py-3 rounded-xl transition text-xs shadow-md flex items-center justify-center gap-2"
+          >
+            <Truck size={17} />
+            <span>تتبع موعد وصول مندوب المعاينة برقم الهاتف 🚚</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('home')}
+            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-sm"
+          >
+            تصفح الأجهزة والعروض كزائر
+          </button>
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 rounded-xl transition text-xs border border-gray-200"
+          >
+            تسجيل الدخول (اختياري)
+          </button>
+        </div>
       </div>
     );
   }
@@ -104,14 +124,15 @@ export const ProfilePage: React.FC = () => {
       <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 rounded-3xl p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4 text-center sm:text-right">
           <div className="w-16 h-16 rounded-full border-2 border-white/80 overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-            <img
-              src={user.avatar || '/assets/avatar2.png'}
-              alt={user.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={32} className="text-white" />
+            )}
           </div>
           <div>
             <h2 className="text-xl font-black">{user.name}</h2>

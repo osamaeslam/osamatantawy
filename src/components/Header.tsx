@@ -13,7 +13,8 @@ import {
   PhoneCall,
   Percent,
   Flame,
-  Building2
+  Building2,
+  Truck
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -32,7 +33,8 @@ export const Header: React.FC = () => {
     user,
     setIsAuthModalOpen,
     setIsAboutModalOpen,
-    setSelectedCategory
+    setSelectedCategory,
+    setIsOrderTrackingOpen
   } = useApp();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -52,7 +54,15 @@ export const Header: React.FC = () => {
           <Sparkles size={14} className="text-yellow-300 animate-pulse shrink-0" />
           <span>طنطاوي جروب: أجهزة منزلية كبرى وشاشات وأجهزة خفيفة • شحن لجميع المحافظات • دفع موحد عند الاستلام بعد المعاينة</span>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <button
+            onClick={() => setIsOrderTrackingOpen(true)}
+            className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 px-2.5 py-1 rounded-full text-[11px] font-black transition shadow-xs"
+            title="تتبع طلب المعاينة برقم الهاتف"
+          >
+            <Truck size={13} />
+            <span>تتبع طلبك 🚚</span>
+          </button>
           <PWAInstallButton />
           <button 
             onClick={() => setIsAboutModalOpen(true)}
@@ -194,17 +204,17 @@ export const Header: React.FC = () => {
                   setIsAuthModalOpen(true);
                 }
               }}
-              className="flex items-center gap-2 p-1.5 md:px-3 md:py-1.5 border border-gray-200 hover:border-gray-300 rounded-full transition"
+              className="flex items-center gap-2 p-1.5 md:px-3 md:py-1.5 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/60 rounded-full transition"
             >
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center text-gray-600">
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-blue-50 flex items-center justify-center text-blue-900">
                 {isLoggedIn && user.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={18} />
+                  <User size={17} className="text-blue-900" />
                 )}
               </div>
-              <span className="text-xs font-bold text-gray-700 hidden md:inline truncate max-w-[90px]">
-                {isLoggedIn ? user.name.split(' ')[0] : 'دخول'}
+              <span className="text-xs font-bold text-gray-700 hidden md:inline truncate max-w-[100px]">
+                {isLoggedIn ? (user.name && user.name !== 'زائر' ? user.name.split(' ')[0] : 'حسابي') : 'دخول'}
               </span>
             </button>
           </div>

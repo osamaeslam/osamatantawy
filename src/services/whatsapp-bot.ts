@@ -192,6 +192,7 @@ export class WhatsAppBot {
         quantity: session.quantity || 1,
         totalPrice: total,
         status: "pending",
+        createdAt: new Date().toISOString(),
         whatsappMessageId: text,
       };
 

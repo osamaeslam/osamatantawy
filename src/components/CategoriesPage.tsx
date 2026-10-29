@@ -11,9 +11,11 @@ import {
   Heart,
   ChevronRight,
   Filter,
-  Check
+  Check,
+  MessageCircle
 } from 'lucide-react';
 import { Product } from '../types';
+import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 
 export const CategoriesPage: React.FC = () => {
   const { 
@@ -222,18 +224,24 @@ export const CategoriesPage: React.FC = () => {
                     </h3>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                      متاح بالمعارض
-                    </span>
-
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-1.5">
                     <button
                       onClick={() => addToCart(product, 1)}
-                      className="p-2 bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white rounded-lg transition"
+                      className="flex-1 py-1.5 px-2.5 bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white rounded-lg transition text-[11px] font-bold flex items-center justify-center gap-1"
                       title="طلب معاينة الصنف"
                     >
-                      <ShoppingCart size={16} />
+                      <ShoppingCart size={14} />
+                      <span>معاينة</span>
                     </button>
+                    <a
+                      href={createProductWhatsAppUrl(product)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs flex items-center justify-center"
+                      title="طلب فوري واستفسار عبر واتساب"
+                    >
+                      <MessageCircle size={14} />
+                    </a>
                   </div>
                 </div>
               </div>

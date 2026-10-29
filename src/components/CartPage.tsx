@@ -11,13 +11,16 @@ import {
   Truck, 
   Heart,
   ShoppingCart,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
+import { createCartWhatsAppUrl } from '../services/whatsapp-order';
 
 export const CartPage: React.FC = () => {
   const { 
     cart, 
     wishlist,
+    user,
     removeFromCart, 
     updateQuantity, 
     clearCart,
@@ -259,6 +262,16 @@ export const CartPage: React.FC = () => {
                   <span>تأكيد طلب المعاينة وحجز الموعد</span>
                   <ArrowLeft size={16} />
                 </button>
+
+                <a
+                  href={createCartWhatsAppUrl(cart, user ? { name: user.name, phone: user.phone, address: user.address } : undefined)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-2.5 px-4 rounded-xl font-bold text-xs transition shadow-xs flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={16} />
+                  <span>إرسال قائمة المعاينة لمبيعات واتساب 💬</span>
+                </a>
 
                 <div className="space-y-2 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
                   <div className="flex items-center gap-2">

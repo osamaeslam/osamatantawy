@@ -14,6 +14,7 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthModal } from './components/AuthModal';
+import { OrderTrackingModal } from './components/OrderTrackingModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
@@ -21,7 +22,7 @@ import { Smartphone, Monitor, ArrowLeft, Building2 } from 'lucide-react';
 import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, viewMode, setViewMode } = useApp();
+  const { activeTab, viewMode, setViewMode, isOrderTrackingOpen, setIsOrderTrackingOpen, trackingPhone } = useApp();
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
@@ -76,14 +77,6 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* زر أدمن عائم */}
-        <button
-          onClick={() => setShowAdmin(true)}
-          className="fixed bottom-6 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition flex items-center gap-2 text-xs font-bold"
-          title="لوحة التحكم الإدارية"
-        >
-          ⚙️ أدمن
-        </button>
       </div>
     );
   }
@@ -154,6 +147,11 @@ const MainLayout: React.FC = () => {
         <AboutCompanyModal />
         <CheckoutModal />
         <AuthModal />
+        <OrderTrackingModal
+          isOpen={isOrderTrackingOpen}
+          onClose={() => setIsOrderTrackingOpen(false)}
+          initialPhone={trackingPhone}
+        />
       </div>
     );
   }
@@ -170,21 +168,12 @@ const MainLayout: React.FC = () => {
         {renderContent()}
       </main>
 
-      <Footer />
+      <Footer onOpenAdmin={() => setShowAdmin(true)} />
       <BottomNavigation />
       <FloatingHotlineButton />
 
       {/* WhatsApp Chat Widget */}
       <WhatsAppChatWidget phoneNumber="+201521800000" />
-
-      {/* Admin Access Button (floating bottom-left) */}
-      <button
-        onClick={() => setShowAdmin(true)}
-        className="fixed bottom-6 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition flex items-center gap-2 text-xs font-bold"
-        title="لوحة التحكم الإدارية"
-      >
-        ⚙️ أدمن
-      </button>
 
       {/* Admin Dashboard Overlay */}
       {showAdmin && (
@@ -212,6 +201,11 @@ const MainLayout: React.FC = () => {
       <AboutCompanyModal />
       <CheckoutModal />
       <AuthModal />
+      <OrderTrackingModal
+        isOpen={isOrderTrackingOpen}
+        onClose={() => setIsOrderTrackingOpen(false)}
+        initialPhone={trackingPhone}
+      />
     </div>
   );
 };

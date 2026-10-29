@@ -22,6 +22,10 @@ interface AppContextType {
   setIsAboutModalOpen: (open: boolean) => void;
   isCheckoutModalOpen: boolean;
   setIsCheckoutModalOpen: (open: boolean) => void;
+  isOrderTrackingOpen: boolean;
+  setIsOrderTrackingOpen: (open: boolean) => void;
+  trackingPhone: string;
+  setTrackingPhone: (phone: string) => void;
   user: UserProfile;
   isLoggedIn: boolean;
   orders: OrderItem[];
@@ -47,20 +51,15 @@ interface AppContextType {
   cartCount: number;
   selectedBrand: string | null;
   setSelectedBrand: (brand: string | null) => void;
+  addProductReview: (productId: string, review: { customername: string; comment: string; rating: number; revieweddate: string }) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products] = useState<Product[]>(PRODUCTS);
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    // initialize with 2 sample items from Raneen
-    return [
-      { product: PRODUCTS[0], quantity: 1, selectedSize: PRODUCTS[0].sizevariants[0] },
-      { product: PRODUCTS[4], quantity: 1, selectedSize: PRODUCTS[4].sizevariants[0] }
-    ];
-  });
-  const [wishlist, setWishlist] = useState<Product[]>(() => [PRODUCTS[1], PRODUCTS[6]]);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<Product[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'cart' | 'profile'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -69,9 +68,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
+  const [trackingPhone, setTrackingPhone] = useState('');
   const [user, setUser] = useState<UserProfile>(INITIAL_USER);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [viewMode, setViewMode] = useState<'mobile' | 'web'>('web');
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState<string>('');
@@ -181,11 +182,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    setUser(INITIAL_USER);
     setIsLoggedIn(false);
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...profile }));
+  };
+
+  const addProductReview = (
+    productId: string, 
+    review: { customername: string; comment: string; rating: number; revieweddate: string }
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== productId) return p;
+        const newReviews = [review, ...(p.reviews || [])];
+        const avg =
+          newReviews.reduce((sum, r) => sum + Number(r.rating || 5), 0) /
+          newReviews.length;
+        const updated = {
+          ...p,
+          reviews: newReviews,
+          overallrating: Number(avg.toFixed(1)),
+        };
+        if (selectedProduct && selectedProduct.id === productId) {
+          setSelectedProduct(updated);
+        }
+        return updated;
+      })
+    );
   };
 
   return (
@@ -210,6 +236,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAboutModalOpen,
         isCheckoutModalOpen,
         setIsCheckoutModalOpen,
+        isOrderTrackingOpen,
+        setIsOrderTrackingOpen,
+        trackingPhone,
+        setTrackingPhone,
         user,
         isLoggedIn,
         orders,
@@ -235,6 +265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cartCount,
         selectedBrand,
         setSelectedBrand,
+        addProductReview,
       }}
     >
       {children}

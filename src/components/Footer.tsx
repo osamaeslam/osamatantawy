@@ -13,7 +13,11 @@ import {
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
   const { setActiveTab, setSelectedCategory, setIsAboutModalOpen } = useApp();
 
   return (
@@ -158,7 +162,18 @@ export const Footer: React.FC = () => {
 
         {/* Bottom bar */}
         <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <p>© {new Date().getFullYear()} مجموعة طنطاوي (TANTAWY GROUP) - جميع الحقوق محفوظة</p>
+          <div className="flex items-center gap-3">
+            <p>© {new Date().getFullYear()} مجموعة طنطاوي (TANTAWY GROUP) - جميع الحقوق محفوظة</p>
+            {onOpenAdmin && (
+              <button
+                onClick={onOpenAdmin}
+                className="text-slate-600 hover:text-slate-400 text-[11px] transition cursor-pointer"
+                title="لوحة الإدارة"
+              >
+                ⚙️ الإدارة
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-emerald-400 font-bold">دفع موحد عند الاستلام بعد المعاينة</span>
             <span>•</span>

@@ -406,12 +406,12 @@ export const INITIAL_ORDERS: OrderItem[] = [
 ];
 
 export const INITIAL_USER: UserProfile = {
-  name: 'أحمد محمود العوضي',
-  email: 'ahmed.elawadi@example.com',
-  phone: '+20 102 345 6789',
-  address: 'شارع فيصل الرئيسي، بجوار معرض طنطاوي جروب، الدور الرابع',
-  city: 'الجيزة، مصر',
-  avatar: '/assets/avatar2.png'
+  name: 'زائر',
+  email: '',
+  phone: '',
+  address: '',
+  city: 'القاهرة، مصر',
+  avatar: ''
 };
 
 export const PROMO_CODES: Record<string, number> = {

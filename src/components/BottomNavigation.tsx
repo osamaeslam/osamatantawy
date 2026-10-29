@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, Grid, Zap, ShoppingBag, User } from 'lucide-react';
+import { Home, Grid, Zap, ShoppingBag, User, Truck } from 'lucide-react';
 
 interface NavItem {
-  id: 'home' | 'categories' | 'deals' | 'cart' | 'profile';
+  id: 'home' | 'categories' | 'deals' | 'cart' | 'profile' | 'tracking';
   label: string;
   icon: any;
   isDeal?: boolean;
@@ -11,12 +11,12 @@ interface NavItem {
 }
 
 export const BottomNavigation: React.FC = () => {
-  const { activeTab, setActiveTab, cartCount } = useApp();
+  const { activeTab, setActiveTab, cartCount, setIsOrderTrackingOpen } = useApp();
 
   const navItems: NavItem[] = [
     { id: 'home', label: 'الرئيسية', icon: Home },
     { id: 'categories', label: 'الأقسام', icon: Grid },
-    { id: 'deals', label: 'العروض', icon: Zap, isDeal: true },
+    { id: 'tracking', label: 'تتبع الطلب', icon: Truck },
     { id: 'cart', label: 'المعاينة', icon: ShoppingBag, badge: cartCount },
     { id: 'profile', label: 'حسابي', icon: User }
   ];
@@ -26,11 +26,17 @@ export const BottomNavigation: React.FC = () => {
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = activeTab === (item.id as any);
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                if (item.id === 'tracking') {
+                  setIsOrderTrackingOpen(true);
+                } else {
+                  setActiveTab(item.id as any);
+                }
+              }}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition relative ${
                 isActive ? 'text-blue-900 font-bold scale-105' : 'text-gray-500 hover:text-gray-900 font-medium'
               }`}

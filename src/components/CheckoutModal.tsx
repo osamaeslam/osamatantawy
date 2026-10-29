@@ -20,26 +20,33 @@ export const CheckoutModal: React.FC = () => {
     cart, 
     cartTotal, 
     user, 
+    isLoggedIn,
+    updateUserProfile,
     createOrder,
-    setActiveTab 
+    setActiveTab,
+    setIsOrderTrackingOpen,
+    setTrackingPhone
   } = useApp();
 
-  const [shippingAddress, setShippingAddress] = useState(user.address);
-  const [phone, setPhone] = useState(user.phone);
-  const [city, setCity] = useState(user.city);
+  const [customerName, setCustomerName] = useState(isLoggedIn && user.name !== 'زائر' ? user.name : '');
+  const [shippingAddress, setShippingAddress] = useState(user.address || '');
+  const [phone, setPhone] = useState(user.phone || '');
+  const [city, setCity] = useState(user.city || 'القاهرة والجيزة');
   const [notes, setNotes] = useState('');
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
 
   if (!isCheckoutModalOpen) return null;
 
-
   const handleConfirmOrder = (e: React.FormEvent) => {
     e.preventDefault();
     const order = createOrder(
-      `${city} - ${shippingAddress} (هاتف: ${phone}${notes ? ` - ملاحظات: ${notes}` : ''})`, 
-      'دفع موحد عند الاستلام - طنطاوي جروب (مع حق المعاينة)'
+      `${customerName ? `${customerName} - ` : ''}${city} - ${shippingAddress} (هاتف: ${phone}${notes ? ` - ملاحظات: ${notes}` : ''})`, 
+      'دفع موحد عند الاستلام - طنطاوي جروب (مع حق المعاينة المجانية)'
     );
     if (order) {
+      if (customerName) {
+        updateUserProfile({ name: customerName, phone, address: shippingAddress, city });
+      }
       setCompletedOrder(order);
     }
   };
@@ -108,12 +115,27 @@ export const CheckoutModal: React.FC = () => {
               📞 سيقوم أحد ممثلي خدمة عملاء <strong>طنطاوي جروب (15218)</strong> بالتواصل معك لتأكيد الموعد والتفاصيل.
             </div>
 
-            <button
-              onClick={handleFinish}
-              className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 rounded-xl transition text-xs shadow-md"
-            >
-              عرض تفاصيل الطلب في حسابي
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setTrackingPhone(phone);
+                  setCompletedOrder(null);
+                  setIsCheckoutModalOpen(false);
+                  setIsOrderTrackingOpen(true);
+                }}
+                className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black py-3 rounded-xl transition text-xs shadow-md flex items-center justify-center gap-2"
+              >
+                <Truck size={16} />
+                <span>تتبع موعد وصول المندوب للمعاينة الآن 🚚</span>
+              </button>
+
+              <button
+                onClick={handleFinish}
+                className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl transition text-xs"
+              >
+                عرض تفاصيل الطلب في حسابي
+              </button>
+            </div>
           </div>
         ) : (
           /* Checkout Form with Unified Payment */
@@ -130,6 +152,18 @@ export const CheckoutModal: React.FC = () => {
 
             {/* Address fields */}
             <div className="space-y-2.5 text-xs">
+              <div>
+                <label className="block text-gray-700 font-bold mb-1">اسم العميل الكريم:</label>
+                <input
+                  type="text"
+                  required
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
+                  placeholder="الاسم بالكامل أو اسم المستلم"
+                />
+              </div>
+
               <div>
                 <label className="block text-gray-700 font-bold mb-1">المدينة والمحافظة:</label>
                 <input

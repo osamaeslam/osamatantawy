@@ -124,9 +124,9 @@ router.post("/webhook/whatsapp", express.json(), async (req, res) => {
     // TODO: هنا يتم إرسال الرد الفعلي عبر WhatsApp Business API (Meta / Twilio / مزود مصري)
     // await sendWhatsAppMessage(phone, reply);
 
-    console.log(`WhatsApp Bot -> ${phone}: ${reply}`);
+    console.log(`WhatsApp Bot -> ${phone}: ${response.reply}`);
 
-    res.json({ status: "ok", reply });
+    res.json({ status: "ok", reply: response.reply });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: err.message });

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { FirebaseProduct } from '../types/firebase';
-import { customerService } from '../supabase/customer.service';
 import { orderService } from '../supabase/order.service';
 import { sendInvoiceToWhatsApp } from '../services/invoice-to-whatsapp';
-import { PhoneCall, MapPin, User, ShoppingCart, Send } from 'lucide-react';
+import { PhoneCall, MapPin, User, ShoppingCart, Send, Truck } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 interface CustomerOrderFormProps {
   product: FirebaseProduct;
@@ -14,6 +14,7 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
   product,
   onOrderComplete,
 }) => {
+  const { setIsOrderTrackingOpen, setTrackingPhone } = useApp();
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -35,13 +36,14 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
         orderId,
         customerPhone: form.phone,
         customerName: form.name,
-        productId: product.id!,
+        productId: product.id || '',
         productNameAr: product.nameAr,
         selectedColor: '',
         selectedSize: '',
-        quantity: form.quantity,
+        quantity: Number(form.quantity),
         totalPrice: estimatedPrice,
         status: 'pending',
+        createdAt: new Date().toISOString(),
         whatsappMessageId: '',
       });
 
@@ -54,7 +56,7 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
           {
             nameAr: product.nameAr,
             quantity: Number(form.quantity),
-            image: product.previewimage,
+            image: product.imageUrl || (product as any).previewimage,
           },
         ],
         totalPrice: estimatedPrice,
@@ -79,16 +81,28 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
         <p className="text-green-700 text-sm mb-6">
           سيقوم فريق المبيعات بالتواصل معك عبر رقم التليفون لتأكيد السعر وموعد التوصيل.
         </p>
-        <button
-          onClick={() => {
-            setForm({ name: '', phone: '', address: '', quantity: '1' });
-            setSuccess(false);
-            onOrderComplete?.();
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition"
-        >
-          طلب منتج آخر
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => {
+              setTrackingPhone(form.phone);
+              setIsOrderTrackingOpen(true);
+            }}
+            className="bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-black py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 shadow-xs"
+          >
+            <Truck size={18} />
+            <span>تتبع موعد وصول المندوب الآن 🚚</span>
+          </button>
+          <button
+            onClick={() => {
+              setForm({ name: '', phone: '', address: '', quantity: '1' });
+              setSuccess(false);
+              onOrderComplete?.();
+            }}
+            className="bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 px-6 rounded-xl transition"
+          >
+            طلب منتج آخر
+          </button>
+        </div>
       </div>
     );
   }
@@ -113,9 +127,11 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
             type="text"
             value={form.name}
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="مثال: أحمد محمد علي"
+            placeholder="الاسم بالكامل أو اسم المستلم"
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-right"
           />
+        </div>
+
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">رقم التليفون</label>
           <input
@@ -177,4 +193,3 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
     </div>
   );
 };
-        </div>

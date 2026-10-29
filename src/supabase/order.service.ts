@@ -59,4 +59,33 @@ export const orderService = {
       .eq('id', id);
     if (error) throw error;
   },
+
+  /** البحث عن طلبات العميل برقم التليفون */
+  async getByPhone(phone: string): Promise<FirebaseOrder[]> {
+    const cleanPhone = phone.trim().replace(/\s+/g, '');
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .ilike('customer_phone', `%${cleanPhone}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Error fetching orders by phone:', error);
+      return [];
+    }
+    return (data || []).map((row) => ({
+      id: row.id,
+      orderId: row.order_id,
+      customerPhone: row.customer_phone,
+      customerName: row.customer_name,
+      productId: row.product_id || '',
+      productNameAr: row.product_name,
+      selectedColor: row.selected_color || '',
+      selectedSize: row.selected_size || '',
+      quantity: row.quantity || 1,
+      totalPrice: row.total_price || 0,
+      status: row.status as FirebaseOrder['status'],
+      createdAt: row.created_at,
+    }));
+  },
 };

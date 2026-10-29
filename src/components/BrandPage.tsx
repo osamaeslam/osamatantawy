@@ -101,22 +101,21 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
                   {product.nameAr}
                 </h3>
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <span>{product.colors.length} لون</span>
-                  <span>{product.sizes.length} مقاس</span>
-                  <span className="font-bold text-green-600">متوفر</span>
+                  <span>{product.sizevariants?.length || 1} موديل</span>
+                  <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">متاح للمعاينة</span>
                 </div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 gap-2">
                   <button
                     onClick={() => setSelectedProduct(product)}
-                    className="flex-1 bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1"
+                    className="flex-1 bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-xs"
                   >
-                    <PhoneCall size={14} /> استفسار عن السعر
+                    <PhoneCall size={14} /> طلب معاينة واستفسار
                   </button>
                   <button
                     onClick={() => toggleWishlist(product)}
                     className="p-2 border border-gray-200 hover:border-red-300 rounded-lg text-gray-400 hover:text-red-500 transition flex items-center justify-center"
                   >
-                    <Heart size={16} className={isInWishlist(product) ? 'text-red-500 fill-red-500' : ''} />
+                    <Heart size={16} className={isInWishlist(product.id) ? 'text-red-500 fill-red-500' : ''} />
                   </button>
                 </div>
               </div>

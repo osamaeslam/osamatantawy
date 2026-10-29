@@ -10,6 +10,11 @@ import type { FirebaseProduct } from '../types/firebase';
 import type { FirebaseOrder } from '../types/firebase';
 import { Package, Building2 } from 'lucide-react';
 import { StatCard } from './StatCard';
+import { OverviewTab } from './OverviewTab';
+import { ProductsTab } from './ProductsTab';
+import { OrdersTab } from './OrdersTab';
+import { VisitorsTab } from './VisitorsTab';
+import { ClicksTab } from './ClicksTab';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel'>('overview');
@@ -145,7 +150,7 @@ export const AdminDashboard: React.FC = () => {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveTab(tab.id as any)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 activeTab === tab.id ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}

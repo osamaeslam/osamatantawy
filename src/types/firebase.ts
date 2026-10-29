@@ -28,6 +28,9 @@ export interface FirebaseOrder {
   status: "pending" | "confirmed" | "delivered" | "cancelled";
   createdAt: any;
   whatsappMessageId?: string;
+  customerAddress?: string;
+  imageUrl?: string;
+  whatsappSent?: boolean;
 }
 
 export type BotState =
