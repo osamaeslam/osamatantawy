@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
