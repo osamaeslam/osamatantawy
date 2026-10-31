@@ -139,9 +139,9 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       if (combined.length === 0 && (searchTarget === '01012345678' || searchTarget === '15218' || searchTarget === '01111111111')) {
         combined.push({
           orderId: 'TG-884920',
-          customerName: 'أحمد محمود العوضي',
+          customerName: 'عميل طنطاوي جروب',
           customerPhone: searchTarget,
-          productName: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD بريسيفر داخلي',
+          productName: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت',
           quantity: 1,
           status: 'dispatched',
           statusLabelAr: 'المندوب في الطريق إليك للمعاينة المنزلية',
@@ -150,7 +150,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           representativeName: 'ك/ حسام حسن (مندوب طنطاوي جروب)',
           representativePhone: '01099887766',
           createdAt: new Date().toISOString(),
-          address: 'القاهرة - مدينة نصر'
+          address: 'القاهرة والجيزة'
         });
       }
 

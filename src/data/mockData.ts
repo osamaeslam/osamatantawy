@@ -369,48 +369,14 @@ export const PRODUCTS: Product[] = [
   }
 ];
 
-export const INITIAL_ORDERS: OrderItem[] = [
-  {
-    orderid: 'TG-83533963',
-    name: 'Samsung 55-inch Crystal UHD 4K Smart TV',
-    nameAr: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت',
-    description: 'Delivery expected within 24-48 business hours.',
-    descriptionAr: 'قيد الشحن مع مندوب طنطاوي جروب - متوقع التسليم غداً مع حق المعاينة.',
-    status: 'Dispatched',
-    productimage: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
-    price: 14429,
-    date: '2024-04-12'
-  },
-  {
-    orderid: 'TG-63428737',
-    name: 'Philips XXL Air Fryer 7.3L',
-    nameAr: 'قلاية هوائية فيليبس XXL سعة 7.3 لتر ديجيتال',
-    description: 'Order was cancelled per customer request.',
-    descriptionAr: 'تم إلغاء الطلب بناء على طلب العميل.',
-    status: 'Cancelled',
-    productimage: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop&q=80',
-    price: 7499,
-    date: '2024-03-18'
-  },
-  {
-    orderid: 'TG-83658319',
-    name: 'Sharp Refrigerator 450L NoFrost Digital Inverter',
-    nameAr: 'ثلاجة شارب 450 لتر ديجيتال نوفروست انفرتر',
-    description: 'Delivered successfully and signed by customer.',
-    descriptionAr: 'تم التسليم بنجاح والمعاينة وتم تقييم الطلب بـ 5 نجوم.',
-    status: 'Completed',
-    productimage: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=800&auto=format&fit=crop&q=80',
-    price: 27625,
-    date: '2024-02-25'
-  }
-];
+export const INITIAL_ORDERS: OrderItem[] = [];
 
 export const INITIAL_USER: UserProfile = {
-  name: 'زائر',
+  name: '',
   email: '',
   phone: '',
   address: '',
-  city: 'القاهرة، مصر',
+  city: '',
   avatar: ''
 };
 

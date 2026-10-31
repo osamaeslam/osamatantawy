@@ -28,10 +28,10 @@ export const CheckoutModal: React.FC = () => {
     setTrackingPhone
   } = useApp();
 
-  const [customerName, setCustomerName] = useState(isLoggedIn && user.name !== 'زائر' ? user.name : '');
-  const [shippingAddress, setShippingAddress] = useState(user.address || '');
-  const [phone, setPhone] = useState(user.phone || '');
-  const [city, setCity] = useState(user.city || 'القاهرة والجيزة');
+  const [customerName, setCustomerName] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('القاهرة والجيزة');
   const [notes, setNotes] = useState('');
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
 

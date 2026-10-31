@@ -2,16 +2,25 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Register service worker for PWA installation capability
+// Register service worker for PWA installation capability & clear old caches
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        for (const name of names) {
+          if (name !== 'tantawy-group-v3') {
+            caches.delete(name);
+          }
+        }
+      });
+    }
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('Tantawy Group PWA ServiceWorker registered with scope:', registration.scope);
+        registration.update();
       })
       .catch((error) => {
-        console.warn('PWA ServiceWorker registration failed:', error);
+        console.warn('PWA ServiceWorker registration:', error);
       });
   });
 }

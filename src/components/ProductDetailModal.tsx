@@ -57,7 +57,7 @@ export const ProductDetailModal: React.FC = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [reviewAuthor, setReviewAuthor] = useState(user.name !== 'زائر' ? user.name : '');
+  const [reviewAuthor, setReviewAuthor] = useState('');
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 

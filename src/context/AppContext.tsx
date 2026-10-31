@@ -24,6 +24,8 @@ interface AppContextType {
   setIsCheckoutModalOpen: (open: boolean) => void;
   isOrderTrackingOpen: boolean;
   setIsOrderTrackingOpen: (open: boolean) => void;
+  isUserGuideOpen: boolean;
+  setIsUserGuideOpen: (open: boolean) => void;
   trackingPhone: string;
   setTrackingPhone: (phone: string) => void;
   user: UserProfile;
@@ -69,6 +71,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
+  const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
   const [trackingPhone, setTrackingPhone] = useState('');
   const [user, setUser] = useState<UserProfile>(INITIAL_USER);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -77,6 +80,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
+
+  // تنظيف أي بيانات مستخدم مخزنة مسبقاً (إلغاء نظام المستخدمين نهائياً)
+  useEffect(() => {
+    setIsLoggedIn(false);
+    setUser({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      avatar: ''
+    });
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   // Cart calculations
   const cartSubtotal = cart.reduce((sum, item) => {
@@ -238,6 +260,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsCheckoutModalOpen,
         isOrderTrackingOpen,
         setIsOrderTrackingOpen,
+        isUserGuideOpen,
+        setIsUserGuideOpen,
         trackingPhone,
         setTrackingPhone,
         user,

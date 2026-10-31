@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, Grid, Zap, ShoppingBag, User, Truck } from 'lucide-react';
+import { Home, Grid, Zap, ShoppingBag, Truck } from 'lucide-react';
 
 interface NavItem {
-  id: 'home' | 'categories' | 'deals' | 'cart' | 'profile' | 'tracking';
+  id: 'home' | 'categories' | 'deals' | 'cart' | 'tracking';
   label: string;
   icon: any;
   isDeal?: boolean;
@@ -16,9 +16,9 @@ export const BottomNavigation: React.FC = () => {
   const navItems: NavItem[] = [
     { id: 'home', label: 'الرئيسية', icon: Home },
     { id: 'categories', label: 'الأقسام', icon: Grid },
-    { id: 'tracking', label: 'تتبع الطلب', icon: Truck },
+    { id: 'deals', label: 'العروض', icon: Zap, isDeal: true },
     { id: 'cart', label: 'المعاينة', icon: ShoppingBag, badge: cartCount },
-    { id: 'profile', label: 'حسابي', icon: User }
+    { id: 'tracking', label: 'تتبع الطلب', icon: Truck },
   ];
 
   return (

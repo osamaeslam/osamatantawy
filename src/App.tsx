@@ -8,13 +8,12 @@ import { HomePage } from './components/HomePage';
 import { CategoriesPage } from './components/CategoriesPage';
 import { DealsPage } from './components/DealsPage';
 import { CartPage } from './components/CartPage';
-import { ProfilePage } from './components/ProfilePage';
 import { Footer } from './components/Footer';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
-import { AuthModal } from './components/AuthModal';
 import { OrderTrackingModal } from './components/OrderTrackingModal';
+import { UserGuideModal } from './components/UserGuideModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
@@ -22,13 +21,33 @@ import { Smartphone, Monitor, ArrowLeft, Building2 } from 'lucide-react';
 import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, viewMode, setViewMode, isOrderTrackingOpen, setIsOrderTrackingOpen, trackingPhone } = useApp();
+  const { 
+    activeTab, 
+    viewMode, 
+    setViewMode, 
+    isOrderTrackingOpen, 
+    setIsOrderTrackingOpen, 
+    isUserGuideOpen, 
+    setIsUserGuideOpen, 
+    trackingPhone 
+  } = useApp();
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
-  // تتبع الزائر عند تحميل الصفحة
+  // تتبع الزائر واكتشاف مسار لوحة الإدارة تلقائياً
   React.useEffect(() => {
     visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
+
+    if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+      setShowAdmin(true);
+    }
+    const handleHash = () => {
+      if (window.location.hash === '#admin') {
+        setShowAdmin(true);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
   // إذا تم اختيار ماركة، عرض صفحة المarka مباشرة
@@ -91,8 +110,6 @@ const MainLayout: React.FC = () => {
         return <DealsPage />;
       case 'cart':
         return <CartPage />;
-      case 'profile':
-        return <ProfilePage />;
       default:
         return <HomePage />;
     }
@@ -146,11 +163,15 @@ const MainLayout: React.FC = () => {
         <ProductDetailModal />
         <AboutCompanyModal />
         <CheckoutModal />
-        <AuthModal />
         <OrderTrackingModal
           isOpen={isOrderTrackingOpen}
           onClose={() => setIsOrderTrackingOpen(false)}
           initialPhone={trackingPhone}
+        />
+        <UserGuideModal
+          isOpen={isUserGuideOpen}
+          onClose={() => setIsUserGuideOpen(false)}
+          onOpenAdmin={() => setShowAdmin(true)}
         />
       </div>
     );
@@ -200,11 +221,15 @@ const MainLayout: React.FC = () => {
       <ProductDetailModal />
       <AboutCompanyModal />
       <CheckoutModal />
-      <AuthModal />
       <OrderTrackingModal
         isOpen={isOrderTrackingOpen}
         onClose={() => setIsOrderTrackingOpen(false)}
         initialPhone={trackingPhone}
+      />
+      <UserGuideModal
+        isOpen={isUserGuideOpen}
+        onClose={() => setIsUserGuideOpen(false)}
+        onOpenAdmin={() => setShowAdmin(true)}
       />
     </div>
   );

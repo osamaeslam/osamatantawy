@@ -18,7 +18,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
-  const { setActiveTab, setSelectedCategory, setIsAboutModalOpen } = useApp();
+  const { setActiveTab, setSelectedCategory, setIsAboutModalOpen, setIsUserGuideOpen } = useApp();
 
   return (
     <footer className="bg-slate-950 text-gray-300 pt-12 pb-24 md:pb-12 border-t border-slate-800">
@@ -151,12 +151,20 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             <div className="pt-1">
               <PWAInstallButton />
             </div>
-            <button
-              onClick={() => setIsAboutModalOpen(true)}
-              className="text-xs text-blue-400 hover:text-blue-300 font-bold underline block mt-2"
-            >
-              عن مجموعة طنطاوي وضماناتنا
-            </button>
+            <div className="pt-2 flex flex-col gap-2">
+              <button
+                onClick={() => setIsUserGuideOpen(true)}
+                className="bg-blue-900/80 hover:bg-blue-800 text-yellow-300 font-bold px-3 py-1.5 rounded-xl text-xs transition border border-blue-700/50 flex items-center justify-center gap-1.5"
+              >
+                <span>📖 دليل الاستخدام (م/ سجى)</span>
+              </button>
+              <button
+                onClick={() => setIsAboutModalOpen(true)}
+                className="text-xs text-blue-400 hover:text-blue-300 font-bold underline text-right"
+              >
+                عن مجموعة طنطاوي وضماناتنا
+              </button>
+            </div>
           </div>
         </div>
 
@@ -164,10 +172,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
         <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <div className="flex items-center gap-3">
             <p>© {new Date().getFullYear()} مجموعة طنطاوي (TANTAWY GROUP) - جميع الحقوق محفوظة</p>
+            <button
+              onClick={() => setIsUserGuideOpen(true)}
+              className="text-yellow-400 hover:text-yellow-300 text-[11px] font-bold transition cursor-pointer"
+              title="دليل استخدام المنظومة"
+            >
+              📖 دليل المنظومة
+            </button>
             {onOpenAdmin && (
               <button
                 onClick={onOpenAdmin}
-                className="text-slate-600 hover:text-slate-400 text-[11px] transition cursor-pointer"
+                className="text-slate-500 hover:text-slate-300 text-[11px] transition cursor-pointer"
                 title="لوحة الإدارة"
               >
                 ⚙️ الإدارة
