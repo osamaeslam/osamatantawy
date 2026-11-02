@@ -1,6 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, OrderItem, UserProfile, HomePageConfig } from '../types';
 import { PRODUCTS, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES, INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
+import { normalizeImageUrl } from '../services/image-url';
+
+/** يضمن أن صور المنتجات (من الشيت/الدريفي/المخزّن) قابلة للعرض مباشرة */
+const withNormalizedImages = (list: Product[]): Product[] =>
+  (list || []).map((p) => ({
+    ...p,
+    previewimage: normalizeImageUrl(p.previewimage),
+    imageLink: normalizeImageUrl(p.imageLink),
+    previewimages: Array.isArray(p.previewimages)
+      ? p.previewimages.map((u) => normalizeImageUrl(u))
+      : p.previewimages,
+  }));
 
 interface AppContextType {
   products: Product[];
@@ -67,12 +79,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem('tantawy_custom_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return withNormalizedImages(parsed);
       }
     } catch (e) {
       console.warn('Fallback to default products:', e);
     }
-    return PRODUCTS;
+    return withNormalizedImages(PRODUCTS);
   });
 
   // Homepage CMS Config
@@ -159,9 +171,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // استيراد منتجات شيت جوجل أو ملف الإكسل
   const importProducts = (newProducts: Product[]) => {
-    setProducts(newProducts);
+    const normalized = withNormalizedImages(newProducts);
+    setProducts(normalized);
     try {
-      localStorage.setItem('tantawy_custom_products', JSON.stringify(newProducts));
+      localStorage.setItem('tantawy_custom_products', JSON.stringify(normalized));
     } catch (e) {
       console.error('Error saving custom products:', e);
     }

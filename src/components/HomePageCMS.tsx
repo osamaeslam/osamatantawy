@@ -21,6 +21,7 @@ import {
   Send
 } from 'lucide-react';
 import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
+import { normalizeImageUrl } from '../services/image-url';
 
 export const HomePageCMS: React.FC = () => {
   const { homePageConfig, updateHomePageConfig } = useApp();
@@ -334,7 +335,7 @@ export const HomePageCMS: React.FC = () => {
             <div className={`relative overflow-hidden rounded-2xl min-h-[200px] md:min-h-[240px] bg-gradient-to-r ${activeBanner.bgGradient || 'from-blue-950 to-indigo-950'} flex items-center p-6 md:p-8 text-white shadow-md`}>
               <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
                 <img
-                  src={activeBanner.image}
+                  src={normalizeImageUrl(activeBanner.image)}
                   alt=""
                   className="w-full h-full object-cover"
                   onError={(e: any) => {
