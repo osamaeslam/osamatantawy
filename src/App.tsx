@@ -17,7 +17,7 @@ import { UserGuideModal } from './components/UserGuideModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
-import { Smartphone, Monitor, ArrowLeft, Building2 } from 'lucide-react';
+import { Smartphone, Monitor, ArrowLeft } from 'lucide-react';
 import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
@@ -63,13 +63,6 @@ const MainLayout: React.FC = () => {
               <ArrowLeft size={18} /> العودة
             </button>
             <h1 className="text-xl font-black text-blue-900">{selectedBrand}</h1>
-            <button
-              onClick={() => setShowAdmin(true)}
-              className="hidden md:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition px-2.5 py-1 rounded-full text-[11px] font-semibold text-gray-200"
-            >
-              <Building2 size={12} />
-              <span>عن الشركة</span>
-            </button>
           </div>
         </header>
 
@@ -171,7 +164,6 @@ const MainLayout: React.FC = () => {
         <UserGuideModal
           isOpen={isUserGuideOpen}
           onClose={() => setIsUserGuideOpen(false)}
-          onOpenAdmin={() => setShowAdmin(true)}
         />
       </div>
     );
@@ -189,7 +181,7 @@ const MainLayout: React.FC = () => {
         {renderContent()}
       </main>
 
-      <Footer onOpenAdmin={() => setShowAdmin(true)} />
+      <Footer />
       <BottomNavigation />
       <FloatingHotlineButton />
 
@@ -229,7 +221,6 @@ const MainLayout: React.FC = () => {
       <UserGuideModal
         isOpen={isUserGuideOpen}
         onClose={() => setIsUserGuideOpen(false)}
-        onOpenAdmin={() => setShowAdmin(true)}
       />
     </div>
   );

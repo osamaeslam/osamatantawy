@@ -60,10 +60,10 @@ export const Header: React.FC = () => {
           <button
             onClick={() => setIsUserGuideOpen(true)}
             className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-full text-[11px] font-bold transition shadow-xs border border-white/20"
-            title="دليل استخدام وتشغيل المنظومة مع م/ سجى"
+            title="دليل الاستخدام"
           >
             <BookOpen size={13} className="text-yellow-300" />
-            <span>دليل الاستخدام (م/ سجى) 📖</span>
+            <span>دليل الاستخدام 📖</span>
           </button>
           <button
             onClick={() => setIsOrderTrackingOpen(true)}

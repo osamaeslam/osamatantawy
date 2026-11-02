@@ -57,24 +57,14 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     setLoggingIn(true);
     try {
-      let admin = null;
-      try {
-        admin = await adminAuthService.login(adminUsername.trim(), adminPassword);
-      } catch (err) {
-        console.warn('Database auth check fallback:', err);
-      }
-
-      if (admin || (adminUsername.trim().toLowerCase() === 'saja' && adminPassword === 'osama442')) {
+      const admin = await adminAuthService.login(adminUsername.trim(), adminPassword);
+      if (admin) {
         setIsAuthenticated(true);
       } else {
         alert('اسم المستخدم أو كلمة المرور غير صحيحة');
       }
     } catch (err: any) {
-      if (adminUsername.trim().toLowerCase() === 'saja' && adminPassword === 'osama442') {
-        setIsAuthenticated(true);
-      } else {
-        alert('حدث خطأ أثناء الاتصال بالخادم: ' + err.message);
-      }
+      alert('حدث خطأ أثناء الاتصال بالخادم: ' + err.message);
     } finally {
       setLoggingIn(false);
     }
@@ -121,16 +111,16 @@ export const AdminDashboard: React.FC = () => {
           </form>
 
           <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col items-center gap-2">
-            <div className="text-xs text-gray-500 text-center">
-              اسم المستخدم: <span className="font-bold text-blue-900 font-mono">saja</span> | كلمة المرور: <span className="font-bold text-emerald-700 font-mono">osama442</span>
-            </div>
+            <p className="text-[11px] text-gray-400 text-center">
+              الدخول مخصص للمسؤولين فقط
+            </p>
             <button
               type="button"
               onClick={() => setIsUserGuideOpen(true)}
               className="text-xs text-blue-700 hover:text-blue-900 font-bold hover:underline flex items-center gap-1"
             >
               <BookOpen size={13} />
-              <span>عرض دليل الاستخدام الشامل (م/ سجى)</span>
+              <span>عرض دليل الاستخدام</span>
             </button>
           </div>
         </div>
@@ -162,7 +152,7 @@ export const AdminDashboard: React.FC = () => {
               className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-lg font-bold text-xs transition flex items-center gap-1.5"
             >
               <BookOpen size={14} />
-              <span>دليل المنظومة (م/ سجى) 📖</span>
+              <span>دليل الاستخدام 📖</span>
             </button>
             <button
               onClick={() => setIsAuthenticated(false)}

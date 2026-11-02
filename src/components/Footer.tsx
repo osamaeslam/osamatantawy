@@ -13,11 +13,7 @@ import {
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
-interface FooterProps {
-  onOpenAdmin?: () => void;
-}
-
-export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
+export const Footer: React.FC = () => {
   const { setActiveTab, setSelectedCategory, setIsAboutModalOpen, setIsUserGuideOpen, setIsOrderTrackingOpen } = useApp();
 
   return (
@@ -156,7 +152,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
                 onClick={() => setIsUserGuideOpen(true)}
                 className="bg-blue-900/80 hover:bg-blue-800 text-yellow-300 font-bold px-3 py-1.5 rounded-xl text-xs transition border border-blue-700/50 flex items-center justify-center gap-1.5"
               >
-                <span>📖 دليل الاستخدام (م/ سجى)</span>
+                <span>📖 دليل الاستخدام</span>
               </button>
               <button
                 onClick={() => setIsAboutModalOpen(true)}
@@ -175,19 +171,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
             <button
               onClick={() => setIsUserGuideOpen(true)}
               className="text-yellow-400 hover:text-yellow-300 text-[11px] font-bold transition cursor-pointer"
-              title="دليل استخدام المنظومة"
+              title="دليل الاستخدام"
             >
-              📖 دليل المنظومة
+              📖 دليل الاستخدام
             </button>
-            {onOpenAdmin && (
-              <button
-                onClick={onOpenAdmin}
-                className="text-slate-500 hover:text-slate-300 text-[11px] transition cursor-pointer"
-                title="لوحة الإدارة"
-              >
-                ⚙️ الإدارة
-              </button>
-            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-emerald-400 font-bold">دفع موحد عند الاستلام بعد المعاينة</span>
