@@ -10,32 +10,31 @@ export interface AdminUser {
 export const adminAuthService = {
   /** تسجيل دخول المسؤول */
   async login(username: string, password: string): Promise<AdminUser | null> {
+    // 1) الطريقة الآمنة: عبر دالة RPC (بعد تشغيل supabase/admin_users_security.sql)
+    //    لا تُرجع أي بيانات عند عدم التطابق، والجدول نفسه مقفول عن المتصفح.
+    try {
+      const { data, error } = await supabase.rpc('verify_admin_login', {
+        p_username: username,
+        p_password: password,
+      });
+      if (!error) {
+        const row = Array.isArray(data) ? data[0] : data;
+        return (row as AdminUser) ?? null;
+      }
+    } catch {
+      // الدالة غير موجودة بعد (لم يُشغّل سكربت التأمين) — نكمل للاحتياطي
+    }
+
+    // 2) احتياطي مؤقت (يعمل فقط قبل تشغيل سكربت التأمين)
     const { data, error } = await supabase
       .from('admin_users')
       .select('id, username, full_name, role')
       .eq('username', username)
       .eq('password_hash', password)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
-
-    return {
-      id: data.id,
-      username: data.username,
-      full_name: data.full_name,
-      role: data.role,
-    };
-  },
-
-  /** جلب جميع المسؤولين (لعرضهم في الإدارة لاحقًا) */
-  async getAll(): Promise<AdminUser[]> {
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('id, username, full_name, role, is_active, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    return data as AdminUser;
   },
 };
