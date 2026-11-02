@@ -1,27 +1,40 @@
-// Service Worker for Tantawy Group PWA (Network-First to always serve latest code)
-const CACHE_NAME = 'tantawy-group-v3';
+// Service Worker for Tantawy Group PWA (Network-First, same-origin only)
+const CACHE_NAME = 'tantawy-group-v4';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => caches.delete(key))
-      );
-    })
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  if (!event.request.url.startsWith('http')) return;
+const offlineResponse = () =>
+  new Response(
+    '<!doctype html><html lang="ar"><body style="font-family:sans-serif;text-align:center;padding:40px">تعذر الاتصال بالإنترنت. من فضلك حدّث الصفحة.</body></html>',
+    { status: 503, statusText: 'Offline', headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
 
-  // Always fetch latest from network first
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  let url;
+  try { url = new URL(req.url); } catch (e) { return; }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+  // لا نتدخل في أي طلب خارجي (صور unsplash/drive، أو Supabase API)
+  if (url.origin !== self.location.origin) return;
+
+  // نفس الأصل: نجرب الشبكة أولاً، ولو فشلت نرجع من الكاش أو رد آمن
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(req).catch(() =>
+      caches.match(req).then((cached) => cached || offlineResponse())
+    )
   );
 });
