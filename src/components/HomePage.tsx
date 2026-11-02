@@ -39,13 +39,6 @@ export const HomePage: React.FC = () => {
     homePageConfig
   } = useApp();
 
-  // Pagination setup - show 10 products per page
-  const { paginatedProducts, currentPage, totalPagesForDisplay, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
-    products,
-    pageSize: 10,
-    initialPage: 1,
-  });
-
   const heroBanners = homePageConfig.heroBanners && homePageConfig.heroBanners.length > 0 
     ? homePageConfig.heroBanners 
     : [
@@ -72,7 +65,7 @@ export const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [heroBanners.length]);
 
-  // Filter products if search is active, then apply pagination
+  // Filter products if search is active
   const filteredProducts = searchQuery
     ? products.filter(
         (p) =>
@@ -81,20 +74,19 @@ export const HomePage: React.FC = () => {
           p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.categoryAr.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : paginatedProducts();
+    : products;
 
-// Apply pagination to filtered/search results
-  const { paginatedProducts: paginatedFilteredProducts, totalPagesForDisplay: filteredTotalPages } = useProductPagination({
+  // Single pagination source of truth - show 10 products per page
+  // (search results when searching, all products otherwise)
+  const { paginatedProducts, currentPage, totalPages, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage } = useProductPagination({
     products: filteredProducts,
     pageSize: 10,
     initialPage: 1,
   });
 
-  const deals = paginatedFilteredProducts.filter((p) => p.isDeal);
-  const newArrivals = paginatedFilteredProducts.slice(2, 7);
-
-// Use filtered total pages when searching, otherwise use regular total pages
-  const totalPagesForDisplay = searchQuery ? filteredTotalPages : totalPages;
+  const pageProducts = paginatedProducts();
+  const deals = pageProducts.filter((p) => p.isDeal);
+  const newArrivals = pageProducts.slice(2, 7);
 
   return (
     <div className="space-y-6 md:space-y-10 pb-16">

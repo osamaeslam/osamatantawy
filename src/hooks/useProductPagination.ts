@@ -74,7 +74,7 @@ export function useProductPagination({
     }
 
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-  }, [safeCurrentPage, totalPages, totalDisplay]);
+  }, [safeCurrentPage, totalPages]);
 
   return {
     // State
