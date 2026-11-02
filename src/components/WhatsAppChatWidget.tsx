@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { MessageCircle, X, Send, Phone, CheckCircle2 } from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { normalizeWhatsAppNumber } from "../services/whatsapp-order";
 
 interface Props {
-  phoneNumber: string; // رقم الخط الساخن أو رقم البوت
+  phoneNumber?: string; // رقم الخط الساخن أو رقم البوت
 }
 
 export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
+  const { whatsappNumber } = useApp();
+  const activeWhatsApp = normalizeWhatsAppNumber(whatsappNumber || phoneNumber || '201521800000');
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ text: string; sender: "bot" | "user" }[]>([
     { text: "أهلاً! كيف يمكنني مساعدتك في طلبات طنطاوي جروب؟", sender: "bot" },
@@ -77,7 +81,7 @@ export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
           <div className="bg-emerald-50 px-3 py-2 border-b border-emerald-100 flex items-center justify-between text-xs">
             <span className="text-emerald-950 font-bold">تفضل التحدث في تطبيق واتساب؟</span>
             <a
-              href={`https://wa.me/201521800000?text=${encodeURIComponent('السلام عليكم فريق مبيعات طنطاوي جروب، أود الاستفسار عن الأجهزة المنزلية المتاحة والمعاينة المجانية')}`}
+              href={`https://wa.me/${activeWhatsApp}?text=${encodeURIComponent('السلام عليكم فريق مبيعات طنطاوي جروب، أود الاستفسار عن الأجهزة المنزلية المتاحة والمعاينة المجانية')}`}
               target="_blank"
               rel="noreferrer"
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition shadow-xs"

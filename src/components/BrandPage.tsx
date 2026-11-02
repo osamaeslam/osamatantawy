@@ -15,7 +15,6 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
     isInWishlist,
     setSelectedProduct,
     setActiveTab,
-    setIsAuthModalOpen,
   } = useApp();
 
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
@@ -131,16 +130,13 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
             تواصل مع فريق المبيعات للحصول على أفضل أسعار الجملة والعروض الخاصة بالتجار.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setActiveTab('cart');
-            setIsAuthModalOpen(true);
-          }}
-          className="bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black px-6 py-3 rounded-xl text-sm shadow-lg transition"
+        <a
+          href="tel:15218"
+          className="bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black px-6 py-3 rounded-xl text-sm shadow-lg transition inline-flex items-center gap-2"
         >
-          <PhoneCall size={16} className="mr-2" />
-          تواصل للمبيعات
-        </button>
+          <PhoneCall size={16} />
+          <span>تواصل مع المبيعات (15218)</span>
+        </a>
       </div>
     </div>
   );

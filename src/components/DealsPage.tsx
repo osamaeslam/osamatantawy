@@ -19,7 +19,9 @@ export const DealsPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const dealProducts = products.filter((p) => p.discountpercent >= 20);
+  const dealProducts = products.filter((p) => p.isDeal).length > 0 
+    ? products.filter((p) => p.isDeal) 
+    : products.slice(0, 8);
 
   return (
     <div className="space-y-6 pb-16">

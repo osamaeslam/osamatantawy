@@ -33,10 +33,43 @@ export const CategoriesPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'default' | 'rating' | 'name'>('default');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
 
-  // Filter products by selected category and subcategory
-  let filtered = products;
-  if (selectedCategory) {
-    filtered = filtered.filter((p) => p.category === selectedCategory);
+  // Identify active sector
+  const isHomeSector = selectedCategory === 'أجهزة منزلية' || selectedCategory === 'Home Appliances';
+  const isElectricSector = selectedCategory === 'أجهزة كهربيه' || selectedCategory === 'Electrical Appliances';
+
+  // Products belonging to the active sector
+  const sectorProducts = products.filter((p) => {
+    if (isHomeSector) {
+      return p.sector === 'أجهزة منزلية' || p.categoryAr === 'أجهزة منزلية' || p.category === 'Home Appliances';
+    }
+    if (isElectricSector) {
+      return p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه' || p.category === 'Electrical Appliances';
+    }
+    if (selectedCategory) {
+      return p.category === selectedCategory || p.categoryAr === selectedCategory || p.sector === selectedCategory;
+    }
+    return true;
+  });
+
+  // Extract distinct Family Names / Item Groups dynamically from the current sector products
+  const availableFamilies = Array.from(
+    new Set(
+      sectorProducts
+        .map((p) => p.familyName || p.itemGroup)
+        .filter((val): val is string => Boolean(val && val.trim() !== ''))
+    )
+  );
+
+  // Filter products by selected category and subcategory (Family Name)
+  let filtered = sectorProducts;
+  if (selectedSubcategory) {
+    filtered = filtered.filter(
+      (p) =>
+        p.familyName === selectedSubcategory ||
+        p.itemGroup === selectedSubcategory ||
+        p.categoryAr === selectedSubcategory ||
+        p.nameAr.includes(selectedSubcategory)
+    );
   }
 
   // Sorting without prices
@@ -46,17 +79,27 @@ export const CategoriesPage: React.FC = () => {
     return 0;
   });
 
-  const activeCategoryObj = CATEGORIES.find((c) => c.name === selectedCategory);
+  const homeCount = products.filter(p => p.sector === 'أجهزة منزلية' || p.categoryAr === 'أجهزة منزلية').length;
+  const electricCount = products.filter(p => p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه').length;
 
   return (
     <div className="space-y-6 pb-16">
       {/* Category Pills Header */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base md:text-lg font-black text-gray-900">
-            {activeCategoryObj ? activeCategoryObj.nameAr : 'جميع أقسام طنطاوي جروب'}
+          <h2 className="text-base md:text-lg font-black text-gray-900 flex items-center gap-2">
+            <span>
+              {isHomeSector
+                ? 'أجهزة منزلية كبرى'
+                : isElectricSector
+                ? 'أجهزة كهربيه وشاشات وتكييفات'
+                : selectedCategory || 'جميع منتجات وأقسام طنطاوي جروب'}
+            </span>
+            <span className="text-xs bg-gray-100 text-gray-600 font-bold px-2.5 py-0.5 rounded-full">
+              {filtered.length} صنف معروض
+            </span>
           </h2>
-          {selectedCategory && (
+          {(selectedCategory || selectedSubcategory) && (
             <button
               onClick={() => {
                 setSelectedCategory(null);
@@ -64,59 +107,81 @@ export const CategoriesPage: React.FC = () => {
               }}
               className="text-xs text-blue-800 font-bold hover:underline"
             >
-              عرض كل الأقسام
+              عرض كل المنتجات
             </button>
           )}
         </div>
 
-        {/* Categories scrollable chips */}
+        {/* Sectors scrollable chips */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           <button
             onClick={() => {
               setSelectedCategory(null);
               setSelectedSubcategory(null);
             }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
               selectedCategory === null
                 ? 'bg-blue-900 text-white shadow-xs'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            الكل ({products.length})
+            جميع المنتجات ({products.length})
           </button>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.name}
-              onClick={() => {
-                setSelectedCategory(cat.name);
-                setSelectedSubcategory(null);
-              }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition ${
-                selectedCategory === cat.name
-                  ? 'bg-blue-900 text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {cat.nameAr}
-            </button>
-          ))}
+
+          <button
+            onClick={() => {
+              setSelectedCategory('أجهزة منزلية');
+              setSelectedSubcategory(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
+              isHomeSector
+                ? 'bg-blue-900 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            أجهزة منزلية ({homeCount})
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedCategory('أجهزة كهربيه');
+              setSelectedSubcategory(null);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
+              isElectricSector
+                ? 'bg-blue-900 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            أجهزة كهربيه ({electricCount})
+          </button>
         </div>
 
-        {/* Subcategories if category selected */}
-        {activeCategoryObj && (
-          <div className="pt-2 border-t border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] text-gray-400 font-bold shrink-0">التصنيفات:</span>
-            {activeCategoryObj.subcategoriesAr.map((sub) => (
+        {/* Dynamic Subcategories (Family Name) from the loaded items */}
+        {selectedCategory && availableFamilies.length > 0 && (
+          <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-[11px] text-gray-500 font-bold shrink-0 ml-1">الأصناف والعائلات:</span>
+            <button
+              onClick={() => setSelectedSubcategory(null)}
+              className={`text-xs px-2.5 py-1 rounded-lg font-bold shrink-0 transition ${
+                selectedSubcategory === null
+                  ? 'bg-blue-900 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              الكل
+            </button>
+            {availableFamilies.map((family) => (
               <button
-                key={sub}
-                onClick={() => setSelectedSubcategory(selectedSubcategory === sub ? null : sub)}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium shrink-0 transition ${
-                  selectedSubcategory === sub
-                    ? 'bg-blue-100 text-blue-900 font-bold'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                key={family}
+                onClick={() => setSelectedSubcategory(selectedSubcategory === family ? null : family)}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium shrink-0 transition ${
+                  selectedSubcategory === family
+                    ? 'bg-blue-100 text-blue-900 font-bold ring-1 ring-blue-300'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                 }`}
               >
-                {sub}
+                {family}
               </button>
             ))}
           </div>

@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
-import { TANTAWY_HOTLINE, TANTAWY_SALES_PHONE } from '../services/whatsapp-order';
+import { TANTAWY_HOTLINE, getStoredWhatsAppNumber } from '../services/whatsapp-order';
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -281,7 +281,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     <span>الخط الساخن: 15218</span>
                   </a>
                   <a
-                    href={`https://wa.me/${TANTAWY_SALES_PHONE}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن موعد معاينة طلبي لدى طنطاوي جروب برقم هاتف: ' + phoneNumber)}`}
+                    href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن موعد معاينة طلبي لدى طنطاوي جروب برقم هاتف: ' + phoneNumber)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
@@ -400,7 +400,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     </a>
 
                     <a
-                      href={`https://wa.me/${TANTAWY_SALES_PHONE}?text=${encodeURIComponent(`السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد وصول مندوب المعاينة`)}`}
+                      href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(`السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد وصول مندوب المعاينة`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-xs"

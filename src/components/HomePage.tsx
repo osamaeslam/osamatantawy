@@ -34,42 +34,25 @@ export const HomePage: React.FC = () => {
     setSelectedCategory,
     setIsAboutModalOpen,
     searchQuery,
-    setSelectedBrand
+    setSelectedBrand,
+    homePageConfig
   } = useApp();
 
-  // Premium, high-definition promotional banners for Tantawy Group
-  const heroBanners = [
-    {
-      id: 1,
-      title: 'الأجهزة المنزلية الكبرى',
-      subtitle: 'أحدث موديلات الثلاجات، الغسالات، البوتاجازات، والتكييفات بضمان الوكيل الرسمي وضمان طنطاوي',
-      badge: 'أجهزة أصلية معتمدة',
-      buttonText: 'تصفح الأجهزة الكبرى',
-      category: 'Major Appliances',
-      bgGradient: 'from-blue-950 via-blue-900 to-indigo-900',
-      image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=1600&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 2,
-      title: 'عالم الشاشات والتلفزيونات الذكية',
-      subtitle: 'شاشات 4K الترا HD، أوليد وكريستال سمارت من سامسونج وإل جي وتوشيبا بريسيفر داخلي',
-      badge: 'تجربة سينمائية',
-      buttonText: 'تصفح الشاشات',
-      category: 'Smart TVs',
-      bgGradient: 'from-slate-950 via-slate-900 to-blue-950',
-      image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=1600&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 3,
-      title: 'الأجهزة المنزلية الخفيفة والمطبخ',
-      subtitle: 'قلايات هوائية إير فراير، محضرات طعام متكاملة، ميكروويف، مكانس، وماكينات قهوة فاخرة',
-      badge: 'راحة يومية',
-      buttonText: 'تصفح الأجهزة الخفيفة',
-      category: 'Small Appliances',
-      bgGradient: 'from-indigo-950 via-blue-950 to-red-950',
-      image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=1600&auto=format&fit=crop&q=80'
-    }
-  ];
+  const heroBanners = homePageConfig.heroBanners && homePageConfig.heroBanners.length > 0 
+    ? homePageConfig.heroBanners 
+    : [
+        {
+          id: 1,
+          title: 'أجهزة منزلية كبرى بضمان الوكيل',
+          subtitle: 'أحدث موديلات الثلاجات، الغسالات، البوتاجازات، والتكييفات بضمان الوكيل الرسمي وضمان طنطاوي',
+          badge: 'ضمان الوكيل المعتمد',
+          buttonText: 'تصفح الأجهزة المنزلية',
+          category: 'أجهزة منزلية',
+          bgGradient: 'from-blue-950 via-blue-900 to-indigo-900',
+          image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=1600&auto=format&fit=crop&q=80',
+          linkCategory: 'أجهزة منزلية'
+        }
+      ];
 
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
@@ -95,7 +78,6 @@ export const HomePage: React.FC = () => {
   const deals = products.filter((p) => p.isDeal);
   const newArrivals = products.slice(2, 7);
 
-      <BrandsGrid />
   return (
     <div className="space-y-6 md:space-y-10 pb-16">
       {/* Search Result Notification if user searched */}
@@ -158,8 +140,16 @@ export const HomePage: React.FC = () => {
                   <div className="pt-2 flex items-center gap-3">
                     <button
                       onClick={() => {
-                        setSelectedCategory(banner.category);
-                        setActiveTab('categories');
+                        const target = (banner as any).linkCategory || banner.category;
+                        if (target === 'عروض طنطاوي جروب اليومية') {
+                          setActiveTab('deals');
+                        } else if (target === 'جميع المنتجات') {
+                          setActiveTab('home');
+                          setSelectedCategory(null);
+                        } else {
+                          setSelectedCategory(target);
+                          setActiveTab('categories');
+                        }
                       }}
                       className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md"
                     >

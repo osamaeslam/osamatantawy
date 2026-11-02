@@ -18,7 +18,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
-  const { setActiveTab, setSelectedCategory, setIsAboutModalOpen, setIsUserGuideOpen } = useApp();
+  const { setActiveTab, setSelectedCategory, setIsAboutModalOpen, setIsUserGuideOpen, setIsOrderTrackingOpen } = useApp();
 
   return (
     <footer className="bg-slate-950 text-gray-300 pt-12 pb-24 md:pb-12 border-t border-slate-800">
@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('profile')}
+                  onClick={() => setIsOrderTrackingOpen(true)}
                   className="hover:text-blue-400 transition"
                 >
                   تتبع الشحنات والطلبات

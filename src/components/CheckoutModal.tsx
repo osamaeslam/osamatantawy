@@ -21,7 +21,6 @@ export const CheckoutModal: React.FC = () => {
     cartTotal, 
     user, 
     isLoggedIn,
-    updateUserProfile,
     createOrder,
     setActiveTab,
     setIsOrderTrackingOpen,
@@ -44,8 +43,8 @@ export const CheckoutModal: React.FC = () => {
       'دفع موحد عند الاستلام - طنطاوي جروب (مع حق المعاينة المجانية)'
     );
     if (order) {
-      if (customerName) {
-        updateUserProfile({ name: customerName, phone, address: shippingAddress, city });
+      if (phone) {
+        setTrackingPhone(phone);
       }
       setCompletedOrder(order);
     }
@@ -54,7 +53,11 @@ export const CheckoutModal: React.FC = () => {
   const handleFinish = () => {
     setCompletedOrder(null);
     setIsCheckoutModalOpen(false);
-    setActiveTab('profile');
+    if (phone) {
+      setTrackingPhone(phone);
+      setIsOrderTrackingOpen(true);
+    }
+    setActiveTab('home');
   };
 
   return (

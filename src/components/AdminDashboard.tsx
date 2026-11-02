@@ -17,9 +17,11 @@ import { OrdersTab } from './OrdersTab';
 import { VisitorsTab } from './VisitorsTab';
 import { ClicksTab } from './ClicksTab';
 
+import { HomePageCMS } from './HomePageCMS';
+
 export const AdminDashboard: React.FC = () => {
-  const { setIsUserGuideOpen } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel'>('overview');
+  const { setIsUserGuideOpen, whatsappNumber } = useApp();
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms'>('overview');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -146,6 +148,16 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setActiveTab('cms')}
+              className="hidden sm:flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs"
+              title="اضغط لتعديل رقم واتساب المبيعات"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>واتساب الطلبات:</span>
+              <span className="font-mono text-emerald-800" dir="ltr">{whatsappNumber || '201521800000'}</span>
+              <span className="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded-md font-bold">تعديل ⚙️</span>
+            </button>
+            <button
               onClick={() => setIsUserGuideOpen(true)}
               className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-lg font-bold text-xs transition flex items-center gap-1.5"
             >
@@ -173,11 +185,12 @@ export const AdminDashboard: React.FC = () => {
         <div className="flex gap-2 mb-6 border-b border-gray-200 pb-2">
           {[
             { id: 'overview', label: 'نظرة عامة' },
+            { id: 'cms', label: 'تخصيص الواجهة ورقم الواتساب 🎨📱' },
+            { id: 'excel', label: 'شيت جوجل ورفع إكسل (9 أعمدة) 📊' },
             { id: 'products', label: 'المنتجات' },
             { id: 'orders', label: 'الطلبات' },
             { id: 'visitors', label: 'الزوار' },
             { id: 'clicks', label: 'نقرات الواتساب' },
-            { id: 'excel', label: 'رفع اكسل' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -192,11 +205,12 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {activeTab === 'overview' && <OverviewTab orders={orders} recentVisitors={recentVisitors} />}
+        {activeTab === 'cms' && <HomePageCMS />}
+        {activeTab === 'excel' && <ExcelUpload />}
         {activeTab === 'products' && <ProductsTab products={products} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} />}
         {activeTab === 'visitors' && <VisitorsTab stats={stats} recentVisitors={recentVisitors} />}
         {activeTab === 'clicks' && <ClicksTab stats={stats} recentClicks={recentClicks} />}
-        {activeTab === 'excel' && <ExcelUpload />}
       </div>
     </div>
   );

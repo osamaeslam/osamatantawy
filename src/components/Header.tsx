@@ -30,13 +30,11 @@ export const Header: React.FC = () => {
     setSearchQuery,
     viewMode,
     setViewMode,
-    isLoggedIn,
-    user,
-    setIsAuthModalOpen,
-    setIsAboutModalOpen,
     setSelectedCategory,
     setIsOrderTrackingOpen,
-    setIsUserGuideOpen
+    setIsUserGuideOpen,
+    setIsAboutModalOpen,
+    homePageConfig
   } = useApp();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -47,14 +45,16 @@ export const Header: React.FC = () => {
       <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 text-white text-xs py-2 px-3 sm:px-4 font-medium flex items-center justify-between border-b border-blue-800/40">
         <div className="flex items-center gap-2">
           <PhoneCall size={14} className="text-yellow-400 shrink-0" />
-          <a href="tel:15218" className="hover:underline flex items-center gap-1">
+          <a href={`tel:${homePageConfig?.hotline || '15218'}`} className="hover:underline flex items-center gap-1">
             <span className="hidden sm:inline text-gray-200">الخط الساخن:</span>
-            <strong className="font-black tracking-wider text-yellow-300 text-xs sm:text-sm">15218</strong>
+            <strong className="font-black tracking-wider text-yellow-300 text-xs sm:text-sm">
+              {homePageConfig?.hotline || '15218'}
+            </strong>
           </a>
         </div>
         <div className="hidden md:flex items-center justify-center gap-2 text-xs text-gray-100">
           <Sparkles size={14} className="text-yellow-300 animate-pulse shrink-0" />
-          <span>طنطاوي جروب: أجهزة منزلية كبرى وشاشات وأجهزة خفيفة • شحن لجميع المحافظات • دفع موحد عند الاستلام بعد المعاينة</span>
+          <span>{homePageConfig?.announcementText || 'طنطاوي جروب: أجهزة منزلية وكهربية • شحن لجميع المحافظات • دفع عند الاستلام بعد المعاينة'}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
           <button
@@ -214,7 +214,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-0.5">
             <button 
               onClick={() => setActiveTab('deals')}
-              className={`flex items-center gap-1.5 font-bold transition px-2.5 py-1 rounded-md ${
+              className={`flex items-center gap-1.5 font-bold transition px-3 py-1 rounded-lg ${
                 activeTab === 'deals' ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'
               }`}
             >
@@ -226,36 +226,27 @@ export const Header: React.FC = () => {
                 setActiveTab('home');
                 setSelectedCategory(null);
               }}
-              className={`hover:text-blue-700 transition ${activeTab === 'home' && !searchQuery ? 'text-blue-700 font-bold' : ''}`}
+              className={`hover:text-blue-700 transition px-2.5 py-1 rounded-lg ${activeTab === 'home' && !searchQuery ? 'text-blue-900 font-bold bg-blue-50' : ''}`}
             >
               جميع المنتجات
             </button>
             <button 
               onClick={() => {
                 setActiveTab('categories');
-                setSelectedCategory('Major Appliances');
+                setSelectedCategory('أجهزة منزلية');
               }}
-              className="hover:text-blue-700 transition"
+              className="hover:text-blue-700 transition px-2.5 py-1 rounded-lg"
             >
-              أجهزة منزلية كبرى
+              أجهزة منزلية
             </button>
             <button 
               onClick={() => {
                 setActiveTab('categories');
-                setSelectedCategory('Smart TVs');
+                setSelectedCategory('أجهزة كهربيه');
               }}
-              className="hover:text-blue-700 transition"
+              className="hover:text-blue-700 transition px-2.5 py-1 rounded-lg"
             >
-              شاشات وتلفزيونات ذكية
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('categories');
-                setSelectedCategory('Small Appliances');
-              }}
-              className="hover:text-blue-700 transition"
-            >
-              أجهزة منزلية خفيفة
+              أجهزة كهربيه
             </button>
           </div>
 

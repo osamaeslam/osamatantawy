@@ -1,13 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, CartItem, OrderItem, UserProfile } from '../types';
-import { PRODUCTS, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES } from '../data/mockData';
+import { Product, CartItem, OrderItem, UserProfile, HomePageConfig } from '../types';
+import { PRODUCTS, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES, INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
 
 interface AppContextType {
   products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  importProducts: (newProducts: Product[]) => void;
+  resetProductsToDefault: () => void;
+  homePageConfig: HomePageConfig;
+  updateHomePageConfig: (config: HomePageConfig) => void;
+  whatsappNumber: string;
+  updateWhatsAppNumber: (phone: string) => void;
   cart: CartItem[];
   wishlist: Product[];
-  activeTab: 'home' | 'categories' | 'deals' | 'cart' | 'profile';
-  setActiveTab: (tab: 'home' | 'categories' | 'deals' | 'cart' | 'profile') => void;
+  activeTab: 'home' | 'categories' | 'deals' | 'cart';
+  setActiveTab: (tab: 'home' | 'categories' | 'deals' | 'cart') => void;
   selectedCategory: string | null;
   setSelectedCategory: (cat: string | null) => void;
   selectedSubcategory: string | null;
@@ -16,8 +23,6 @@ interface AppContextType {
   setSearchQuery: (query: string) => void;
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
-  isAuthModalOpen: boolean;
-  setIsAuthModalOpen: (open: boolean) => void;
   isAboutModalOpen: boolean;
   setIsAboutModalOpen: (open: boolean) => void;
   isCheckoutModalOpen: boolean;
@@ -44,9 +49,6 @@ interface AppContextType {
   applyPromoCode: (code: string) => { success: boolean; message: string };
   removePromoCode: () => void;
   createOrder: (address: string, paymentMethod: string) => OrderItem | null;
-  login: (email: string, name?: string) => void;
-  logout: () => void;
-  updateUserProfile: (profile: Partial<UserProfile>) => void;
   cartTotal: number;
   cartSubtotal: number;
   cartDiscount: number;
@@ -59,42 +61,130 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  // Products initialized from localStorage or default
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('tantawy_custom_products');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Fallback to default products:', e);
+    }
+    return PRODUCTS;
+  });
+
+  // Homepage CMS Config
+  const [homePageConfig, setHomePageConfig] = useState<HomePageConfig>(() => {
+    try {
+      const saved = localStorage.getItem('tantawy_homepage_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.heroBanners && Array.isArray(parsed.heroBanners)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Fallback to default home config:', e);
+    }
+    return INITIAL_HOMEPAGE_CONFIG;
+  });
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
-  const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'cart' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'cart'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
   const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
   const [trackingPhone, setTrackingPhone] = useState('');
-  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user] = useState<UserProfile>(INITIAL_USER);
+  const [isLoggedIn] = useState(false);
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [viewMode, setViewMode] = useState<'mobile' | 'web'>('web');
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
 
-  // تنظيف أي بيانات مستخدم مخزنة مسبقاً (إلغاء نظام المستخدمين نهائياً)
-  useEffect(() => {
-    setIsLoggedIn(false);
-    setUser({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      avatar: ''
-    });
+  // رقم الواتساب المعتمد لتلقي طلبات المعاينة
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(() => {
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      const direct = localStorage.getItem('tantawy_whatsapp_number');
+      if (direct) return direct;
+      const saved = localStorage.getItem('tantawy_homepage_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.whatsappNumber) return parsed.whatsappNumber;
+      }
+    } catch (e) {
+      console.warn('Fallback to default whatsapp:', e);
+    }
+    return INITIAL_HOMEPAGE_CONFIG.whatsappNumber || '201521800000';
+  });
+
+  const updateWhatsAppNumber = (newNumber: string) => {
+    setWhatsappNumber(newNumber);
+    try {
+      localStorage.setItem('tantawy_whatsapp_number', newNumber);
+      setHomePageConfig(prev => {
+        const updated = { ...prev, whatsappNumber: newNumber };
+        localStorage.setItem('tantawy_homepage_config', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (e) {
+      console.error('Error saving whatsapp number:', e);
+    }
+  };
+
+  // تحديث محتوى الصفحة الرئيسية وحفظه
+  const updateHomePageConfig = (newConfig: HomePageConfig) => {
+    setHomePageConfig(newConfig);
+    if (newConfig.whatsappNumber) {
+      setWhatsappNumber(newConfig.whatsappNumber);
+      try {
+        localStorage.setItem('tantawy_whatsapp_number', newConfig.whatsappNumber);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    try {
+      localStorage.setItem('tantawy_homepage_config', JSON.stringify(newConfig));
+    } catch (e) {
+      console.error('Error saving homepage config:', e);
+    }
+  };
+
+  // استيراد منتجات شيت جوجل أو ملف الإكسل
+  const importProducts = (newProducts: Product[]) => {
+    setProducts(newProducts);
+    try {
+      localStorage.setItem('tantawy_custom_products', JSON.stringify(newProducts));
+    } catch (e) {
+      console.error('Error saving custom products:', e);
+    }
+  };
+
+  // استعادة المنتجات الأساسية المعتمدة
+  const resetProductsToDefault = () => {
+    setProducts(PRODUCTS);
+    try {
+      localStorage.removeItem('tantawy_custom_products');
+    } catch (e) {
+      console.error('Error resetting products:', e);
+    }
+  };
+
+  // تنظيف أي بقايا لجلسات مستخدمين سابقة
+  useEffect(() => {
+    try {
+      localStorage.removeItem('user');
+      localStorage.removeItem('tantawy_user');
+      localStorage.removeItem('tantawy_auth');
+      localStorage.removeItem('ahmed_user');
+      localStorage.removeItem('userProfile');
     } catch (e) {
       // ignore
     }
@@ -122,7 +212,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         return next;
       } else {
-        return [...prev, { product, quantity, selectedSize: selectedSize || product.sizevariants?.[0] }];
+        return [...prev, { product, quantity, selectedSize: selectedSize || product.sizevariants?.[0] || product.size }];
       }
     });
   };
@@ -178,38 +268,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const createOrder = (address: string, paymentMethod: string): OrderItem | null => {
     if (cart.length === 0) return null;
     const newOrder: OrderItem = {
-      orderid: `RN-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      orderid: `TG-${Math.floor(10000000 + Math.random() * 90000000)}`,
       name: cart[0].product.name,
-      nameAr: cart[0].product.nameAr + (cart.length > 1 ? ` (+ ${cart.length - 1} منتجات أخرى)` : ''),
+      nameAr: cart[0].product.nameAr + (cart.length > 1 ? ` (+ ${cart.length - 1} أصناف أخرى)` : ''),
       description: `الدفع بواسطة ${paymentMethod} - العنوان: ${address}`,
       descriptionAr: `الدفع بواسطة ${paymentMethod} - العنوان: ${address}`,
       status: 'Processing',
-      productimage: cart[0].product.previewimage,
+      productimage: cart[0].product.previewimage || cart[0].product.imageLink || '',
       price: Math.round(cartTotal),
       date: new Date().toISOString().split('T')[0]
     };
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
     return newOrder;
-  };
-
-  const login = (email: string, name?: string) => {
-    setUser((prev) => ({
-      ...prev,
-      email,
-      name: name || prev.name
-    }));
-    setIsLoggedIn(true);
-    setIsAuthModalOpen(false);
-  };
-
-  const logout = () => {
-    setUser(INITIAL_USER);
-    setIsLoggedIn(false);
-  };
-
-  const updateUserProfile = (profile: Partial<UserProfile>) => {
-    setUser((prev) => ({ ...prev, ...profile }));
   };
 
   const addProductReview = (
@@ -240,6 +311,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         products,
+        setProducts,
+        importProducts,
+        resetProductsToDefault,
+        homePageConfig,
+        updateHomePageConfig,
+        whatsappNumber,
+        updateWhatsAppNumber,
         cart,
         wishlist,
         activeTab,
@@ -252,8 +330,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSearchQuery,
         selectedProduct,
         setSelectedProduct,
-        isAuthModalOpen,
-        setIsAuthModalOpen,
         isAboutModalOpen,
         setIsAboutModalOpen,
         isCheckoutModalOpen,
@@ -280,9 +356,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applyPromoCode,
         removePromoCode,
         createOrder,
-        login,
-        logout,
-        updateUserProfile,
         cartTotal,
         cartSubtotal,
         cartDiscount,

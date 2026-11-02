@@ -28,6 +28,34 @@ export interface Product {
   dealEndsIn?: string;
   inStock?: boolean;
   brand?: string;
+  // أعمدة جوجل شيت المعتمدة
+  itemNumber?: string;       // Item number
+  unifiedCode?: string;      // كود موحد
+  size?: string;             // Size
+  color?: string;            // Color
+  itemGroup?: string;        // Item group
+  familyName?: string;       // Family Name
+  imageLink?: string;        // لينك الصور
+  sector?: string;           // القطاع
+}
+
+export interface HeroBanner {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  badge: string;
+  buttonText: string;
+  category: string;
+  bgGradient: string;
+  image: string;
+  linkCategory?: string;
+}
+
+export interface HomePageConfig {
+  announcementText: string;
+  hotline: string;
+  whatsappNumber?: string;
+  heroBanners: HeroBanner[];
 }
 
 export interface CategoryItem {
