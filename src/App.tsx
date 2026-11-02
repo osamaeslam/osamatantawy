@@ -38,7 +38,10 @@ const MainLayout: React.FC = () => {
   React.useEffect(() => {
     visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
 
-    if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+    if (
+      window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/admin' ||
+      window.location.hash === '#admin'
+    ) {
       setShowAdmin(true);
     }
     const handleHash = () => {

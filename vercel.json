@@ -61,8 +61,11 @@
     {
       "source": "/sw.js",
       "destination": "/sw.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "cleanUrls": true,
   "trailingSlash": false
 }

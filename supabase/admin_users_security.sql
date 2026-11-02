@@ -44,3 +44,21 @@ $$;
 
 -- 5) السماح باستدعاء الدالة فقط (بدون صلاحية قراءة الجدول)
 grant execute on function public.verify_admin_login(text, text) to anon, authenticated;
+
+-- =====================================================================
+-- (اختياري) إنشاء أو إعادة تعيين حساب أدمن
+-- شيل التعليقات (--) وغيّر اليوزر والباسورد ثم شغّل.
+-- * لو الحساب موجود بالفعل هيعمل update للباسورد.
+-- * لو ظهر خطأ بسبب عدم وجود قيد unique على username،
+--   استخدم: delete from public.admin_users where username='admin';  الأول.
+-- =====================================================================
+-- insert into public.admin_users (username, full_name, role, password_hash, is_active)
+-- values ('admin', 'المدير', 'admin', crypt('ChangeMe_12345', gen_salt('bf')), true)
+-- on conflict (username) do update
+--   set password_hash = excluded.password_hash, is_active = true, role = 'admin';
+
+-- =====================================================================
+-- (اختياري) إنشاء حساب موظف للمتابعة/التقارير
+-- =====================================================================
+-- insert into public.admin_users (username, full_name, role, password_hash, is_active)
+-- values ('employee1', 'اسم الموظف', 'employee', crypt('StrongPass123', gen_salt('bf')), true);
