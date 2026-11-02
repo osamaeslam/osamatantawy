@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
+import { productService } from '../supabase/products.service';
+import { supabase } from '../supabase/config';
 import { 
   FileSpreadsheet, 
   Link2, 
@@ -238,13 +240,108 @@ export const GoogleSheetSync: React.FC = () => {
   };
 
   // تطبيق المنتجات في الكتالوج
-  const applyImportedProducts = () => {
+  const applyImportedProducts = async () => {
     if (!previewProducts || previewProducts.length === 0) return;
-    importProducts(previewProducts);
-    setStatusMessage({
-      type: 'success',
-      text: `🎉 تم تحديث كتالوج طنطاوي جروب بنجاح! تم اعتماد ${previewProducts.length} صنف ويظهرون الآن لجميع العملاء.`
-    });
+
+    setLoading(true);
+    setStatusMessage(null);
+
+    try {
+      // 1. Save to local state and localStorage (existing behavior)
+      importProducts(previewProducts);
+
+      // 2. Also save to Supabase database using batch insert
+      // Prepare products for Supabase - map from Product type to FirebaseProduct fields
+      const supabaseItems = previewProducts.map((p) => ({
+        nameAr: p.nameAr,
+        nameEn: p.name || p.nameAr,
+        category: p.categoryAr || p.category || 'Home Appliances',
+        categoryAr: p.categoryAr || p.categoryAr || 'أجهزة منزلية',
+        price: typeof p.actualprice === 'number' ? p.actualprice : 0,
+        discountedPrice: typeof p.discountpercent === 'number' && p.discountpercent > 0 ? Math.round(p.actualprice * (p.discountpercent / 100)) : 0,
+        imageUrl: p.imageLink || p.previewimage || '',
+        colors: p.color ? [p.color] : [],
+        sizes: p.sizevariants || [p.size || 'قياسي'],
+        inStock: p.inStock !== undefined ? p.inStock : true,
+        brand: p.brand || '',
+        createdAt: new Date().toISOString(),
+      }));
+
+      // Batch insert into Supabase (limit to avoid timeout, split if too many)
+      const BATCH_SIZE = 500;
+      const totalItems = supabaseItems.length;
+      let successCount = 0;
+
+      for (let i = 0; i < totalItems; i += BATCH_SIZE) {
+        const batch = supabaseItems.slice(i, i + BATCH_SIZE);
+        try {
+          await productService.batchCreate(batch);
+          successCount += batch.length;
+        } catch (batchError) {
+          console.error(`Batch insert error at index ${i}:`, batchError);
+          // Continue with remaining batches even if one fails
+        }
+      }
+
+      // 3. Force refresh products from Supabase so all users see the update
+      // We need to update the app context products from the database
+      try {
+        const { data: serverProducts, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (!error && serverProducts) {
+          // Update localStorage with fresh data from server
+          const normalizedProducts = serverProducts.map((item: any) => ({
+            id: item.id,
+            name: item.name_ar || item.name_en || 'منتج جديد',
+            nameAr: item.name_ar,
+            nameEn: item.name_en,
+            category: item.category || 'Home Appliances',
+            categoryAr: item.category_ar || 'أجهزة منزلية',
+            summary: '',
+            summaryAr: '',
+            description: '',
+            descriptionAr: '',
+            actualprice: item.price || 0,
+            discountpercent: item.discounted_price ? Math.round((1 - (item.discounted_price / item.price)) * 100) : 0,
+            overallrating: 0,
+            previewimage: item.image_url || '',
+            previewimages: item.image_url ? [item.image_url] : [],
+            reviews: [],
+            quantities: ['1'],
+            sizevariants: ['قياسي'],
+            isDeal: false,
+            dealEndsIn: '',
+            inStock: item.in_stock !== false,
+            brand: item.brand || '',
+            itemNumber: '',
+            unifiedCode: '',
+            size: 'قياسي',
+            color: 'أصلي',
+            itemGroup: '',
+            familyName: '',
+            sector: item.category_ar || 'أجهزة منزلية',
+          } as Product));
+          localStorage.setItem('tantawy_custom_products', JSON.stringify(normalizedProducts));
+          // Update the products state immediately
+          importProducts(normalizedProducts);
+          console.log('✅ Products refreshed from Supabase after import');
+        }
+      } catch (refreshError) {
+        console.warn('Could not refresh products from server, using local data:', refreshError);
+      }
+
+      setStatusMessage({
+        type: 'success',
+        text: `🎉 تم تحديث كتالوج طنطاوي جروب بنجاح! تم اعتماد ${previewProducts.length} صنف (${successCount} تم حفظها في قاعدة البيانات).`
+      });
+    } catch (err: any) {
+      console.error('Error applying imported products:', err);
+      setStatusMessage({
+        type: 'error',
+        text: `❌ خطأ في تطبيق الاستيراد: ${err.message}`
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // تنزيل نموذج إكسل جاهز يحتوي على الأعمدة الـ 9 والأصناف الحالية

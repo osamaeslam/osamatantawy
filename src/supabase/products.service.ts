@@ -80,6 +80,30 @@ export const productService = {
     return inserted.id;
   },
 
+  async batchCreate(items: Omit<FirebaseProduct, 'id'>[]): Promise<string[]> {
+    if (items.length === 0) return [];
+
+    const { error } = await supabase.from(TABLE).insert(
+      items.map((item) => ({
+        name_ar: item.nameAr,
+        name_en: item.nameEn,
+        category: item.categoryAr,
+        price: item.price,
+        discounted_price: item.discountedPrice,
+        image_url: item.imageUrl,
+        colors: item.colors,
+        sizes: item.sizes,
+        in_stock: item.inStock,
+        brand: item.brand,
+      }))
+    );
+
+    if (error) throw error;
+
+    // Return IDs - we'll use the order as IDs since Supabase may not return them all
+    return items.map((_, index) => `temp-${Date.now()}-${index}`);
+  },
+
   async update(id: string, data: Partial<FirebaseProduct>): Promise<void> {
     const updateData: Record<string, any> = {};
     if (data.nameAr) updateData.name_ar = data.nameAr;
