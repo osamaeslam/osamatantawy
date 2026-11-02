@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useProductPagination } from '../hooks/useProductPagination';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/mockData';
 import { 
@@ -29,6 +30,13 @@ export const CategoriesPage: React.FC = () => {
     isInWishlist,
     setSelectedProduct
   } = useApp();
+
+  // Pagination setup - show 10 products per page
+  const { paginatedProducts, currentPage, totalPages, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
+    sectorProducts,
+    pageSize: 10,
+    initialPage: 1,
+  });
 
   const [sortBy, setSortBy] = useState<'default' | 'rating' | 'name'>('default');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
@@ -73,7 +81,7 @@ export const CategoriesPage: React.FC = () => {
   }
 
   // Sorting without prices
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...paginatedProducts].sort((a, b) => {
     if (sortBy === 'rating') return b.overallrating - a.overallrating;
     if (sortBy === 'name') return a.nameAr.localeCompare(b.nameAr, 'ar');
     return 0;

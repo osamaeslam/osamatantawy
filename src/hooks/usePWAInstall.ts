@@ -23,7 +23,10 @@ export function usePWAInstall() {
     setIsIOS(isIOSDevice);
 
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the native install prompt from showing
+      // so we can show a custom PWA install banner
       e.preventDefault();
+      // Store the event so we can call prompt() later when user clicks install
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
