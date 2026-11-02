@@ -40,7 +40,7 @@ export const HomePage: React.FC = () => {
   } = useApp();
 
   // Pagination setup - show 10 products per page
-  const { paginatedProducts, currentPage, totalPages, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
+  const { paginatedProducts, currentPage, totalPagesForDisplay, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
     products,
     pageSize: 10,
     initialPage: 1,
@@ -72,7 +72,7 @@ export const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [heroBanners.length]);
 
-  // Filter products if search is active
+  // Filter products if search is active, then apply pagination
   const filteredProducts = searchQuery
     ? products.filter(
         (p) =>
@@ -83,8 +83,18 @@ export const HomePage: React.FC = () => {
       )
     : paginatedProducts();
 
-  const deals = filteredProducts.filter((p) => p.isDeal);
-  const newArrivals = filteredProducts.slice(2, 7);
+// Apply pagination to filtered/search results
+  const { paginatedProducts: paginatedFilteredProducts, totalPagesForDisplay: filteredTotalPages } = useProductPagination({
+    products: filteredProducts,
+    pageSize: 10,
+    initialPage: 1,
+  });
+
+  const deals = paginatedFilteredProducts.filter((p) => p.isDeal);
+  const newArrivals = paginatedFilteredProducts.slice(2, 7);
+
+// Use filtered total pages when searching, otherwise use regular total pages
+  const totalPagesForDisplay = searchQuery ? filteredTotalPages : totalPages;
 
   return (
     <div className="space-y-6 md:space-y-10 pb-16">
@@ -95,7 +105,7 @@ export const HomePage: React.FC = () => {
             <span className="text-sm text-gray-600">نتائج البحث في طنطاوي جروب عن:</span>
             <span className="text-sm font-bold text-blue-900">"{searchQuery}"</span>
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-              ({filteredProducts.length} منتج)
+              ({filteredProducts.length > 0 ? filteredProducts.length : products.length} منتج)
             </span>
           </div>
           <button
