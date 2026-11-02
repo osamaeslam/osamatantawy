@@ -535,7 +535,7 @@ export const GoogleSheetSync: React.FC = () => {
                     <tr key={i} className="hover:bg-gray-50">
                       <td className="p-2">
                         <img
-                          src={p.previewimage}
+                          src={p.previewimage} referrerPolicy="no-referrer"
                           alt=""
                           className="w-10 h-10 object-contain rounded-lg border border-gray-200 bg-white"
                           onError={(e: any) => {

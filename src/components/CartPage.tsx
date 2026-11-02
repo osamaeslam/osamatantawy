@@ -311,7 +311,7 @@ export const CartPage: React.FC = () => {
                   className="aspect-square bg-gray-50 rounded-xl p-3 flex items-center justify-center cursor-pointer mb-2"
                 >
                   <img
-                    src={product.previewimage}
+                    src={product.previewimage} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain"
                   />

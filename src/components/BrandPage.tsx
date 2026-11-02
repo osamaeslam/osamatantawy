@@ -81,7 +81,7 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
                 className="aspect-[4/5] bg-gray-50 rounded-t-2xl overflow-hidden cursor-pointer border-b border-gray-50 group-hover:border-blue-100"
               >
                 <img
-                  src={product.previewimage}
+                  src={product.previewimage} referrerPolicy="no-referrer"
                   alt={product.nameAr}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-300"
                 />

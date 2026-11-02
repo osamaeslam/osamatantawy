@@ -109,7 +109,7 @@ export const DealsPage: React.FC = () => {
                   className="w-48 h-48 cursor-pointer flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage}
+                    src={product.previewimage} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-300"
                   />

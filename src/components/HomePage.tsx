@@ -125,7 +125,7 @@ export const HomePage: React.FC = () => {
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
                   <img
-                    src={normalizeImageUrl(banner.image)}
+                    src={normalizeImageUrl(banner.image)} referrerPolicy="no-referrer"
                     alt={banner.title}
                     className="w-full h-full object-cover object-center"
                   />
@@ -179,7 +179,7 @@ export const HomePage: React.FC = () => {
                 {/* Left/Right Product Accent Graphic */}
                 <div className="hidden lg:block absolute left-12 top-1/2 -translate-y-1/2 z-10 w-80 h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
                   <img
-                    src={normalizeImageUrl(banner.image)}
+                    src={normalizeImageUrl(banner.image)} referrerPolicy="no-referrer"
                     alt="Featured Product"
                     className="w-full h-full object-cover"
                   />
@@ -367,7 +367,7 @@ export const HomePage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={normalizeImageUrl(product.previewimage)}
+                    src={normalizeImageUrl(product.previewimage)} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
@@ -524,7 +524,7 @@ export const HomePage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={normalizeImageUrl(product.previewimage)}
+                    src={normalizeImageUrl(product.previewimage)} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />

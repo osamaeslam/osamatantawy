@@ -335,7 +335,7 @@ export const HomePageCMS: React.FC = () => {
             <div className={`relative overflow-hidden rounded-2xl min-h-[200px] md:min-h-[240px] bg-gradient-to-r ${activeBanner.bgGradient || 'from-blue-950 to-indigo-950'} flex items-center p-6 md:p-8 text-white shadow-md`}>
               <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
                 <img
-                  src={normalizeImageUrl(activeBanner.image)}
+                  src={normalizeImageUrl(activeBanner.image)} referrerPolicy="no-referrer"
                   alt=""
                   className="w-full h-full object-cover"
                   onError={(e: any) => {

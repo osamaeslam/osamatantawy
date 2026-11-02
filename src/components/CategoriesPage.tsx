@@ -276,7 +276,7 @@ export const CategoriesPage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage}
+                    src={product.previewimage} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
@@ -337,7 +337,7 @@ export const CategoriesPage: React.FC = () => {
                   className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-lg shrink-0 cursor-pointer p-2 flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage}
+                    src={product.previewimage} referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain"
                   />
