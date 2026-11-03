@@ -57,24 +57,30 @@ export const productService = {
   },
 
   async create(data: Omit<FirebaseProduct, 'id'>): Promise<string> {
-    const { error, data: upserted } = await supabase
-      .from(TABLE)
-      .upsert({
-        name_ar: data.nameAr,
-        name_en: data.nameEn,
-        category: data.categoryAr,
-        price: data.price,
-        discounted_price: data.discountedPrice,
-        image_url: data.imageUrl,
-        colors: data.colors,
-        sizes: data.sizes,
-        in_stock: data.inStock,
-        brand: data.brand,
-      }, {
-        onConflict: 'name_ar, category',
-      })
-      .select('id')
-      .single();
+  // Auto-assign category based on product nameAr keywords
+  let categoryValue = data.categoryAr || data.category || 'أجهزة منزلية';
+  const lowerName = data.nameAr.toLowerCase();
+  if (/ثلاجة|غسالة|بوتاجاز/.test(lowerName)) categoryValue = 'أجهزة منزلية';
+  else if (/شاشة|تكييف|مكنسة/.test(lowerName)) categoryValue = 'أجهزة كهربيه';
+
+  const { error, data: upserted } = await supabase
+    .from(TABLE)
+    .upsert({
+      name_ar: data.nameAr,
+      name_en: data.nameEn,
+      category: categoryValue,
+      price: data.price,
+      discounted_price: data.discountedPrice,
+      image_url: data.imageUrl,
+      colors: data.colors,
+      sizes: data.sizes,
+      in_stock: data.inStock,
+      brand: data.brand,
+    }, {
+      onConflict: 'name_ar, category',
+    })
+    .select('id')
+    .single();
 
     if (error) throw error;
     return upserted.id;
