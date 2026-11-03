@@ -523,7 +523,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
         {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
         {activeTab === 'excel' && isSuperAdmin && <ExcelUpload />}
-        {activeTab === 'products' && <ProductsTab products={products} />}
+        {activeTab === 'products' && (
+          <ProductsTab
+            products={products}
+            onRefresh={async () => {
+              await loadData();
+              await fetchProductsFromDatabase();
+            }}
+          />
+        )}
         {activeTab === 'visitors' && isSuperAdmin && <VisitorsTab stats={stats} recentVisitors={recentVisitors} />}
         {activeTab === 'clicks' && isSuperAdmin && <ClicksTab stats={stats} recentClicks={recentClicks} />}
       </div>
