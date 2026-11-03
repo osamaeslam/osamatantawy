@@ -94,12 +94,40 @@ export const CheckoutModal: React.FC = () => {
       setInvoiceData(generatedInvoice);
       setCompletedOrder(order);
       setTrackingPhone(phonePrimary.trim());
+
+      // حفظ نسخة احتياطية محلية فوراً (تعمل حتى لو انقطع الإنترنت)
+      try {
+        const savedOrdersRaw = localStorage.getItem('tantawy_saved_orders');
+        const savedOrders = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
+        const orderToSave = {
+          orderId: order.orderid,
+          customerName: customerName.trim(),
+          customerPhone: phonePrimary.trim(),
+          productNameAr: cart.length > 0 ? cart[0].product.nameAr : 'منتج من طنطاوي جروب',
+          quantity: cart.length,
+          totalPrice: Math.round(cart.reduce((s, it) => s + (it.product.actualprice || 0) * (1 - (it.product.discountpercent || 0) / 100) * it.quantity, 0)),
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          address: deliveryAddress,
+          city: city,
+          notes: notes || ''
+        };
+        localStorage.setItem('tantawy_saved_orders', JSON.stringify([...savedOrders, orderToSave]));
+      } catch (e) {
+        console.warn('localStorage save failed:', e);
+      }
+
       clearCart();
 
-      // حفظ كارت الفاتورة والطلب مباشرة في قاعدة بيانات سوبابيز
+      // حفظ كارت الفاتورة والطلب مباشرة في قاعدة بيانات سوبابيز (المصدر الأساسي للأونلاين)
       orderService.saveInvoiceOrder(generatedInvoice).catch((err) => {
-        console.warn('Supabase order auto-save fallback:', err);
+        console.warn('Supabase order auto-save fallback (saved locally):', err);
       });
+
+      // إشعار للعميل بأن الفاتورة تم رفعها برقم الموبايل
+      alert(
+        `تم رفع طلبك بنجاح! 🎉\nرقم الطلب: ${order.orderid}\nتم رفع الفاتورة برقم الموبايل: ${phonePrimary.trim()}\nسيتم التواصل معك على هذا الرقم لتأكيد السعر عبر واتساب ${whatsappNumber || '15218'}\nويمكنك متابعة الطلب من زر "تتبع طلبك".`
+      );
     }
   };
 

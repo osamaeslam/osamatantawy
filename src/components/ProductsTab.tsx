@@ -37,7 +37,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({ products }) => {
                 <tr key={p.id} className="border-b border-gray-100">
                   <td className="p-2 text-left">
                     {p.imageUrl ? (
-                      <img src={p.imageUrl} alt={p.nameAr} className="w-12 h-12 object-cover rounded border" />
+                      <img loading="lazy" src={p.imageUrl} alt={p.nameAr} className="w-12 h-12 object-cover rounded border" />
                     ) : (
                       <span className="text-xs text-gray-400">لا توجد</span>
                     )}

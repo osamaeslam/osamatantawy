@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useProductPagination } from '../hooks/useProductPagination';
-import { CATEGORIES } from '../data/mockData';
 import { 
   Zap, 
   ChevronRight, 
@@ -37,7 +36,8 @@ export const HomePage: React.FC = () => {
     setIsAboutModalOpen,
     searchQuery,
     setSelectedBrand,
-    homePageConfig
+    homePageConfig,
+    categories
   } = useApp();
 
   const heroBanners = homePageConfig.heroBanners && homePageConfig.heroBanners.length > 0 
@@ -125,6 +125,7 @@ export const HomePage: React.FC = () => {
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
                   <img
+                    loading="lazy"
                     src={normalizeImageUrl(banner.image)} referrerPolicy="no-referrer"
                     alt={banner.title}
                     className="w-full h-full object-cover object-center"
@@ -274,7 +275,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <div
               key={cat.name}
               onClick={() => {
@@ -393,6 +394,9 @@ export const HomePage: React.FC = () => {
                         متاح بالمعارض
                       </span>
                       <span className="text-[10px] text-gray-500 font-medium">شحن لجميع المحافظات</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="text-[10px] font-bold">السعر يعتمد على حالة المعاينة ويعرف عند إتمام الفاتورة عبر واتساب</span>
+                    </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 w-full">
@@ -578,6 +582,11 @@ export const HomePage: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-200 text-xs font-bold px-3 py-1 rounded-full border border-blue-400/30">
               <Award size={14} className="text-yellow-400" />
               <span>نادي عملاء طنطاوي جروب المميزين (VIP Club)</span>
+            </div>
+            {/* Promotional Tag */}
+            <div className="inline-flex items-center gap-2 bg-emerald-600/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/30 mt-2 md:mt-0">
+              <Truck size={10} className="shrink-0" />
+              <span>اشتري الآن وادفع عقب الفحص</span>
             </div>
             <h3 className="text-xl md:text-3xl font-black">
               تسوق بثقة تامة مع أكبر صرح للأجهزة والأدوات المنزلية

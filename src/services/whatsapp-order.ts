@@ -1,4 +1,5 @@
 import { Product, CartItem } from '../types';
+import { supabase } from '../supabase/config';
 
 export const TANTAWY_DEFAULT_SALES_PHONE = '201521800000'; // رقم المبيعات الافتراضي
 export const TANTAWY_SALES_PHONE = TANTAWY_DEFAULT_SALES_PHONE;
@@ -35,7 +36,8 @@ export function normalizeWhatsAppNumber(phone?: string | null): string {
 }
 
 /**
- * استرجاع رقم الواتساب المحفوظ من إعدادات الإدارة مباشرة
+ * استرجاع رقم الواتساب المحفوظ محلياً (نسخة متزامنة سريعة - بدون قاعدة البيانات)
+ * تُستخدم في بناء روابط واتساب المتزامنة
  */
 export function getStoredWhatsAppNumber(): string {
   try {
@@ -52,6 +54,47 @@ export function getStoredWhatsAppNumber(): string {
   } catch (e) {
     console.warn('Error reading stored whatsapp number:', e);
   }
+  return TANTAWY_DEFAULT_SALES_PHONE;
+}
+
+/**
+ * استرجاع رقم الواتساب من قاعدة البيانات أولاً ثم احتياطياً من المحلي
+ */
+export async function getStoredWhatsAppNumberAsync(): Promise<string> {
+  try {
+    // Try Supabase first for real-time sync and cross-device access
+    const { data } = await supabase
+      .from('site_configs')
+      .select('value')
+      .eq('key', 'whatsapp_sales_number')
+      .maybeSingle();
+
+    if (data?.value) {
+      // Save to localStorage as backup for faster future access
+      try {
+        localStorage.setItem('tantawy_whatsapp_number', data.value);
+      } catch (e) {
+        console.warn('Failed to save to localStorage:', e);
+      }
+      return normalizeWhatsAppNumber(data.value);
+    }
+  } catch (e) {
+    console.warn('Error reading from Supabase, falling back to localStorage:', e);
+  }
+
+  // Fallback to localStorage if Supabase unavailable or has no data
+  const directPhone = localStorage.getItem('tantawy_whatsapp_number');
+  if (directPhone) return normalizeWhatsAppNumber(directPhone);
+
+  const configStr = localStorage.getItem('tantawy_homepage_config');
+  if (configStr) {
+    const parsed = JSON.parse(configStr);
+    if (parsed.whatsappNumber) {
+      return normalizeWhatsAppNumber(parsed.whatsappNumber);
+    }
+  }
+
+  // Final fallback to default number
   return TANTAWY_DEFAULT_SALES_PHONE;
 }
 

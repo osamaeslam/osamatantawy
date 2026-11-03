@@ -17,6 +17,7 @@ import { OrdersTab } from './OrdersTab';
 import { VisitorsTab } from './VisitorsTab';
 import { ClicksTab } from './ClicksTab';
 import { HomePageCMS } from './HomePageCMS';
+import { CategoriesTab } from './CategoriesTab';
 import { StaffManagementTab } from './StaffManagementTab';
 import { StaffUser, staffService } from '../services/staff.service';
 
@@ -36,7 +37,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     products: appProducts 
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'staff'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff'>('overview');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [currentStaff, setCurrentStaff] = useState<StaffUser | null>(() => staffService.getCurrentUser());
@@ -490,6 +491,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
                 { id: 'staff', label: 'فريق العمل وحسابات الموظفين 👥' },
                 { id: 'cms', label: 'تخصيص الواجهة ورقم الواتساب 🎨📱' },
+                { id: 'categories', label: 'أسماء الأقسام 🗂️' },
                 { id: 'excel', label: 'شيت جوجل ورفع إكسل 📊' },
                 { id: 'products', label: 'المنتجات 📦' },
                 { id: 'visitors', label: 'الزوار 👥' },
@@ -519,6 +521,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {activeTab === 'orders' && <OrdersTab orders={orders} onRefresh={loadData} />}
         {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab onSwitchUser={handleSwitchToUser} />}
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
+        {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
         {activeTab === 'excel' && isSuperAdmin && <ExcelUpload />}
         {activeTab === 'products' && <ProductsTab products={products} />}
         {activeTab === 'visitors' && isSuperAdmin && <VisitorsTab stats={stats} recentVisitors={recentVisitors} />}

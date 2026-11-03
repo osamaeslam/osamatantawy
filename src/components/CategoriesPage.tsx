@@ -93,6 +93,11 @@ export const CategoriesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Page Title */}
+      <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-6">
+        أقسام وتصنيفات طنطاوي جروب
+      </h1>
+
       {/* Category Pills Header */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
         <div className="flex items-center justify-between">

@@ -24,7 +24,7 @@ import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
 import { normalizeImageUrl } from '../services/image-url';
 
 export const HomePageCMS: React.FC = () => {
-  const { homePageConfig, updateHomePageConfig } = useApp();
+  const { homePageConfig, updateHomePageConfig, saveHomePageConfigToDatabase } = useApp();
 
   const [announcementText, setAnnouncementText] = useState(homePageConfig.announcementText);
   const [hotline, setHotline] = useState(homePageConfig.hotline);
@@ -32,6 +32,8 @@ export const HomePageCMS: React.FC = () => {
   const [banners, setBanners] = useState<HeroBanner[]>(homePageConfig.heroBanners || []);
   const [selectedBannerIndex, setSelectedBannerIndex] = useState(0);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Sync state if context changes
   React.useEffect(() => {
@@ -91,7 +93,7 @@ export const HomePageCMS: React.FC = () => {
     setSelectedBannerIndex(targetIndex);
   };
 
-  const handleSaveAll = () => {
+  const handleSaveAll = async () => {
     const cleanNumber = normalizeWhatsAppNumber(whatsappNumber);
     const newConfig: HomePageConfig = {
       announcementText,
@@ -99,21 +101,40 @@ export const HomePageCMS: React.FC = () => {
       whatsappNumber: cleanNumber,
       heroBanners: banners
     };
-    updateHomePageConfig(newConfig);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 4000);
-  };
-
-  const handleResetToDefault = () => {
-    if (confirm('هل تريد استعادة إعدادات وبنرات الصفحة الرئيسية الافتراضية؟')) {
-      updateHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
-      setAnnouncementText(INITIAL_HOMEPAGE_CONFIG.announcementText);
-      setHotline(INITIAL_HOMEPAGE_CONFIG.hotline);
-      setWhatsappNumber(INITIAL_HOMEPAGE_CONFIG.whatsappNumber || '201521800000');
-      setBanners(INITIAL_HOMEPAGE_CONFIG.heroBanners);
-      setSelectedBannerIndex(0);
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await saveHomePageConfigToDatabase(newConfig);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 4000);
+    } catch (err: any) {
+      console.error('Save to database failed:', err);
+      setSaveError('تعذر الحفظ في قاعدة البيانات. تحقق من الاتصال بالإنترنت وإعدادات Supabase.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    if (confirm('هل تريد استعادة إعدادات وبنرات الصفحة الرئيسية الافتراضية؟')) {
+      setIsSaving(true);
+      setSaveError(null);
+      try {
+        await saveHomePageConfigToDatabase(INITIAL_HOMEPAGE_CONFIG);
+        updateHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+        setAnnouncementText(INITIAL_HOMEPAGE_CONFIG.announcementText);
+        setHotline(INITIAL_HOMEPAGE_CONFIG.hotline);
+        setWhatsappNumber(INITIAL_HOMEPAGE_CONFIG.whatsappNumber || '201521800000');
+        setBanners(INITIAL_HOMEPAGE_CONFIG.heroBanners);
+        setSelectedBannerIndex(0);
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 4000);
+      } catch (err: any) {
+        console.error('Reset to database failed:', err);
+        setSaveError('تعذر استعادة الإعدادات في قاعدة البيانات.');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -141,10 +162,11 @@ export const HomePageCMS: React.FC = () => {
           </button>
           <button
             onClick={handleSaveAll}
-            className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-xs px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2"
+            disabled={isSaving}
+            className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-xs px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <CheckCircle2 size={16} />
-            <span>حفظ ونشر التعديلات فوراً 🚀</span>
+            <span>{isSaving ? 'جارٍ الحفظ في قاعدة البيانات...' : 'حفظ ونشر التعديلات فوراً 🚀'}</span>
           </button>
         </div>
       </div>
@@ -152,7 +174,13 @@ export const HomePageCMS: React.FC = () => {
       {savedSuccess && (
         <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs">
           <CheckCircle2 size={18} className="text-emerald-600" />
-          <span>تم حفظ التعديلات بنجاح! تم تحديث الصفحة الرئيسية الآن مباشرة لجميع الزوار.</span>
+          <span>تم حفظ التعديلات في قاعدة البيانات بنجاح! الآن تظهر لجميع الزوار على كل الأجهزة.</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="bg-red-50 border border-red-300 text-red-900 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs">
+          <span>⚠️ {saveError}</span>
         </div>
       )}
 

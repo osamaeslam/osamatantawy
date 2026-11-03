@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, CartItem, OrderItem, UserProfile, HomePageConfig } from '../types';
-import { PRODUCTS, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES, INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
+import { Product, CartItem, OrderItem, UserProfile, HomePageConfig, CategoryItem } from '../types';
+import { PRODUCTS, CATEGORIES, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES, INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
 import { normalizeImageUrl } from '../services/image-url';
 import { supabase } from '../supabase/config';
 import { mapSupabaseToProduct } from '../supabase/product-mapper';
+import { siteConfigService } from '../supabase/siteConfig.service';
+import { categoryService } from '../supabase/categories.service';
 
 /** يضمن أن صور المنتجات (من الشيت/الدريفي/المخزّن) قابلة للعرض مباشرة */
 const withNormalizedImages = (list: Product[]): Product[] =>
@@ -28,6 +30,14 @@ interface AppContextType {
   supabaseProductCount: number;
   homePageConfig: HomePageConfig;
   updateHomePageConfig: (config: HomePageConfig) => void;
+  saveHomePageConfigToDatabase: (config: HomePageConfig) => Promise<void>;
+  refreshHomePageConfigFromDatabase: () => Promise<void>;
+  categories: CategoryItem[];
+  categoriesLoading: boolean;
+  refreshCategoriesFromDatabase: () => Promise<void>;
+  addCategory: (item: CategoryItem) => Promise<void>;
+  editCategory: (id: number, item: Partial<CategoryItem>) => Promise<void>;
+  deleteCategory: (id: number) => Promise<void>;
   whatsappNumber: string;
   updateWhatsAppNumber: (phone: string) => void;
   cart: CartItem[];
@@ -167,6 +177,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_HOMEPAGE_CONFIG;
   });
 
+  // Categories (from database, fallback to defaults)
+  const [categories, setCategories] = useState<CategoryItem[]>(CATEGORIES);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'cart'>('home');
@@ -205,20 +219,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_HOMEPAGE_CONFIG.whatsappNumber || '201521800000';
   });
 
-  const updateWhatsAppNumber = (newNumber: string) => {
+ const updateWhatsAppNumber = async (newNumber: string) => {
     const trimmed = newNumber.trim();
     setWhatsappNumber(trimmed);
+    
+    // Save to localStorage for immediate access (fast, works offline)
     try {
       localStorage.setItem('tantawy_whatsapp_number', trimmed);
       localStorage.setItem('tantawy_sales_whatsapp', trimmed);
       localStorage.setItem('tantawy_sales_phone', trimmed);
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+
+    // Save to Supabase for cross-device sync and persistence (async, doesn't block UI)
+    try {
+      const { error } = await supabase
+        .from('site_configs')
+        .upsert({ key: 'whatsapp_sales_number', value: trimmed }, { onConflict: 'key' });
+
+      if (error) {
+        console.warn('Failed to save to Supabase, localStorage will persist:', error.message);
+      }
+    } catch (e) {
+      console.warn('Error saving to Supabase:', e);
+    }
+
+    // Update homepage config in localStorage
+    try {
       setHomePageConfig(prev => {
         const updated = { ...prev, whatsappNumber: trimmed };
         localStorage.setItem('tantawy_homepage_config', JSON.stringify(updated));
         return updated;
       });
     } catch (e) {
-      console.error('Error saving whatsapp number:', e);
+      console.error('Error updating homepage config:', e);
     }
   };
 
@@ -242,6 +277,99 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Error saving homepage config:', e);
     }
   };
+
+  // حفظ إعدادات الصفحة الرئيسية في قاعدة البيانات (Supabase)
+  const saveHomePageConfigToDatabase = async (config: HomePageConfig) => {
+    // تحديث الحالة والمحلي أولاً (فوري)
+    updateHomePageConfig(config);
+    // ثم الحفظ في قاعدة البيانات
+    await siteConfigService.saveHomePageConfig(config);
+  };
+
+  // جلب إعدادات الصفحة الرئيسية (بنرات/خط ساخن/واتساب) من قاعدة البيانات
+  const refreshHomePageConfigFromDatabase = async () => {
+    try {
+      const dbConfig = await siteConfigService.getHomePageConfig();
+      if (!dbConfig) return;
+
+      setHomePageConfig((prev) => {
+        // استخدام بيانات القاعدة إذا وجدت، وإلا الاحتفاظ بالافتراضي
+        const merged: HomePageConfig = {
+          announcementText: dbConfig.announcementText ?? prev.announcementText,
+          hotline: dbConfig.hotline ?? prev.hotline,
+          whatsappNumber: dbConfig.whatsappNumber ?? prev.whatsappNumber,
+          heroBanners:
+            dbConfig.heroBanners && dbConfig.heroBanners.length > 0
+              ? dbConfig.heroBanners
+              : prev.heroBanners,
+        };
+        try {
+          localStorage.setItem('tantawy_homepage_config', JSON.stringify(merged));
+          if (merged.whatsappNumber) {
+            localStorage.setItem('tantawy_whatsapp_number', merged.whatsappNumber);
+          }
+        } catch { /* ignore */ }
+        return merged;
+      });
+
+      if (dbConfig.whatsappNumber) {
+        setWhatsappNumber(dbConfig.whatsappNumber);
+      }
+    } catch (err) {
+      console.warn('refreshHomePageConfigFromDatabase error:', err);
+    }
+  };
+
+  // جلب الأقسام من قاعدة البيانات
+  const refreshCategoriesFromDatabase = async () => {
+    setCategoriesLoading(true);
+    try {
+      const dbCategories = await categoryService.getAll();
+      if (dbCategories && dbCategories.length > 0) {
+        setCategories(
+          dbCategories.map((c) => ({
+            name: c.name,
+            nameAr: c.nameAr,
+            icon: c.icon,
+            image: c.image,
+            descriptionAr: c.descriptionAr,
+            subcategories: c.subcategories,
+            subcategoriesAr: c.subcategoriesAr,
+          }))
+        );
+      }
+    } catch (err) {
+      console.warn('refreshCategoriesFromDatabase error:', err);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // إضافة قسم جديد
+  const addCategory = async (item: CategoryItem) => {
+    await categoryService.create(item);
+    await refreshCategoriesFromDatabase();
+  };
+
+  // تعديل قسم
+  const editCategory = async (id: number, item: Partial<CategoryItem>) => {
+    await categoryService.update(id, item);
+    await refreshCategoriesFromDatabase();
+  };
+
+  // حذف قسم
+  const deleteCategory = async (id: number) => {
+    await categoryService.delete(id);
+    await refreshCategoriesFromDatabase();
+  };
+
+  // تحميل الأقسام وإعدادات الصفحة الرئيسية من قاعدة البيانات عند البدء
+  useEffect(() => {
+    refreshCategoriesFromDatabase();
+    refreshHomePageConfigFromDatabase();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // استيراد منتجات شيت جوجل أو ملف الإكسل
   const importProducts = (newProducts: Product[]) => {
@@ -409,6 +537,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         supabaseProductCount,
         homePageConfig,
         updateHomePageConfig,
+        saveHomePageConfigToDatabase,
+        refreshHomePageConfigFromDatabase,
+        categories,
+        categoriesLoading,
+        refreshCategoriesFromDatabase,
+        addCategory,
+        editCategory,
+        deleteCategory,
         whatsappNumber,
         updateWhatsAppNumber,
         cart,

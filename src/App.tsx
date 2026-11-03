@@ -18,7 +18,6 @@ import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
 import { Smartphone, Monitor, ArrowLeft } from 'lucide-react';
-import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
   const { 
@@ -34,10 +33,8 @@ const MainLayout: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
-  // تتبع الزائر واكتشاف مسار لوحة الإدارة تلقائياً
+  // اكتشاف مسار لوحة الإدارة تلقائياً
   React.useEffect(() => {
-    visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
-
     if (
       window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/admin' ||
       window.location.hash === '#admin'
