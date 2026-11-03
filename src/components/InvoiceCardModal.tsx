@@ -10,13 +10,11 @@ import {
   Clock, 
   Calendar, 
   FileText, 
-  Sparkles, 
   ShieldCheck,
   Building2,
   Package
 } from 'lucide-react';
 import { OrderInvoiceData, sendQuoteToCustomerWhatsApp, generateQuoteMessage } from '../services/invoice-to-whatsapp';
-import { useApp } from '../context/AppContext';
 import { getSafeImageSrc } from '../utils/imageHelper';
 
 interface InvoiceCardModalProps {
@@ -30,7 +28,6 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
   onClose,
   order
 }) => {
-  const { whatsappNumber } = useApp();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !order) return null;
@@ -215,6 +212,10 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
               <span>إجمالي عرض السعر</span>
               <span>{order.totalPrice || 0} جنيه</span>
             </div>
+
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-bold text-amber-900">
+              عرض السعر في انتظار تأكيد العميل. لتعديل أو استبدال أي صنف، يرجى التواصل مع فريق المبيعات.
+            </p>
 
             {/* Footer of Card */}
             <div className="mt-4 pt-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500 font-bold">

@@ -38,8 +38,6 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'quoted' | 'partially_accepted' | 'confirmed' | 'dispatched' | 'delivered'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<OrderInvoiceData | null>(null);
-  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
-  const [priceInput, setPriceInput] = useState<string>('');
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
   const [quoteDraft, setQuoteDraft] = useState<OrderInvoiceData | null>(null);
   const [catalogProducts, setCatalogProducts] = useState<FirebaseProduct[]>([]);
@@ -71,20 +69,6 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
       );
     } catch (e: any) {
       alert('تعذر تحديث حالة الطلب: ' + e.message);
-    }
-  };
-
-  const handleSavePrice = async (orderId: string) => {
-    const val = Number(priceInput);
-    if (isNaN(val)) return;
-    try {
-      await orderService.updateTotalPrice(orderId, val);
-      setOrdersList((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, totalPrice: val } : o))
-      );
-      setEditingPriceId(null);
-    } catch (e: any) {
-      alert('تعذر تحديث السعر: ' + e.message);
     }
   };
 
@@ -182,8 +166,8 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
   const saveQuote = async (order: FirebaseOrder) => {
     if (!quoteDraft || !order.id || savingQuote) return;
     const activeItems = quoteDraft.items.filter((item) => item.decision !== 'rejected');
-    if (activeItems.length === 0) {
-      alert('لا يمكن إصدار عرض سعر بدون أصناف. غيّر حالة الطلب إلى ملغي إذا رفض العميل كل الأصناف.');
+    if (quoteDraft.items.length === 0) {
+      alert('أضف صنفًا من الكتالوج قبل حفظ الطلب.');
       return;
     }
     if (activeItems.some((item) => item.unitPrice === undefined || !Number.isFinite(item.unitPrice) || item.unitPrice < 0)) {
@@ -209,13 +193,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
     };
     const acceptedCount = activeItems.filter((item) => item.decision === 'accepted').length;
     const rejectedCount = quoteDraft.items.filter((item) => item.decision === 'rejected').length;
-    const status: FirebaseOrder['status'] = acceptedCount > 0 && rejectedCount > 0
-      ? 'partially_accepted'
-      : acceptedCount === activeItems.length && rejectedCount === 0
-        ? 'confirmed'
-        : acceptedCount > 0
-          ? 'partially_accepted'
-          : 'quoted';
+    const status: FirebaseOrder['status'] = activeItems.length === 0
+      ? 'cancelled'
+      : acceptedCount > 0 && rejectedCount > 0
+        ? 'partially_accepted'
+        : acceptedCount === activeItems.length && rejectedCount === 0
+          ? 'confirmed'
+          : acceptedCount > 0
+            ? 'partially_accepted'
+            : 'quoted';
 
     setSavingQuote(true);
     try {
@@ -228,11 +214,24 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
         activeItems.reduce((sum, item) => sum + item.quantity, 0),
         quoteDraft.deliveryTimeWindow || ''
       );
-      const updatedOrder = { ...order, items: updatedItems, totalPrice, status };
+      const updatedOrder = {
+        ...order,
+        items: updatedItems,
+        totalPrice,
+        status,
+        productNameAr: activeItems.map((item) => item.nameAr).slice(0, 3).join('، '),
+        quantity: activeItems.reduce((sum, item) => sum + item.quantity, 0),
+        selectedSize: quoteDraft.deliveryTimeWindow || '',
+      };
       setOrdersList((prev) => prev.map((item) => item.id === order.id ? updatedOrder : item));
       setQuoteDraft({ ...quoteDraft, items: updatedItems.orderedItems, totalPrice });
       setEditingQuoteId(null);
-      setSelectedInvoice({ ...quoteDraft, items: activeItems, totalPrice });
+      if (activeItems.length > 0) {
+        setSelectedInvoice({ ...quoteDraft, items: activeItems, totalPrice });
+      } else {
+        setSelectedInvoice(null);
+        alert('تم تسجيل رفض جميع الأصناف وإلغاء الطلب.');
+      }
     } catch (error: any) {
       alert(`تعذر حفظ عرض السعر: ${error.message}`);
     } finally {
@@ -574,39 +573,9 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
 
                     <div className="pt-1 flex items-center gap-2">
                       <span className="text-gray-500 text-[11px]">إجمالي الفاتورة:</span>
-                      {editingPriceId === o.id ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={priceInput}
-                            onChange={(e) => setPriceInput(e.target.value)}
-                            placeholder="المبلغ"
-                            className="w-20 p-1 border rounded text-xs font-mono font-bold"
-                          />
-                          <button
-                            onClick={() => handleSavePrice(o.id || '')}
-                            className="px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold"
-                          >
-                            حفظ
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <strong className="font-mono font-black text-sm text-blue-950">
-                            {o.totalPrice ? `${o.totalPrice} ج.م` : 'بانتظار التسعير'}
-                          </strong>
-                          <button
-                            onClick={() => {
-                              setEditingPriceId(o.id || null);
-                              setPriceInput(String(o.totalPrice || ''));
-                            }}
-                            className="text-gray-400 hover:text-blue-700"
-                            title="تعديل السعر النهائي"
-                          >
-                            <Edit3 size={13} />
-                          </button>
-                        </div>
-                      )}
+                      <strong className="font-mono font-black text-sm text-blue-950">
+                        {o.totalPrice ? `${o.totalPrice} ج.م` : 'بانتظار التسعير'}
+                      </strong>
                     </div>
                   </div>
                 </div>

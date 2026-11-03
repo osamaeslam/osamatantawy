@@ -5,14 +5,19 @@ const TABLE = 'products';
 
 export const productService = {
   async getAll(): Promise<FirebaseProduct[]> {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('*')
-      .order('created_at', { ascending: false });
+    const data: any[] = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data: page, error } = await supabase
+        .from(TABLE)
+        .select('*')
+        .order('id', { ascending: false })
+        .range(offset, offset + 999);
+      if (error) throw error;
+      data.push(...(page || []));
+      if (!page || page.length < 1000) break;
+    }
 
-    if (error) throw error;
-
-    return (data || []).map((item) => ({
+    return data.map((item) => ({
       id: item.id,
       nameAr: item.name_ar,
       nameEn: item.name_en,
