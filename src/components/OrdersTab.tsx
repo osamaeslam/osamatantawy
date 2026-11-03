@@ -266,7 +266,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                   {/* Phones */}
                   <div className="space-y-1">
                     <span className="text-gray-500 font-bold block text-[11px]">أرقام التواصل:</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <strong className="font-mono text-blue-900 text-xs font-black" dir="ltr">
                         {o.customerPhone}
                       </strong>
@@ -279,18 +279,21 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                         <PhoneCall size={12} />
                       </a>
                       <a
-                        href={`https://wa.me/2${o.customerPhone.replace(/^0+/, '')}`}
+                        href={`https://wa.me/2${o.customerPhone.replace(/^0+/, '')}?text=${encodeURIComponent(
+                          `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك فريق مبيعات طنطاوي جروب للأجهزة بخصوص طلبك رقم #${o.orderId} (${o.productNameAr}) للتأكيد على الأسعار وميعاد التوصيل.`
+                        )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1 bg-white hover:bg-emerald-50 rounded border border-gray-200 text-emerald-600"
-                        title="فتح محادثة واتساب"
+                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+                        title="فتح محادثة واتساب مع العميل للتأكيد والتسعير"
                       >
                         <MessageCircle size={12} />
+                        <span>رد واتساب 💬</span>
                       </a>
                     </div>
 
                     {phoneSec && (
-                      <div className="flex items-center gap-2 pt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-gray-200/60">
                         <strong className="font-mono text-emerald-900 text-xs font-black" dir="ltr">
                           {phoneSec}
                         </strong>
@@ -301,6 +304,17 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                           title="اتصال بالهاتف البديل"
                         >
                           <PhoneCall size={12} />
+                        </a>
+                        <a
+                          href={`https://wa.me/2${phoneSec.replace(/^0+/, '')}?text=${encodeURIComponent(
+                            `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك مبيعات طنطاوي جروب بخصوص طلبك رقم #${o.orderId}.`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded font-bold text-[10px] flex items-center gap-1"
+                        >
+                          <MessageCircle size={11} />
+                          <span>واتساب بديل</span>
                         </a>
                       </div>
                     )}

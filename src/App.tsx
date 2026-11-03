@@ -53,7 +53,24 @@ const MainLayout: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  // إذا تم اختيار ماركة، عرض صفحة المarka مباشرة
+  // فتح لوحة الإدارة بشكل كامل وشامل كصفحة مستقلة
+  if (showAdmin) {
+    return (
+      <AdminDashboard 
+        onExit={() => {
+          setShowAdmin(false);
+          if (window.location.hash === '#admin') {
+            window.location.hash = '';
+          }
+          if (window.location.pathname.toLowerCase().includes('/admin')) {
+            window.history.pushState(null, '', '/');
+          }
+        }} 
+      />
+    );
+  }
+
+  // إذا تم اختيار ماركة، عرض صفحة الماركة مباشرة
   if (selectedBrand) {
     return (
       <div className="min-h-screen bg-gray-50 font-['Cairo',sans-serif]">
@@ -70,28 +87,6 @@ const MainLayout: React.FC = () => {
         </header>
 
         <BrandPage brandName={selectedBrand} />
-
-        {/* Admin Dashboard Overlay */}
-        {showAdmin && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">لوحة التحكم - طنطاوي جروب</h2>
-                <button
-                  onClick={() => setShowAdmin(false)}
-                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-                  title="إغلاق"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <AdminDashboard />
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
     );
   }
@@ -191,26 +186,7 @@ const MainLayout: React.FC = () => {
       {/* WhatsApp Chat Widget */}
       <WhatsAppChatWidget phoneNumber="+201521800000" />
 
-      {/* Admin Dashboard Overlay */}
-      {showAdmin && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">لوحة التحكم - طنطاوي جروب</h2>
-              <button
-                onClick={() => setShowAdmin(false)}
-                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-                title="إغلاق"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <AdminDashboard />
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Global Modals */}
       <ProductDetailModal />
