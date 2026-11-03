@@ -18,6 +18,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
+import { getSafeImageSrc } from '../utils/imageHelper';
 
 export const ProductDetailModal: React.FC = () => {
   const { 
@@ -113,26 +114,28 @@ export const ProductDetailModal: React.FC = () => {
                   {selectedProduct.brand}
                 </span>
                 <img
-                  src={images[activeImageIndex] || selectedProduct.previewimage}
+                  src={getSafeImageSrc(images[activeImageIndex] || selectedProduct.previewimage)}
                   alt={selectedProduct.nameAr}
                   className="max-h-full max-w-full object-contain"
                 />
               </div>
 
               {/* Thumbnails */}
-              {images.length > 1 && (
+              {images.filter(img => Boolean(img && img.trim() !== '')).length > 1 && (
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                  {images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`w-14 h-14 rounded-xl border-2 p-1 bg-gray-50 overflow-hidden shrink-0 transition ${
-                        activeImageIndex === idx ? 'border-blue-900 shadow-xs' : 'border-gray-200'
-                      }`}
-                    >
-                      <img src={img} alt="thumbnail" className="w-full h-full object-contain" />
-                    </button>
-                  ))}
+                  {images
+                    .filter(img => Boolean(img && img.trim() !== ''))
+                    .map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`w-14 h-14 rounded-xl border-2 p-1 bg-gray-50 overflow-hidden shrink-0 transition ${
+                          activeImageIndex === idx ? 'border-blue-900 shadow-xs' : 'border-gray-200'
+                        }`}
+                      >
+                        <img src={getSafeImageSrc(img)} alt="thumbnail" className="w-full h-full object-contain" />
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
@@ -234,7 +237,7 @@ export const ProductDetailModal: React.FC = () => {
                     className="flex-1 bg-blue-900 hover:bg-blue-950 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
                   >
                     <ShoppingCart size={18} />
-                    <span>إضافة لقائمة المعاينة</span>
+                    <span>إضافة إلى سلة الطلبات</span>
                   </button>
 
                   <button
@@ -260,7 +263,7 @@ export const ProductDetailModal: React.FC = () => {
                 {isAddedToast && (
                   <div className="bg-emerald-600 text-white text-xs font-bold p-2.5 rounded-xl text-center shadow-md animate-fade-in flex items-center justify-center gap-1.5">
                     <Check size={16} />
-                    <span>تمت إضافة الصنف إلى قائمة المعاينة بنجاح!</span>
+                    <span>تمت إضافة الصنف إلى سلة الطلبات بنجاح!</span>
                   </div>
                 )}
               </div>

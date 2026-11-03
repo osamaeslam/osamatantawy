@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Zap, Clock, Flame, ShoppingCart, Heart, ShieldAlert, Sparkles } from 'lucide-react';
+import { getSafeImageSrc } from '../utils/imageHelper';
 
 export const DealsPage: React.FC = () => {
   const { products, addToCart, toggleWishlist, isInWishlist, setSelectedProduct } = useApp();
@@ -109,7 +110,8 @@ export const DealsPage: React.FC = () => {
                   className="w-48 h-48 cursor-pointer flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage} referrerPolicy="no-referrer"
+                    src={getSafeImageSrc(product.previewimage)}
+                    referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-300"
                   />
@@ -147,7 +149,7 @@ export const DealsPage: React.FC = () => {
                 {/* Status and CTA */}
                 <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                    متاح للمعاينة الفورية
+                    متوفر للطلب الفوري
                   </span>
 
                   <button
@@ -155,7 +157,7 @@ export const DealsPage: React.FC = () => {
                     className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
                   >
                     <ShoppingCart size={14} />
-                    <span>طلب معاينة</span>
+                    <span>إضافة للطلب</span>
                   </button>
                 </div>
               </div>

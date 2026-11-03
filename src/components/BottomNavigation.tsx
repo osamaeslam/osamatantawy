@@ -17,7 +17,7 @@ export const BottomNavigation: React.FC = () => {
     { id: 'home', label: 'الرئيسية', icon: Home },
     { id: 'categories', label: 'الأقسام', icon: Grid },
     { id: 'deals', label: 'العروض', icon: Zap, isDeal: true },
-    { id: 'cart', label: 'المعاينة', icon: ShoppingBag, badge: cartCount },
+    { id: 'cart', label: 'السلة والطلب', icon: ShoppingBag, badge: cartCount },
     { id: 'tracking', label: 'تتبع الطلب', icon: Truck },
   ];
 

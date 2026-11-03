@@ -25,6 +25,7 @@ export const orderService = {
       totalPrice: item.total_price,
       status: item.status as FirebaseOrder['status'],
       createdAt: item.created_at,
+      items: item.items,
     }));
   },
 
@@ -49,10 +50,11 @@ export const orderService = {
       totalPrice: item.total_price,
       status: item.status as FirebaseOrder['status'],
       createdAt: item.created_at,
+      items: item.items,
     }));
   },
 
-  async create(data: Omit<FirebaseOrder, 'id'>): Promise<string> {
+  async create(data: Omit<FirebaseOrder, 'id'> & { items?: any }): Promise<string> {
     const { data: inserted, error } = await supabase
       .from(TABLE)
       .insert([
@@ -65,8 +67,9 @@ export const orderService = {
           selected_color: data.selectedColor,
           selected_size: data.selectedSize,
           quantity: data.quantity,
-          total_price: data.totalPrice,
-          status: data.status,
+          total_price: data.totalPrice || 0,
+          status: data.status || 'pending',
+          items: data.items || [],
         },
       ])
       .select('id')
@@ -76,8 +79,74 @@ export const orderService = {
     return inserted.id;
   },
 
+  async saveInvoiceOrder(invoice: {
+    orderId: string;
+    customerName: string;
+    phonePrimary: string;
+    phoneSecondary?: string;
+    deliveryAddress: string;
+    city?: string;
+    landmark?: string;
+    deliveryTimeWindow?: string;
+    notes?: string;
+    items: any[];
+    totalPrice?: number;
+  }): Promise<string> {
+    const summaryAr = invoice.items
+      .map((i) => `${i.nameAr} (عدد ${i.quantity})`)
+      .slice(0, 3)
+      .join('، ') + (invoice.items.length > 3 ? ` و${invoice.items.length - 3} أصناف أخرى` : '');
+
+    const totalQty = invoice.items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+
+    const fullItemsPayload = {
+      phonePrimary: invoice.phonePrimary,
+      phoneSecondary: invoice.phoneSecondary || '',
+      city: invoice.city || '',
+      deliveryAddress: invoice.deliveryAddress,
+      landmark: invoice.landmark || '',
+      deliveryTimeWindow: invoice.deliveryTimeWindow || '',
+      notes: invoice.notes || '',
+      orderedItems: invoice.items,
+    };
+
+    const { data: inserted, error } = await supabase
+      .from(TABLE)
+      .insert([
+        {
+          order_id: invoice.orderId,
+          customer_name: invoice.customerName,
+          customer_phone: invoice.phonePrimary,
+          product_name_ar: summaryAr || 'طلب شراء أجهزة من طنطاوي جروب',
+          quantity: totalQty,
+          total_price: invoice.totalPrice || 0,
+          status: 'pending',
+          selected_size: invoice.deliveryTimeWindow || null,
+          items: fullItemsPayload,
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error saving invoice to Supabase:', error);
+      throw error;
+    }
+    return inserted.id;
+  },
+
   async updateStatus(id: string, status: FirebaseOrder['status']): Promise<void> {
     const { error } = await supabase.from(TABLE).update({ status }).eq('id', id);
+    if (error) throw error;
+  },
+
+  async updateTotalPrice(id: string, totalPrice: number): Promise<void> {
+    const { error } = await supabase.from(TABLE).update({ total_price: totalPrice }).eq('id', id);
+    if (error) throw error;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from(TABLE).delete().eq('id', id);
     if (error) throw error;
   },
 };

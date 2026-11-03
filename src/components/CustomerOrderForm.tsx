@@ -169,7 +169,7 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
           <PhoneCall size={16} className="mr-2" />
           ملاحظة: الأسعار غير معروضة على الموقع لأنها للتجارة بالجملة.
-          سيتم التواصل معك لتأكيد السعر النهائي قبل التوصيل، والدفع يكون عند الاستلام بعد المعاينة.
+          سيتم التواصل معك لتأكيد السعر النهائي وإجمالي كارت الفاتورة، والدفع عند الاستلام بعد الفحص.
         </div>
 
         <button

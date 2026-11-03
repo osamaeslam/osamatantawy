@@ -84,7 +84,7 @@ export const Footer: React.FC = () => {
                   onClick={() => setActiveTab('cart')}
                   className="hover:text-blue-400 transition"
                 >
-                  قائمة طلبات المعاينة والمفضلة
+                  سلة طلبات الشراء والمفضلة
                 </button>
               </li>
               <li>
@@ -177,7 +177,7 @@ export const Footer: React.FC = () => {
             </button>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-emerald-400 font-bold">دفع موحد عند الاستلام بعد المعاينة</span>
+            <span className="text-emerald-400 font-bold">دفع عند الاستلام بعد الفحص</span>
             <span>•</span>
             <span>شحن لجميع المحافظات</span>
             <span>•</span>

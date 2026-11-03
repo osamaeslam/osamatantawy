@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, OrderItem, UserProfile, HomePageConfig } from '../types';
 import { PRODUCTS, INITIAL_ORDERS, INITIAL_USER, PROMO_CODES, INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
 import { normalizeImageUrl } from '../services/image-url';
+import { supabase } from '../supabase/config';
+import { mapSupabaseToProduct } from '../supabase/product-mapper';
 
 /** يضمن أن صور المنتجات (من الشيت/الدريفي/المخزّن) قابلة للعرض مباشرة */
 const withNormalizedImages = (list: Product[]): Product[] =>
@@ -19,6 +21,11 @@ interface AppContextType {
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   importProducts: (newProducts: Product[]) => void;
   resetProductsToDefault: () => void;
+  hideDemoProducts: boolean;
+  setHideDemoProducts: (hide: boolean) => void;
+  isSyncingWithDatabase: boolean;
+  fetchProductsFromDatabase: () => Promise<void>;
+  supabaseProductCount: number;
   homePageConfig: HomePageConfig;
   updateHomePageConfig: (config: HomePageConfig) => void;
   whatsappNumber: string;
@@ -73,6 +80,17 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hideDemoProducts, setHideDemoProductsState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tantawy_hide_demo_products') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isSyncingWithDatabase, setIsSyncingWithDatabase] = useState(false);
+  const [supabaseProductCount, setSupabaseProductCount] = useState(0);
+
   // Products initialized from localStorage or default
   const [products, setProducts] = useState<Product[]>(() => {
     try {
@@ -86,6 +104,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return withNormalizedImages(PRODUCTS);
   });
+
+  // مزامنة فورية ومباشرة مع قاعدة بيانات سوبابيز
+  const fetchProductsFromDatabase = async () => {
+    setIsSyncingWithDatabase(true);
+    try {
+      const { data: dbItems, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+
+      if (!error && dbItems && dbItems.length > 0) {
+        setSupabaseProductCount(dbItems.length);
+        const mapped = dbItems.map((item, idx) => mapSupabaseToProduct(item, idx));
+        setProducts(mapped);
+        try {
+          // حفظ نسخة احتياطية محلية
+          localStorage.setItem('tantawy_custom_products', JSON.stringify(mapped.slice(0, 100)));
+        } catch {
+          // ignore quota limits
+        }
+      }
+    } catch (err) {
+      console.warn('Live Supabase products fetch error:', err);
+    } finally {
+      setIsSyncingWithDatabase(false);
+    }
+  };
+
+  // تشغيل المزامنة المباشرة مع قاعدة البيانات فور فتح التطبيق
+  useEffect(() => {
+    fetchProductsFromDatabase();
+  }, []);
+
+  const setHideDemoProducts = (hide: boolean) => {
+    setHideDemoProductsState(hide);
+    try {
+      localStorage.setItem('tantawy_hide_demo_products', hide ? 'true' : 'false');
+    } catch (e) {
+      console.error(e);
+    }
+    if (hide) {
+      // إخفاء البيانات التجريبية والاعتماد على قاعدة البيانات
+      fetchProductsFromDatabase();
+    } else {
+      resetProductsToDefault();
+    }
+  };
 
   // Homepage CMS Config
   const [homePageConfig, setHomePageConfig] = useState<HomePageConfig>(() => {
@@ -121,11 +187,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [discountCode, setDiscountCode] = useState<string>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
 
-  // رقم الواتساب المعتمد لتلقي طلبات المعاينة
+  // رقم الواتساب المعتمد لتلقي الطلبات والفواتير
   const [whatsappNumber, setWhatsappNumber] = useState<string>(() => {
     try {
       const direct = localStorage.getItem('tantawy_whatsapp_number');
       if (direct) return direct;
+      const directSales = localStorage.getItem('tantawy_sales_whatsapp');
+      if (directSales) return directSales;
       const saved = localStorage.getItem('tantawy_homepage_config');
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -138,11 +206,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const updateWhatsAppNumber = (newNumber: string) => {
-    setWhatsappNumber(newNumber);
+    const trimmed = newNumber.trim();
+    setWhatsappNumber(trimmed);
     try {
-      localStorage.setItem('tantawy_whatsapp_number', newNumber);
+      localStorage.setItem('tantawy_whatsapp_number', trimmed);
+      localStorage.setItem('tantawy_sales_whatsapp', trimmed);
+      localStorage.setItem('tantawy_sales_phone', trimmed);
       setHomePageConfig(prev => {
-        const updated = { ...prev, whatsappNumber: newNumber };
+        const updated = { ...prev, whatsappNumber: trimmed };
         localStorage.setItem('tantawy_homepage_config', JSON.stringify(updated));
         return updated;
       });
@@ -155,9 +226,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateHomePageConfig = (newConfig: HomePageConfig) => {
     setHomePageConfig(newConfig);
     if (newConfig.whatsappNumber) {
-      setWhatsappNumber(newConfig.whatsappNumber);
+      const trimmed = newConfig.whatsappNumber.trim();
+      setWhatsappNumber(trimmed);
       try {
-        localStorage.setItem('tantawy_whatsapp_number', newConfig.whatsappNumber);
+        localStorage.setItem('tantawy_whatsapp_number', trimmed);
+        localStorage.setItem('tantawy_sales_whatsapp', trimmed);
+        localStorage.setItem('tantawy_sales_phone', trimmed);
       } catch (e) {
         console.error(e);
       }
@@ -174,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const normalized = withNormalizedImages(newProducts);
     setProducts(normalized);
     try {
-      localStorage.setItem('tantawy_custom_products', JSON.stringify(normalized));
+      localStorage.setItem('tantawy_custom_products', JSON.stringify(normalized.slice(0, 100)));
     } catch (e) {
       console.error('Error saving custom products:', e);
     }
@@ -185,6 +259,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(PRODUCTS);
     try {
       localStorage.removeItem('tantawy_custom_products');
+      localStorage.removeItem('tantawy_hide_demo_products');
     } catch (e) {
       console.error('Error resetting products:', e);
     }
@@ -327,6 +402,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProducts,
         importProducts,
         resetProductsToDefault,
+        hideDemoProducts,
+        setHideDemoProducts,
+        isSyncingWithDatabase,
+        fetchProductsFromDatabase,
+        supabaseProductCount,
         homePageConfig,
         updateHomePageConfig,
         whatsappNumber,

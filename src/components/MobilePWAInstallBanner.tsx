@@ -51,7 +51,7 @@ export const MobilePWAInstallBanner: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-blue-200 truncate">
-                ثبّت التطبيق كأيقونة على هاتفك لطلب المعاينة والشحن بدون متجر
+                ثبّت التطبيق كأيقونة على هاتفك لطلب الأجهزة واستخراج كارت الفاتورة فوراً
               </p>
             </div>
           </div>

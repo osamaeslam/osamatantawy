@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
         </div>
         <div className="hidden md:flex items-center justify-center gap-2 text-xs text-gray-100">
           <Sparkles size={14} className="text-yellow-300 animate-pulse shrink-0" />
-          <span>{homePageConfig?.announcementText || 'طنطاوي جروب: أجهزة منزلية وكهربية • شحن لجميع المحافظات • دفع عند الاستلام بعد المعاينة'}</span>
+          <span>{homePageConfig?.announcementText || 'طنطاوي جروب: أجهزة منزلية وكهربية • شحن لجميع المحافظات • دفع عند الاستلام بعد الفحص'}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
           <button
@@ -68,7 +68,7 @@ export const Header: React.FC = () => {
           <button
             onClick={() => setIsOrderTrackingOpen(true)}
             className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 px-2.5 py-1 rounded-full text-[11px] font-black transition shadow-xs"
-            title="تتبع طلب المعاينة برقم الهاتف"
+            title="تتبع الطلب والشحنة برقم الهاتف"
           >
             <Truck size={13} />
             <span>تتبع طلبك 🚚</span>
@@ -189,7 +189,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setActiveTab('cart')}
               className="relative flex items-center gap-2 p-2 md:px-3 md:py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-full transition"
-              title="قائمة طلبات المعاينة"
+              title="سلة طلبات الشراء والفاتورة"
             >
               <div className="relative">
                 <ShoppingCart size={21} className="text-blue-800" />
@@ -200,7 +200,7 @@ export const Header: React.FC = () => {
                 )}
               </div>
               <div className="hidden lg:flex flex-col text-right">
-                <span className="text-[10px] text-gray-500 font-medium">قائمة المعاينة</span>
+                <span className="text-[10px] text-gray-500 font-medium">سلة الطلبات</span>
                 <span className="text-xs font-black text-blue-900">{cartCount} أصناف</span>
               </div>
             </button>

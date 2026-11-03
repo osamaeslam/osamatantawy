@@ -82,17 +82,17 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       // Process server orders
       serverOrders.forEach((so) => {
         let step = 1;
-        let label = 'تم استلام طلب المعاينة';
+        let label = 'تم استلام وتأكيد طلب الشراء';
         const st = String(so.status).toLowerCase();
         if (st === 'confirmed' || st === 'dispatched' || st === 'shipped') {
           step = 3;
-          label = 'المندوب في الطريق إليك للمعاينة';
+          label = 'الشحنة في الطريق للتسليم والفحص';
         } else if (st === 'delivered' || st === 'completed') {
           step = 4;
-          label = 'تمت المعاينة والاستلام بنجاح';
+          label = 'تم التسليم وسداد الفاتورة بنجاح';
         } else {
           step = 2;
-          label = 'جاري الفحص والتجهيز بالمخازن';
+          label = 'جاري التجهيز وإصدار كارت الفاتورة بالمخازن';
         }
 
         combined.push({
@@ -106,7 +106,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           statusLabelAr: label,
           currentStep: step,
           expectedTime: 'خلال 24 إلى 48 ساعة كحد أقصى',
-          representativeName: 'ك/ محمد طارق (مسؤول معاينة وتسليم)',
+          representativeName: 'ك/ محمد طارق (مسؤول التسليم والشحن)',
           representativePhone: '01012345678',
           createdAt: so.createdAt || new Date().toISOString(),
           address: (so as any).customerAddress || 'القاهرة / الجيزة'
@@ -124,10 +124,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             quantity: 1,
             totalPrice: lo.price,
             status: 'processing',
-            statusLabelAr: 'المندوب في الطريق إليك للمعاينة',
+            statusLabelAr: 'الشحنة في الطريق للتسليم',
             currentStep: 3,
             expectedTime: 'اليوم بين الساعة 2 ظهراً و 6 مساءً',
-            representativeName: 'ك/ كريم حسني (مندوب المعاينة الميداني)',
+            representativeName: 'ك/ كريم حسني (مندوب الشحن والتسليم)',
             representativePhone: '01123456789',
             createdAt: lo.date || new Date().toISOString(),
             address: lo.descriptionAr
@@ -144,7 +144,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           productName: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت',
           quantity: 1,
           status: 'dispatched',
-          statusLabelAr: 'المندوب في الطريق إليك للمعاينة المنزلية',
+          statusLabelAr: 'الشحنة في الطريق للتسليم المنزلي',
           currentStep: 3,
           expectedTime: 'اليوم من 3:00 م حتى 6:00 م',
           representativeName: 'ك/ حسام حسن (مندوب طنطاوي جروب)',
@@ -163,10 +163,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   };
 
   const steps = [
-    { step: 1, title: 'استلام طلب المعاينة', desc: 'تم استلام بياناتك وتأكيد التليفون' },
-    { step: 2, title: 'الفحص والتجهيز', desc: 'فحص الجهاز بكرتونة المصنع وشهادة الضمان' },
-    { step: 3, title: 'المندوب في الطريق', desc: 'سيصلك المندوب لمعاينة الجهاز في منزلك' },
-    { step: 4, title: 'المعاينة والدفع', desc: 'الفحص والتجربة أولاً ثم دفع القيمة' }
+    { step: 1, title: 'استلام طلب الشراء', desc: 'تم استلام وتأكيد بيانات الطلب ورقمين الهاتف' },
+    { step: 2, title: 'التجهيز وكارت الفاتورة', desc: 'تجهيز الجهاز بكرتونة المصنع وإصدار كارت الفاتورة' },
+    { step: 3, title: 'الشحنة في الطريق', desc: 'سيصلك مندوب طنطاوي جروب بالعنوان والعلامة المميزة' },
+    { step: 4, title: 'الفحص والاستلام', desc: 'فحص الجهاز واستلام الفاتورة ثم سداد القيمة' }
   ];
 
   return (
@@ -186,13 +186,13 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-blue-950 flex items-center gap-2">
-                <span>تتبع طلب المعاينة والشحن</span>
+                <span>تتبع طلب الشحن والأوردر</span>
                 <span className="text-[10px] bg-yellow-400 text-blue-950 px-2 py-0.5 rounded-full font-bold">
                   طنطاوي جروب
                 </span>
               </h2>
               <p className="text-xs text-gray-500">
-                أدخل رقم هاتفك لمتابعة موعد وصول مندوب المعاينة وموقف الجهاز
+                أدخل رقم هاتفك لمتابعة موعد وصول مندوب التسليم وموقف كارت الفاتورة
               </p>
             </div>
           </div>
@@ -270,7 +270,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 <AlertCircle size={40} className="text-amber-500 mx-auto" />
                 <h3 className="font-bold text-gray-800 text-sm">لم يتم العثور على طلبات مرتبطة بهذا الرقم</h3>
                 <p className="text-xs text-gray-500 max-w-md mx-auto">
-                  تأكد من كتابة نفس رقم الهاتف المستخدم عند تقديم طلب المعاينة، أو يمكنك التواصل مع خدمة عملاء طنطاوي جروب فوراً:
+                  تأكد من كتابة نفس رقم الهاتف المستخدم عند تقديم الطلب، أو يمكنك التواصل مع خدمة عملاء طنطاوي جروب فوراً:
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <a
@@ -281,7 +281,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     <span>الخط الساخن: 15218</span>
                   </a>
                   <a
-                    href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن موعد معاينة طلبي لدى طنطاوي جروب برقم هاتف: ' + phoneNumber)}`}
+                    href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن موعد تسليم طلبي لدى طنطاوي جروب برقم هاتف: ' + phoneNumber)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
@@ -372,7 +372,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 font-bold flex items-center gap-1.5">
                           <Truck size={14} className="text-blue-900" />
-                          <span>مندوب المعاينة المخصص:</span>
+                          <span>مندوب الشحن والتسليم:</span>
                         </span>
                         <strong className="text-gray-800">{order.representativeName}</strong>
                       </div>
@@ -384,7 +384,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                         <span>سياسة الدفع والاستلام:</span>
                       </span>
                       <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        معاينة وتجربة مجانية قبل دفع أي مليم
+                        فحص الجهاز واستلام كارت الفاتورة قبل دفع أي مليم
                       </span>
                     </div>
                   </div>
@@ -400,7 +400,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     </a>
 
                     <a
-                      href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(`السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد وصول مندوب المعاينة`)}`}
+                      href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(`السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد خروج الشحنة`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-xs"
@@ -418,7 +418,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         {/* Footer Guarantee */}
         <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-600 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
-          <span>خدمة توصيل ومعاينة معتمدة تحت إشراف طنطاوي جروب للأجهزة الكهربائية والتوزيع</span>
+          <span>خدمة توصيل وفحص معتمدة تحت إشراف طنطاوي جروب للأجهزة الكهربائية والتوزيع</span>
         </div>
       </div>
     </div>

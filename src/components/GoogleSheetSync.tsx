@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { Product } from '../types';
 import { productService } from '../supabase/products.service';
 import { supabase } from '../supabase/config';
+import { getSafeImageSrc } from '../utils/imageHelper';
 import { 
   FileSpreadsheet, 
   Link2, 
@@ -632,7 +633,7 @@ export const GoogleSheetSync: React.FC = () => {
                     <tr key={i} className="hover:bg-gray-50">
                       <td className="p-2">
                         <img
-                          src={p.previewimage} referrerPolicy="no-referrer"
+                          src={getSafeImageSrc(p.previewimage)} referrerPolicy="no-referrer"
                           alt=""
                           className="w-10 h-10 object-contain rounded-lg border border-gray-200 bg-white"
                           onError={(e: any) => {

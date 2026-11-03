@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../types';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
+import { getSafeImageSrc } from '../utils/imageHelper';
 
 export const CategoriesPage: React.FC = () => {
   const { 
@@ -276,7 +277,8 @@ export const CategoriesPage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage} referrerPolicy="no-referrer"
+                    src={getSafeImageSrc(product.previewimage)}
+                    referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
@@ -301,10 +303,10 @@ export const CategoriesPage: React.FC = () => {
                     <button
                       onClick={() => addToCart(product, 1)}
                       className="flex-1 py-1.5 px-2.5 bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white rounded-lg transition text-[11px] font-bold flex items-center justify-center gap-1"
-                      title="طلب معاينة الصنف"
+                      title="إضافة الصنف لسلة الطلبات"
                     >
                       <ShoppingCart size={14} />
-                      <span>معاينة</span>
+                      <span>إضافة للطلب</span>
                     </button>
                     <a
                       href={createProductWhatsAppUrl(product)}
@@ -337,7 +339,8 @@ export const CategoriesPage: React.FC = () => {
                   className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-lg shrink-0 cursor-pointer p-2 flex items-center justify-center"
                 >
                   <img
-                    src={product.previewimage} referrerPolicy="no-referrer"
+                    src={getSafeImageSrc(product.previewimage)}
+                    referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain"
                   />
@@ -369,7 +372,7 @@ export const CategoriesPage: React.FC = () => {
 
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                      متاح للمعاينة الفورية بالمعارض أو عند التوصيل
+                      متوفر للطلب الفوري واستخراج كارت الفاتورة
                     </span>
                   </div>
                 </div>
@@ -380,7 +383,7 @@ export const CategoriesPage: React.FC = () => {
                     className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-xs"
                   >
                     <ShoppingCart size={14} />
-                    <span className="hidden sm:inline">طلب معاينة</span>
+                    <span className="hidden sm:inline">إضافة للطلب</span>
                   </button>
                   <button
                     onClick={() => toggleWishlist(product)}

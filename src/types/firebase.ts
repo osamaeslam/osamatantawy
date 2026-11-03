@@ -25,7 +25,7 @@ export interface FirebaseOrder {
   selectedSize: string;
   quantity: number;
   totalPrice: number;
-  status: "pending" | "confirmed" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "dispatched" | "delivered" | "cancelled";
   createdAt: any;
   whatsappMessageId?: string;
   customerAddress?: string;

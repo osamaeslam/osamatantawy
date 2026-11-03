@@ -233,8 +233,8 @@ export const HomePage: React.FC = () => {
             <ShieldCheck size={20} />
           </div>
           <div>
-            <h4 className="text-xs md:text-sm font-bold text-gray-800">دفع موحد بعد المعاينة</h4>
-            <p className="text-[11px] text-gray-500">افتح الشحنة وتأكد منها قبل الدفع</p>
+            <h4 className="text-xs md:text-sm font-bold text-gray-800">دفع عند الاستلام بعد الفحص</h4>
+            <p className="text-[11px] text-gray-500">افحص طلبك وتأكد من سلامته قبل السداد</p>
           </div>
         </div>
         <div className="flex items-center gap-3 p-2">
@@ -392,7 +392,7 @@ export const HomePage: React.FC = () => {
                       <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                         متاح بالمعارض
                       </span>
-                      <span className="text-[10px] text-gray-500 font-medium">معاينة مجانية</span>
+                      <span className="text-[10px] text-gray-500 font-medium">شحن لجميع المحافظات</span>
                     </div>
 
                     <div className="flex items-center gap-1.5 w-full">
@@ -401,14 +401,14 @@ export const HomePage: React.FC = () => {
                         className="flex-1 bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-2 px-2.5 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-xs"
                       >
                         <ShoppingCart size={13} />
-                        <span>طلب معاينة</span>
+                        <span>إضافة للطلب</span>
                       </button>
                       <a
                         href={createProductWhatsAppUrl(product)}
                         target="_blank"
                         rel="noreferrer"
                         className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-xs flex items-center justify-center"
-                        title="طلب فوري واستفسار عبر واتساب"
+                        title="طلب فوري عبر واتساب"
                       >
                         <MessageCircle size={15} />
                       </a>
@@ -549,10 +549,10 @@ export const HomePage: React.FC = () => {
                     <button
                       onClick={() => addToCart(product, 1)}
                       className="flex-1 py-1.5 px-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition text-[11px] font-bold flex items-center justify-center gap-1 shadow-xs"
-                      title="حجز للمعاينة"
+                      title="إضافة إلى سلة الطلبات"
                     >
                       <ShoppingCart size={13} />
-                      <span>حجز معاينة</span>
+                      <span>إضافة للطلب</span>
                     </button>
                     <a
                       href={createProductWhatsAppUrl(product)}
@@ -583,7 +583,7 @@ export const HomePage: React.FC = () => {
               تسوق بثقة تامة مع أكبر صرح للأجهزة والأدوات المنزلية
             </h3>
             <p className="text-xs md:text-sm text-gray-300 leading-relaxed">
-              نوفر لك تشكيلة متكاملة تناسب كل بيت وعروسة مع حق فتح ومعاينة الشحنة بالكامل قبل الدفع عند الاستلام. فريق خدمة العملاء متاح للرد على استفساراتكم طوال اليوم عبر الخط الساخن <a href="tel:15218" className="text-yellow-300 font-bold hover:underline">15218</a>.
+              نوفر لك تشكيلة متكاملة تناسب كل بيت وعروسة مع استلام كارت الفاتورة الرسمي وفحص الأجهزة عند الاستلام. فريق خدمة العملاء متاح للرد على استفساراتكم طوال اليوم عبر الخط الساخن <a href="tel:15218" className="text-yellow-300 font-bold hover:underline">15218</a>.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
               <button

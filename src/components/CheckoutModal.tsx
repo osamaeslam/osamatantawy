@@ -9,247 +9,506 @@ import {
   PhoneCall,
   MapPin,
   Clock,
-  Sparkles
+  Sparkles,
+  Send,
+  Printer,
+  Copy,
+  Calendar,
+  Building2,
+  FileText
 } from 'lucide-react';
 import { OrderItem } from '../types';
+import { OrderInvoiceData, sendInvoiceToWhatsApp, generateInvoiceMessage } from '../services/invoice-to-whatsapp';
+import { orderService } from '../supabase/orders.service';
 
 export const CheckoutModal: React.FC = () => {
   const { 
     isCheckoutModalOpen, 
     setIsCheckoutModalOpen, 
     cart, 
-    cartTotal, 
-    user, 
-    isLoggedIn,
-    createOrder,
+    clearCart,
+    createOrder, 
     setActiveTab,
     setIsOrderTrackingOpen,
-    setTrackingPhone
+    setTrackingPhone,
+    whatsappNumber
   } = useApp();
 
   const [customerName, setCustomerName] = useState('');
-  const [shippingAddress, setShippingAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phonePrimary, setPhonePrimary] = useState('');
+  const [phoneSecondary, setPhoneSecondary] = useState('');
   const [city, setCity] = useState('القاهرة والجيزة');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [deliveryTimeWindow, setDeliveryTimeWindow] = useState('خلال 24 إلى 48 ساعة');
   const [notes, setNotes] = useState('');
+
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
+  const [invoiceData, setInvoiceData] = useState<OrderInvoiceData | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!isCheckoutModalOpen) return null;
 
   const handleConfirmOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    const order = createOrder(
-      `${customerName ? `${customerName} - ` : ''}${city} - ${shippingAddress} (هاتف: ${phone}${notes ? ` - ملاحظات: ${notes}` : ''})`, 
-      'دفع موحد عند الاستلام - طنطاوي جروب (مع حق المعاينة المجانية)'
-    );
+
+    if (!customerName.trim() || !phonePrimary.trim() || !deliveryAddress.trim()) {
+      alert('يرجى استكمال البيانات الأساسية: الاسم ورقم الموبايل ومكان التوصيل.');
+      return;
+    }
+
+    const fullAddress = `${city} - ${deliveryAddress}${landmark ? ` (علامة مميزة: ${landmark})` : ''} - هاتف أساسي: ${phonePrimary}${phoneSecondary ? ` - هاتف بديل: ${phoneSecondary}` : ''} - موعد التوصيل: ${deliveryTimeWindow}${notes ? ` - ملاحظات: ${notes}` : ''}`;
+    
+    const order = createOrder(fullAddress, 'دفع عند الاستلام - طنطاوي جروب');
+
     if (order) {
-      if (phone) {
-        setTrackingPhone(phone);
-      }
+      const generatedInvoice: OrderInvoiceData = {
+        orderId: order.orderid,
+        customerName: customerName.trim(),
+        phonePrimary: phonePrimary.trim(),
+        phoneSecondary: phoneSecondary.trim() || undefined,
+        deliveryAddress: deliveryAddress.trim(),
+        city: city,
+        landmark: landmark.trim() || undefined,
+        deliveryTimeWindow: deliveryTimeWindow.trim() || undefined,
+        notes: notes.trim() || undefined,
+        items: cart.map(item => ({
+          nameAr: item.product.nameAr,
+          itemNumber: item.product.itemNumber,
+          unifiedCode: item.product.unifiedCode,
+          size: item.selectedSize || item.product.size,
+          color: item.product.color,
+          brand: item.product.brand,
+          quantity: item.quantity,
+          image: item.product.previewimage
+        })),
+        createdAt: new Date().toLocaleDateString('ar-EG', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      };
+
+      setInvoiceData(generatedInvoice);
       setCompletedOrder(order);
+      setTrackingPhone(phonePrimary.trim());
+      clearCart();
+
+      // حفظ كارت الفاتورة والطلب مباشرة في قاعدة بيانات سوبابيز
+      orderService.saveInvoiceOrder(generatedInvoice).catch((err) => {
+        console.warn('Supabase order auto-save fallback:', err);
+      });
+    }
+  };
+
+  const handleSendWhatsApp = () => {
+    if (invoiceData) {
+      sendInvoiceToWhatsApp(invoiceData, whatsappNumber);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleCopy = () => {
+    if (invoiceData) {
+      const text = generateInvoiceMessage(invoiceData);
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
     }
   };
 
   const handleFinish = () => {
     setCompletedOrder(null);
+    setInvoiceData(null);
     setIsCheckoutModalOpen(false);
-    if (phone) {
-      setTrackingPhone(phone);
-      setIsOrderTrackingOpen(true);
-    }
     setActiveTab('home');
   };
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white"
       onClick={() => {
         if (!completedOrder) setIsCheckoutModalOpen(false);
       }}
     >
       <div 
-        className="relative bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-100 p-6 space-y-5"
+        className="relative bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
-        {!completedOrder && (
+        {/* Top Header */}
+        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">
+          <div className="flex items-center gap-2">
+            <FileText className="text-yellow-400" size={20} />
+            <h3 className="font-black text-sm sm:text-base">
+              {completedOrder ? 'كارت فاتورة الطلب الصادرة - طنطاوي جروب' : 'استكمال بيانات طلب الشراء والفاتورة'}
+            </h3>
+          </div>
           <button
-            onClick={() => setIsCheckoutModalOpen(false)}
-            className="absolute top-4 left-4 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition"
+            onClick={() => {
+              if (completedOrder) handleFinish();
+              else setIsCheckoutModalOpen(false);
+            }}
+            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-300 hover:text-white"
+            title="إغلاق"
           >
             <X size={18} />
           </button>
-        )}
+        </div>
 
-        {completedOrder ? (
-          /* Order Confirmed Screen */
-          <div className="text-center py-6 space-y-4">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce">
-              <CheckCircle size={48} />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                تم تسجيل طلبك في طنطاوي جروب بنجاح!
-              </span>
-              <h3 className="text-xl font-black text-gray-900 pt-2">
-                شكراً لثقتكم في طنطاوي جروب (TANTAWY GROUP)
-              </h3>
-              <p className="text-xs text-gray-500">
-                رقم بوليصة الشحن: <strong className="font-mono text-blue-900 text-sm">{completedOrder.orderid}</strong>
-              </p>
-            </div>
-
-            <div className="bg-blue-50/60 p-4 rounded-2xl text-xs text-right space-y-2 border border-blue-100">
-              <div className="flex justify-between">
-                <span className="text-gray-500">طريقة الدفع الموحدة:</span>
-                <span className="font-bold text-blue-900">دفع موحد عند الاستلام بعد المعاينة التامة</span>
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 text-right font-['Cairo',sans-serif] print:overflow-visible print:p-4">
+          
+          {completedOrder && invoiceData ? (
+            /* ========================================================
+               Screen 2: Official Order Invoice Card
+               ======================================================== */
+            <div className="space-y-6">
+              
+              {/* Success Banner (Hidden in print) */}
+              <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex items-center gap-3 text-emerald-950 print:hidden">
+                <div className="w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shrink-0">
+                  <CheckCircle size={22} />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm">تم تسجيل طلب الشراء وتوليد كارت الفاتورة بنجاح!</h4>
+                  <p className="text-[11px] text-emerald-800 mt-0.5">
+                    أرسل الكارت الآن لموظف مبيعات واتساب ليرد عليك فوراً بأسعار الأصناف وإجمالي الفاتورة وموعد الوصول.
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">رسوم حجز المعاينة:</span>
-                <span className="font-black text-emerald-700 text-sm">مجانية بالكامل (0 ج.م)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">موعد التسليم المتوقع:</span>
-                <span className="text-emerald-700 font-bold">خلال 24 إلى 48 ساعة</span>
-              </div>
-            </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl text-center text-[11px] text-gray-600">
-              📞 سيقوم أحد ممثلي خدمة عملاء <strong>طنطاوي جروب (15218)</strong> بالتواصل معك لتأكيد الموعد والتفاصيل.
-            </div>
+              {/* The Official Tantawy Card */}
+              <div className="border-4 border-double border-blue-900/40 rounded-2xl p-5 bg-gradient-to-b from-blue-50/40 to-white relative overflow-hidden shadow-xs">
+                
+                {/* Header info */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-blue-900/20 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-auto bg-white p-1 rounded-xl shadow-xs border border-gray-200 flex items-center justify-center">
+                      <img src="/logo.png" alt="Tantawy Group Logo" className="h-full w-auto object-contain" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-blue-950 flex items-center gap-1.5">
+                        <span>طنطاوي جروب</span>
+                        <span className="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-sm">مصر</span>
+                      </h2>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        TANTAWY GROUP - كارت فاتورة معتمدة
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setTrackingPhone(phone);
-                  setCompletedOrder(null);
-                  setIsCheckoutModalOpen(false);
-                  setIsOrderTrackingOpen(true);
-                }}
-                className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black py-3 rounded-xl transition text-xs shadow-md flex items-center justify-center gap-2"
-              >
-                <Truck size={16} />
-                <span>تتبع موعد وصول المندوب للمعاينة الآن 🚚</span>
-              </button>
+                  <div className="text-center sm:text-left space-y-1">
+                    <div className="bg-blue-950 text-white px-3 py-1 rounded-lg text-xs font-mono font-black inline-block">
+                      فاتورة طلب: #{invoiceData.orderId}
+                    </div>
+                    <div className="text-[11px] text-gray-500 font-bold flex items-center justify-center sm:justify-start gap-1">
+                      <Calendar size={12} />
+                      <span>{invoiceData.createdAt}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <button
-                onClick={handleFinish}
-                className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl transition text-xs"
-              >
-                عرض تفاصيل الطلب في حسابي
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Checkout Form with Unified Payment */
-          <form onSubmit={handleConfirmOrder} className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white p-1 border border-gray-200 shrink-0 shadow-xs">
-                <img src="/logo.png" alt="Tantawy Group Logo" className="w-full h-full object-contain" />
+                {/* Customer Details Box */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
+                  <div className="bg-white p-3 rounded-xl border border-gray-200 text-xs space-y-1.5">
+                    <h5 className="font-black text-blue-900 border-b border-gray-100 pb-1 flex items-center gap-1">
+                      <Building2 size={13} />
+                      <span>بيانات العميل المستلم:</span>
+                    </h5>
+                    <p><span className="text-gray-500">الاسم:</span> <strong>{invoiceData.customerName}</strong></p>
+                    <p><span className="text-gray-500">الموبايل الأساسي:</span> <strong className="font-mono text-blue-900" dir="ltr">{invoiceData.phonePrimary}</strong></p>
+                    {invoiceData.phoneSecondary && (
+                      <p><span className="text-gray-500">الموبايل الإضافي:</span> <strong className="font-mono text-emerald-800" dir="ltr">{invoiceData.phoneSecondary}</strong></p>
+                    )}
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-gray-200 text-xs space-y-1.5">
+                    <h5 className="font-black text-blue-900 border-b border-gray-100 pb-1 flex items-center gap-1">
+                      <MapPin size={13} className="text-red-600" />
+                      <span>بيانات ومكان التوصيل:</span>
+                    </h5>
+                    <p><span className="text-gray-500">العنوان:</span> <strong>{invoiceData.city ? `${invoiceData.city} - ` : ''}{invoiceData.deliveryAddress}</strong></p>
+                    {invoiceData.landmark && (
+                      <p><span className="text-gray-500">علامة مميزة:</span> <strong className="text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded-sm">{invoiceData.landmark}</strong></p>
+                    )}
+                    {invoiceData.deliveryTimeWindow && (
+                      <p><span className="text-gray-500">مدة التوصيل:</span> <strong className="text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded-sm">{invoiceData.deliveryTimeWindow}</strong></p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="space-y-1.5">
+                  <h5 className="text-xs font-black text-gray-900">الأصناف المطلوبة في الأوردر:</h5>
+                  <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                    <table className="w-full text-right text-xs">
+                      <thead className="bg-slate-900 text-white font-bold">
+                        <tr>
+                          <th className="p-2">الصنف</th>
+                          <th className="p-2">كود الصنف</th>
+                          <th className="p-2">المواصفة</th>
+                          <th className="p-2 text-center">الكمية</th>
+                          <th className="p-2 text-left">التسعير</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {invoiceData.items.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="p-2 font-bold text-gray-900">{item.nameAr}</td>
+                            <td className="p-2 font-mono text-[11px] text-blue-900 font-bold">{item.unifiedCode || item.itemNumber || '-'}</td>
+                            <td className="p-2 text-gray-600">{[item.size, item.color].filter(Boolean).join(' - ') || 'قياسي'}</td>
+                            <td className="p-2 text-center font-black text-blue-950 bg-blue-50/50">{item.quantity}</td>
+                            <td className="p-2 text-left text-gray-500 text-[11px] font-bold">يرد به الموظف</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Pricing Instruction Note */}
+                <div className="mt-3.5 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-950 space-y-1">
+                  <p className="font-black">📌 إشعار التسعير الرسمي لطنطاوي جروب:</p>
+                  <p className="text-amber-900 leading-relaxed">
+                    سيقوم موظف المبيعات والتوزيع بالرد فوراً على رسالة الواتساب بأسعار الأصناف المعتمدة وإجمالي قيمة الفاتورة وفقاً للكمية (جملة أو قطاعي) وتأكيد وصول المندوب.
+                  </p>
+                </div>
+
+                {/* Hotline Bar */}
+                <div className="mt-3 pt-2.5 border-t border-gray-200 flex justify-between items-center text-[11px] text-gray-500 font-bold">
+                  <span>دفع عند الاستلام بعد التجربة التامة</span>
+                  <span className="text-blue-950 font-black">الخط الساخن: 15218</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-black text-gray-900">حجز طلب المعاينة - طنطاوي جروب</h3>
-                <p className="text-xs text-gray-500">طلبك محمي بضمان طنطاوي جروب المعتمد</p>
-              </div>
-            </div>
 
-            {/* Address fields */}
-            <div className="space-y-2.5 text-xs">
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">اسم العميل الكريم:</label>
+              {/* Bottom Actions */}
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2 print:hidden">
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black py-3 px-4 rounded-xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+                >
+                  <Send size={16} />
+                  <span>إرسال كارت الفاتورة لواتساب المبيعات فوراً 📲</span>
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  className="w-full sm:w-auto bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="تحميل وطباعة كارت الفاتورة كملف PDF"
+                >
+                  <Printer size={15} />
+                  <span>تحميل PDF 📄</span>
+                </button>
+
+                <button
+                  onClick={handleCopy}
+                  className="w-full sm:w-auto bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <Copy size={15} />
+                  <span>{copied ? 'تم النسخ ✅' : 'نسخ'}</span>
+                </button>
+              </div>
+
+              <div className="pt-2 text-center print:hidden">
+                <button
+                  onClick={handleFinish}
+                  className="text-xs text-blue-900 font-bold hover:underline"
+                >
+                  العودة للكتالوج ومتابعة التسوق
+                </button>
+              </div>
+
+            </div>
+          ) : (
+            /* ========================================================
+               Screen 1: Order Data Input Form (Customer Details)
+               ======================================================== */
+            <form onSubmit={handleConfirmOrder} className="space-y-4">
+              
+              <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 text-xs text-blue-950 space-y-1">
+                <p className="font-black flex items-center gap-1.5">
+                  <Sparkles size={15} className="text-yellow-600" />
+                  <span>طلب شراء فوري واستخراج كارت الفاتورة:</span>
+                </p>
+                <p className="text-[11px] text-blue-900 leading-relaxed">
+                  أدخل بيانات الاستلام أدناه؛ سيتم استخراج كارت فاتورة أنيق بالأصناف وعدد قطعتين أو أكثر للتواصل المباشر مع موظف المبيعات عبر واتساب للرد بالأسعار وقيمة الفاتورة وميعاد التوصيل.
+                </p>
+              </div>
+
+              {/* 1. Customer Name */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-800">
+                  اسم العميل المستلم بالكامل <span className="text-red-500">*</span>:
+                </label>
                 <input
                   type="text"
                   required
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="الاسم بالكامل أو اسم المستلم"
+                  placeholder="مثال: أحمد عبد الله الشريف"
+                  className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 font-bold outline-none focus:ring-2 focus:ring-blue-600 transition"
                 />
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">المدينة والمحافظة:</label>
-                <input
-                  type="text"
-                  required
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="مثال: القاهرة، الجيزة، الإسكندرية..."
-                />
+              {/* 2. Two Mobile Numbers (Primary & Secondary) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    رقم الموبايل الأساسي <span className="text-red-500">*</span>:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      required
+                      value={phonePrimary}
+                      onChange={(e) => setPhonePrimary(e.target.value)}
+                      placeholder="01012345678"
+                      className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-mono font-bold text-left outline-none focus:ring-2 focus:ring-blue-600 transition"
+                      dir="ltr"
+                    />
+                    <PhoneCall size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <span className="text-[10px] text-gray-500 block">رقم للتواصل وتأكيد الأوردر</span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    رقم موبايل إضافي (بديل) <span className="text-gray-400 font-normal">(مفضل)</span>:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      value={phoneSecondary}
+                      onChange={(e) => setPhoneSecondary(e.target.value)}
+                      placeholder="01123456789"
+                      className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-mono font-bold text-left outline-none focus:ring-2 focus:ring-blue-600 transition"
+                      dir="ltr"
+                    />
+                    <PhoneCall size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <span className="text-[10px] text-gray-500 block">في حال كان الهاتف الأول غير متاح</span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">العنوان بالتفصيل:</label>
-                <input
-                  type="text"
-                  required
-                  value={shippingAddress}
-                  onChange={(e) => setShippingAddress(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="الشارع، رقم العمارة، رقم الشقة أو علامة مميزة"
-                />
+              {/* 3. Delivery Location & City */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    المحافظة / النطاق:
+                  </label>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 transition"
+                  >
+                    <option value="القاهرة والجيزة">القاهرة والجيزة</option>
+                    <option value="الإسكندرية والساحل">الإسكندرية والساحل</option>
+                    <option value="محافظات الدلتا">محافظات الدلتا</option>
+                    <option value="محافظات القناة">محافظات القناة</option>
+                    <option value="محافظات الصعيد">محافظات الصعيد</option>
+                    <option value="كافة محافظات مصر">محافظة أخرى</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    مكان وعنوان التوصيل بالتفصيل <span className="text-red-500">*</span>:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    placeholder="المنطقة، اسم الشارع، رقم العقار، رقم الشقة"
+                    className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 transition"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">رقم الهاتف للتواصل وتأكيد المعاينة والشحن:</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="+20 100 000 0000"
-                />
+              {/* 4. Landmark (علامة مميزة) & Delivery Time Window (مدة التوصيل من - إلى) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    علامة مميزة لمكان التوصيل:
+                  </label>
+                  <input
+                    type="text"
+                    value={landmark}
+                    onChange={(e) => setLandmark(e.target.value)}
+                    placeholder="مثال: بجوار مسجد النور / أمام صيدلية العزبي"
+                    className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-600 transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-800">
+                    مدة ومواعيد التوصيل المفضلة (من - إلى):
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryTimeWindow}
+                    onChange={(e) => setDeliveryTimeWindow(e.target.value)}
+                    placeholder="مثال: خلال 24 إلى 48 ساعة / من الأحد إلى الثلاثاء"
+                    className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 transition"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">ملاحظات إضافية للتوصيل (اختياري):</label>
+              {/* 5. Notes */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-800">
+                  ملاحظات إضافية للمندوب أو المبيعات (اختياري):
+                </label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-blue-700"
-                  placeholder="ميعاد مفضل للمعاينة، أو تعليمات خاصة لمندوب التوصيل"
+                  placeholder="مثال: الاتصال قبل التحرك بساعة / تسليم في الفترة المسائية"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-600 transition"
                 />
               </div>
-            </div>
 
-            {/* Unified Payment Option (طنطاوي جروب الموحدة) */}
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black flex items-center gap-1.5">
-                  <ShieldCheck size={16} className="text-emerald-400" />
-                  <span>طريقة الدفع الموحدة: طنطاوي جروب</span>
-                </span>
-                <span className="text-[10px] bg-emerald-500/30 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-400/40">
-                  خيار آمن 100%
-                </span>
-              </div>
-              <p className="text-[11px] text-gray-200 leading-relaxed">
-                تم توحيد الدفع ليكون <strong>نقداً عند الاستلام (كاش)</strong> مع إتاحة <strong>حق فتح الشحنة ومعاينتها بالكامل</strong> قبل سداد أي مبالغ للمندوب لضمان أعلى مستويات الأمان ورضا العملاء.
-              </p>
-            </div>
-
-            {/* Total and Submit */}
-            <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-gray-500 block">رسوم حجز المعاينة:</span>
-                <span className="text-base font-black text-emerald-700">
-                  مجانية بالكامل (0 ج.م)
-                </span>
+              {/* Items Summary in Cart */}
+              <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-200 text-xs space-y-2">
+                <div className="flex justify-between items-center text-gray-700 font-bold border-b border-gray-200 pb-1.5">
+                  <span>الأصناف في الطلب الحالي:</span>
+                  <span className="text-blue-900 font-black">{cart.length} أصناف</span>
+                </div>
+                <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-[11px] text-gray-600">
+                  {cart.map((item, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span className="truncate max-w-[260px] font-medium">{i + 1}. {item.product.nameAr}</span>
+                      <span className="font-bold text-blue-900 font-mono">× {item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <button
-                type="submit"
-                className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-md flex items-center gap-2"
-              >
-                <span>تأكيد حجز المعاينة</span>
-                <Truck size={16} />
-              </button>
-            </div>
-          </form>
-        )}
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-98 text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-lg transition flex items-center justify-center gap-2"
+                >
+                  <FileText size={18} />
+                  <span>تأكيد الطلب وتوليد كارت الفاتورة الرسمية 📄</span>
+                </button>
+              </div>
+
+              <div className="text-center text-[11px] text-gray-500 flex items-center justify-center gap-2 pt-1">
+                <ShieldCheck size={14} className="text-emerald-600" />
+                <span>دفع موحد عند الاستلام بعد فحص الشحنة والتأكد منها</span>
+              </div>
+
+            </form>
+          )}
+
+        </div>
       </div>
     </div>
   );

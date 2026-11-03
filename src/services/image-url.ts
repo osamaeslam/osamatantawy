@@ -4,9 +4,11 @@
  * لأن روابط المشاركة العادية لا تُعرض كصورة في المتصفح وتُسبب خطأ تحميل.
  * أي رابط آخر يرجعه كما هو بدون تغيير.
  */
-export function normalizeImageUrl(url?: string | null): string {
-  if (!url) return '';
-  const trimmed = String(url).trim();
+import { DEFAULT_PRODUCT_FALLBACK } from '../utils/imageHelper';
+
+export function normalizeImageUrl(url?: string | null, fallback = DEFAULT_PRODUCT_FALLBACK): string {
+  if (!url || typeof url !== 'string' || !url.trim()) return fallback;
+  const trimmed = url.trim();
 
   // نتعامل فقط مع روابط جوجل درايف
   if (/drive\.google\.com|docs\.google\.com/.test(trimmed)) {

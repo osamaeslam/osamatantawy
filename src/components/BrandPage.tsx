@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
 import { ShoppingCart, Heart, PhoneCall, Info, Package, List, Grid3X3 } from 'lucide-react';
+import { getSafeImageSrc } from '../utils/imageHelper';
 
 interface BrandPageProps {
   brandName: string;
@@ -78,15 +79,15 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
             >
               <div
                 onClick={() => setSelectedProduct(product)}
-                className="aspect-[4/5] bg-gray-50 rounded-t-2xl overflow-hidden cursor-pointer border-b border-gray-50 group-hover:border-blue-100"
+                className="aspect-[4/5] bg-gray-50 rounded-t-2xl overflow-hidden cursor-pointer border-b border-gray-50 group-hover:border-blue-100 relative"
               >
                 <img
-                  src={product.previewimage} referrerPolicy="no-referrer"
+                  src={getSafeImageSrc(product.previewimage)} referrerPolicy="no-referrer"
                   alt={product.nameAr}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-300"
                 />
-                <div className="absolute top-3 left-3 bg-black/50 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded">
-                  متوفر للمعاينة
+                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-bold px-2 py-1 rounded">
+                  متوفر للطلب
                 </div>
               </div>
               <div className="p-4 text-right">
@@ -101,14 +102,14 @@ export const BrandPage: React.FC<BrandPageProps> = ({ brandName }) => {
                 </h3>
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>{product.sizevariants?.length || 1} موديل</span>
-                  <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">متاح للمعاينة</span>
+                  <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">متاح للشحن الفوري</span>
                 </div>
                 <div className="flex items-center justify-between mb-4 gap-2">
                   <button
                     onClick={() => setSelectedProduct(product)}
                     className="flex-1 bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-xs"
                   >
-                    <PhoneCall size={14} /> طلب معاينة واستفسار
+                    <ShoppingCart size={14} /> إضافة للطلب
                   </button>
                   <button
                     onClick={() => toggleWishlist(product)}

@@ -15,6 +15,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { createCartWhatsAppUrl } from '../services/whatsapp-order';
+import { getSafeImageSrc } from '../utils/imageHelper';
 
 export const CartPage: React.FC = () => {
   const { 
@@ -65,7 +66,7 @@ export const CartPage: React.FC = () => {
           }`}
         >
           <ShoppingCart size={18} />
-          <span>قائمة طلبات المعاينة</span>
+          <span>سلة طلبات الشراء</span>
           <span className="bg-blue-100 text-blue-900 text-xs px-2 py-0.5 rounded-full font-bold">
             {cart.length}
           </span>
@@ -95,9 +96,9 @@ export const CartPage: React.FC = () => {
               <ShoppingBag size={48} className="text-blue-900 animate-pulse" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-black text-gray-900">قائمة المعاينة فارغة حالياً</h3>
+              <h3 className="text-xl font-black text-gray-900">سلة طلباتك فارغة حالياً</h3>
               <p className="text-xs md:text-sm text-gray-500 max-w-sm mx-auto">
-                لم تقم بإضافة أي أجهزة إلى قائمة المعاينة بعد. تصفح أقسام طنطاوي جروب واختر الأصناف لمعاينتها مجاناً!
+                لم تقم بإضافة أي أجهزة إلى سلة طلباتك بعد. تصفح أقسام طنطاوي جروب وأضف أجهزتك المفضلة لاستخراج كارت الفاتورة والطلب!
               </p>
             </div>
             <button
@@ -112,13 +113,13 @@ export const CartPage: React.FC = () => {
             {/* Cart Items List */}
             <div className="lg:col-span-2 space-y-3">
               <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 text-xs">
-                <span className="font-bold text-gray-700">الأصناف المطلوبة للمعاينة ({cart.length})</span>
+                <span className="font-bold text-gray-700">الأصناف في الطلب الحالي ({cart.length})</span>
                 <button
                   onClick={clearCart}
                   className="text-gray-400 hover:text-red-600 transition flex items-center gap-1 font-semibold"
                 >
                   <Trash2 size={14} />
-                  <span>تفريغ القائمة</span>
+                  <span>تفريغ السلة</span>
                 </button>
               </div>
 
@@ -132,7 +133,7 @@ export const CartPage: React.FC = () => {
                     className="w-24 h-24 bg-gray-50 rounded-xl p-2 shrink-0 cursor-pointer flex items-center justify-center"
                   >
                     <img
-                      src={item.product.previewimage}
+                      src={getSafeImageSrc(item.product.previewimage)}
                       alt={item.product.nameAr}
                       className="w-full h-full object-contain"
                     />
@@ -238,28 +239,28 @@ export const CartPage: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between text-gray-600">
-                    <span>رسوم المعاينة الأولية:</span>
-                    <span className="font-bold text-emerald-700">مجاناً بالكامل</span>
+                    <span>نظام تسعير الفاتورة:</span>
+                    <span className="font-bold text-blue-950">تحديد الأسعار بواسطة المبيعات</span>
                   </div>
 
                   <div className="flex justify-between text-gray-600">
                     <span>طريقة الدفع:</span>
-                    <span className="font-bold text-blue-950">موحدة عند الاستلام بعد المعاينة</span>
+                    <span className="font-bold text-emerald-800">عند الاستلام بعد الفحص التام</span>
                   </div>
 
                   <div className="pt-3 border-t border-gray-100 flex justify-between items-baseline">
-                    <span className="text-sm font-black text-gray-900">حالة الطلب:</span>
+                    <span className="text-sm font-black text-gray-900">حالة الأوردر:</span>
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                      جاهز للتأكيد والحجز
+                      جاهز لاستخراج كارت الفاتورة
                     </span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsCheckoutModalOpen(true)}
-                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-3.5 px-4 rounded-xl font-black text-sm transition shadow-md flex items-center justify-center gap-2"
                 >
-                  <span>تأكيد طلب المعاينة وحجز الموعد</span>
+                  <span>تأكيد طلب الأوردر واستخراج كارت الفاتورة 📄</span>
                   <ArrowLeft size={16} />
                 </button>
 
@@ -270,13 +271,13 @@ export const CartPage: React.FC = () => {
                   className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-2.5 px-4 rounded-xl font-bold text-xs transition shadow-xs flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={16} />
-                  <span>إرسال قائمة المعاينة لمبيعات واتساب 💬</span>
+                  <span>إرسال قائمة الطلب لواتساب المبيعات 💬</span>
                 </a>
 
                 <div className="space-y-2 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-green-600 shrink-0" />
-                    <span>حق فتح الكرتونة ومعاينة الجهاز بالكامل قبل دفع أي قرش</span>
+                    <span>فحص ومعاينة الجهاز بالكامل واستلام كارت الفاتورة والضمان</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Truck size={16} className="text-blue-600 shrink-0" />
@@ -311,7 +312,8 @@ export const CartPage: React.FC = () => {
                   className="aspect-square bg-gray-50 rounded-xl p-3 flex items-center justify-center cursor-pointer mb-2"
                 >
                   <img
-                    src={product.previewimage} referrerPolicy="no-referrer"
+                    src={getSafeImageSrc(product.previewimage)}
+                    referrerPolicy="no-referrer"
                     alt={product.nameAr}
                     className="w-full h-full object-contain"
                   />
