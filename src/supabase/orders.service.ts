@@ -145,6 +145,29 @@ export const orderService = {
     if (error) throw error;
   },
 
+  async updateQuote(
+    id: string,
+    items: Record<string, any>,
+    totalPrice: number,
+    status: FirebaseOrder['status'],
+    productNameAr: string,
+    quantity: number,
+    deliveryTimeWindow: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from(TABLE)
+      .update({
+        items,
+        total_price: totalPrice,
+        status,
+        product_name_ar: productNameAr,
+        quantity,
+        selected_size: deliveryTimeWindow,
+      })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase.from(TABLE).delete().eq('id', id);
     if (error) throw error;

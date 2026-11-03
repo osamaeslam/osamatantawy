@@ -15,7 +15,7 @@ import {
   Building2,
   Package
 } from 'lucide-react';
-import { OrderInvoiceData, sendInvoiceToWhatsApp, generateInvoiceMessage } from '../services/invoice-to-whatsapp';
+import { OrderInvoiceData, sendQuoteToCustomerWhatsApp, generateQuoteMessage } from '../services/invoice-to-whatsapp';
 import { useApp } from '../context/AppContext';
 import { getSafeImageSrc } from '../utils/imageHelper';
 
@@ -36,7 +36,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
   if (!isOpen || !order) return null;
 
   const handleCopyText = () => {
-    const text = generateInvoiceMessage(order);
+    const text = generateQuoteMessage(order);
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
@@ -47,7 +47,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
   };
 
   const handleSendWhatsApp = () => {
-    sendInvoiceToWhatsApp(order, whatsappNumber);
+    sendQuoteToCustomerWhatsApp(order);
   };
 
   return (
@@ -63,7 +63,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
             <FileText className="text-yellow-400" size={20} />
-            <span className="font-black text-sm md:text-base">كارت فاتورة طلب الشراء - طنطاوي جروب</span>
+                <span className="font-black text-sm md:text-base">عرض سعر طلب العميل - طنطاوي جروب</span>
           </div>
           <button
             onClick={onClose}
@@ -104,7 +104,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
 
               <div className="text-center sm:text-left space-y-1">
                 <div className="bg-blue-950 text-white px-3 py-1 rounded-lg text-xs font-mono font-black inline-block">
-                  رقم الفاتورة: #{order.orderId}
+                  عرض سعر رقم: #{order.orderId}
                 </div>
                 <div className="text-[11px] text-gray-500 font-bold flex items-center justify-center sm:justify-start gap-1">
                   <Calendar size={12} />
@@ -181,10 +181,10 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
                     <tr>
                       <th className="p-2.5">م</th>
                       <th className="p-2.5">اسم الصنف والجهاز</th>
-                      <th className="p-2.5">كود الصنف</th>
                       <th className="p-2.5">المقاس / المواصفة</th>
                       <th className="p-2.5 text-center">الكمية</th>
-                      <th className="p-2.5 text-left">تسعير الفاتورة</th>
+                      <th className="p-2.5 text-left">سعر الوحدة</th>
+                      <th className="p-2.5 text-left">الإجمالي</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -192,17 +192,17 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
                       <tr key={idx} className="hover:bg-gray-50/60">
                         <td className="p-2.5 font-bold text-gray-400">{idx + 1}</td>
                         <td className="p-2.5 font-black text-gray-900">{item.nameAr}</td>
-                        <td className="p-2.5 font-mono text-blue-900 font-bold text-[11px]">
-                          {item.unifiedCode || item.itemNumber || '-'}
-                        </td>
                         <td className="p-2.5 text-gray-600">
                           {[item.size, item.color].filter(Boolean).join(' / ') || 'قياسي'}
                         </td>
                         <td className="p-2.5 text-center font-bold text-blue-950 bg-blue-50/50">
                           {item.quantity}
                         </td>
-                        <td className="p-2.5 text-left text-gray-500 font-bold text-[11px]">
-                          بانتظار رد الموظف
+                        <td className="p-2.5 text-left font-bold text-blue-950">
+                          {item.unitPrice !== undefined ? `${item.unitPrice} ج.م` : 'بانتظار التسعير'}
+                        </td>
+                        <td className="p-2.5 text-left font-black text-blue-950">
+                          {item.unitPrice !== undefined ? `${item.unitPrice * item.quantity} ج.م` : '-'}
                         </td>
                       </tr>
                     ))}
@@ -211,15 +211,9 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
               </div>
             </div>
 
-            {/* Pricing note box */}
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
-              <Sparkles size={18} className="text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-950 space-y-1">
-                <p className="font-black">نظام تسعير الفاتورة الرسمي لدى طنطاوي جروب:</p>
-                <p className="text-[11px] text-amber-900 leading-relaxed">
-                  يتم إرسال هذا الكارت لمسؤول المبيعات عبر واتساب للرد الفوري بأسعار كل صنف وحساب إجمالي قيمة الفاتورة حسب كمية الطلب (سعر جملة أو قطاعي) مع تأكيد التوصيل السريع.
-                </p>
-              </div>
+            <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 font-black text-sm text-blue-950">
+              <span>إجمالي عرض السعر</span>
+              <span>{order.totalPrice || 0} جنيه</span>
             </div>
 
             {/* Footer of Card */}
@@ -263,7 +257,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
               className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md"
             >
               <Send size={16} />
-              <span>إرسال كارت الفاتورة لواتساب المبيعات فوراً 📲</span>
+              <span>فتح واتساب لإرسال عرض السعر للعميل 📲</span>
             </button>
           </div>
         </div>

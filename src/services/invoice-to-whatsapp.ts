@@ -9,6 +9,8 @@ export interface OrderItemInvoice {
   brand?: string;
   quantity: number;
   image?: string;
+  unitPrice?: number;
+  decision?: 'pending' | 'accepted' | 'rejected';
 }
 
 export interface OrderInvoiceData {
@@ -34,10 +36,10 @@ export interface OrderInvoiceData {
 export const generateInvoiceMessage = (order: OrderInvoiceData): string => {
   const itemsText = order.items
     .map((item, i) => {
-      const code = item.unifiedCode || item.itemNumber ? ` (كود: ${item.unifiedCode || item.itemNumber})` : '';
       const specs = [item.size, item.color].filter(Boolean).join(' - ');
       const specsText = specs ? ` [${specs}]` : '';
-      return `${i + 1}. *${item.nameAr}*${code}${specsText}\n   الكمية المطلوبة: ${item.quantity} قطع`;
+      const priceText = item.unitPrice !== undefined ? `\n   سعر الوحدة: ${item.unitPrice} جنيه` : '';
+      return `${i + 1}. *${item.nameAr}*${specsText}\n   الكمية المطلوبة: ${item.quantity} قطع${priceText}`;
     })
     .join('\n\n');
 
@@ -65,6 +67,17 @@ ${itemsText}
 📞 الخط الساخن: 15218`;
 };
 
+export const generateQuoteMessage = (order: OrderInvoiceData): string => {
+  const itemsText = order.items
+    .map((item, index) => {
+      const lineTotal = (item.unitPrice || 0) * item.quantity;
+      return `${index + 1}. ${item.nameAr}\n   الكمية: ${item.quantity} × ${item.unitPrice || 0} جنيه = ${lineTotal} جنيه`;
+    })
+    .join('\n\n');
+
+  return `السلام عليكم أ/ ${order.customerName}،\nعرض السعر لطلب رقم #${order.orderId}:\n\n${itemsText}\n\nإجمالي الطلب: ${order.totalPrice || 0} جنيه\nمدة التوصيل: ${order.deliveryTimeWindow || 'يتم التأكيد عند اعتماد الطلب'}\n\nبرجاء تأكيد الأصناف المطلوبة أو إرسال التعديلات.\nطنطاوي جروب`;
+};
+
 /**
  * إرسال الفاتورة مباشرة لواتساب المبيعات المعتمد
  */
@@ -76,4 +89,10 @@ export const sendInvoiceToWhatsApp = (
   const message = generateInvoiceMessage(order);
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, '_blank');
+};
+
+export const sendQuoteToCustomerWhatsApp = (order: OrderInvoiceData): void => {
+  const phone = normalizeWhatsAppNumber(order.phonePrimary);
+  const message = generateQuoteMessage(order);
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
 };
