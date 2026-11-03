@@ -57,27 +57,27 @@ export const productService = {
   },
 
   async create(data: Omit<FirebaseProduct, 'id'>): Promise<string> {
-    const { data: inserted, error } = await supabase
+    const { error, data: upserted } = await supabase
       .from(TABLE)
-      .insert([
-        {
-          name_ar: data.nameAr,
-          name_en: data.nameEn,
-          category: data.categoryAr,
-          price: data.price,
-          discounted_price: data.discountedPrice,
-          image_url: data.imageUrl,
-          colors: data.colors,
-          sizes: data.sizes,
-          in_stock: data.inStock,
-          brand: data.brand,
-        },
-      ])
+      .upsert({
+        name_ar: data.nameAr,
+        name_en: data.nameEn,
+        category: data.categoryAr,
+        price: data.price,
+        discounted_price: data.discountedPrice,
+        image_url: data.imageUrl,
+        colors: data.colors,
+        sizes: data.sizes,
+        in_stock: data.inStock,
+        brand: data.brand,
+      }, {
+        onConflict: 'name_ar, category',
+      })
       .select('id')
       .single();
 
     if (error) throw error;
-    return inserted.id;
+    return upserted.id;
   },
 
   async batchCreate(items: Omit<FirebaseProduct, 'id'>[]): Promise<string[]> {
