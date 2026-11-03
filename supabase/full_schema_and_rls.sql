@@ -88,7 +88,10 @@ alter table public.products add column if not exists colors jsonb default '[]'::
 alter table public.products add column if not exists sizes jsonb default '[]'::jsonb;
 alter table public.products add column if not exists in_stock boolean default true;
 alter table public.products add column if not exists brand text;
+alter table public.products add column if not exists item_number text;
 alter table public.products add column if not exists updated_at timestamptz default now();
+create unique index if not exists products_item_number_unique
+  on public.products (item_number);
 
 -- ---------------------------------------------------------------------
 -- (5) جدول الطلبات (orders) : إن لم يكن موجوداً

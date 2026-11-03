@@ -21,6 +21,7 @@ export const productService = {
       price: item.price,
       discountedPrice: item.discounted_price,
       imageUrl: item.image_url,
+      itemNumber: item.item_number,
       colors: item.colors || [],
       sizes: item.sizes || [],
       inStock: item.in_stock,
@@ -48,6 +49,7 @@ export const productService = {
       price: data.price,
       discountedPrice: data.discounted_price,
       imageUrl: data.image_url,
+      itemNumber: data.item_number,
       colors: data.colors || [],
       sizes: data.sizes || [],
       inStock: data.in_stock,
@@ -68,6 +70,7 @@ export const productService = {
     .upsert({
       name_ar: data.nameAr,
       name_en: data.nameEn,
+      item_number: data.itemNumber || null,
       category: categoryValue,
       price: data.price,
       discounted_price: data.discountedPrice,
@@ -77,7 +80,7 @@ export const productService = {
       in_stock: data.inStock,
       brand: data.brand,
     }, {
-      onConflict: 'name_ar, category',
+      onConflict: data.itemNumber ? 'item_number' : 'name_ar, category',
     })
     .select('id')
     .single();
@@ -89,8 +92,9 @@ export const productService = {
   async batchCreate(items: Omit<FirebaseProduct, 'id'>[]): Promise<string[]> {
     if (items.length === 0) return [];
 
-    const { error } = await supabase.from(TABLE).insert(
+    const { error } = await supabase.from(TABLE).upsert(
       items.map((item) => ({
+        item_number: item.itemNumber || null,
         name_ar: item.nameAr,
         name_en: item.nameEn,
         category: item.categoryAr,
@@ -101,7 +105,8 @@ export const productService = {
         sizes: item.sizes,
         in_stock: item.inStock,
         brand: item.brand,
-      }))
+      })),
+      { onConflict: 'item_number' }
     );
 
     if (error) throw error;
@@ -112,6 +117,7 @@ export const productService = {
 
   async update(id: string, data: Partial<FirebaseProduct>): Promise<void> {
     const updateData: Record<string, any> = {};
+    if (data.itemNumber !== undefined) updateData.item_number = data.itemNumber || null;
     if (data.nameAr) updateData.name_ar = data.nameAr;
     if (data.nameEn) updateData.name_en = data.nameEn;
     if (data.categoryAr) updateData.category = data.categoryAr;

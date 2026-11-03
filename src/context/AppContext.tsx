@@ -119,13 +119,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchProductsFromDatabase = async () => {
     setIsSyncingWithDatabase(true);
     try {
-      const { data: dbItems, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1000);
+      const dbItems: any[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('id', { ascending: false })
+          .range(offset, offset + 999);
+        if (error) throw error;
+        dbItems.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
 
-      if (!error && dbItems && dbItems.length > 0) {
+      if (dbItems.length > 0) {
         setSupabaseProductCount(dbItems.length);
         const mapped = dbItems.map((item, idx) => mapSupabaseToProduct(item, idx));
         setProducts(mapped);

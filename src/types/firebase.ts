@@ -7,6 +7,7 @@ export interface FirebaseProduct {
   price: number;
   discountedPrice?: number;
   imageUrl: string;
+  itemNumber?: string;
   colors: string[];
   sizes: string[];
   inStock: boolean;

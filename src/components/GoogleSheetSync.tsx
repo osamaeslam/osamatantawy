@@ -251,11 +251,12 @@ export const GoogleSheetSync: React.FC = () => {
       // 1. Save to local state and localStorage (existing behavior)
       importProducts(previewProducts);
 
-      // 2. Also save to Supabase database using batch insert
+      // 2. Also save to Supabase database using batch upsert
       // Prepare products for Supabase - map from Product type to FirebaseProduct fields
       const supabaseItems = previewProducts.map((p) => ({
         nameAr: p.nameAr,
         nameEn: p.name || p.nameAr,
+        itemNumber: p.itemNumber,
         category: p.categoryAr || p.category || 'Home Appliances',
         categoryAr: p.categoryAr || p.categoryAr || 'أجهزة منزلية',
         price: typeof p.actualprice === 'number' ? p.actualprice : 0,
@@ -268,7 +269,7 @@ export const GoogleSheetSync: React.FC = () => {
         createdAt: new Date().toISOString(),
       }));
 
-      // Batch insert into Supabase (limit to avoid timeout, split if too many)
+      // Batch upsert into Supabase to avoid timeouts and duplicate rows
       const BATCH_SIZE = 500;
       const totalItems = supabaseItems.length;
       let successCount = 0;
@@ -280,15 +281,26 @@ export const GoogleSheetSync: React.FC = () => {
           successCount += batch.length;
         } catch (batchError) {
           console.error(`Batch insert error at index ${i}:`, batchError);
-          // Continue with remaining batches even if one fails
+          throw batchError;
         }
       }
 
       // 3. Force refresh products from Supabase so all users see the update
       // We need to update the app context products from the database
       try {
-        const { data: serverProducts, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (!error && serverProducts) {
+        const serverProducts: any[] = [];
+        for (let offset = 0; ; offset += 1000) {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .order('id', { ascending: false })
+            .range(offset, offset + 999);
+          if (error) throw error;
+          serverProducts.push(...(data || []));
+          if (!data || data.length < 1000) break;
+        }
+
+        if (serverProducts.length > 0) {
           // Update localStorage with fresh data from server
           const normalizedProducts = serverProducts.map((item: any) => ({
             id: item.id,
@@ -313,7 +325,7 @@ export const GoogleSheetSync: React.FC = () => {
             dealEndsIn: '',
             inStock: item.in_stock !== false,
             brand: item.brand || '',
-            itemNumber: '',
+            itemNumber: item.item_number || '',
             unifiedCode: '',
             size: 'قياسي',
             color: 'أصلي',
