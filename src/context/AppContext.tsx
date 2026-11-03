@@ -77,7 +77,7 @@ interface AppContextType {
   isInWishlist: (productId: string) => boolean;
   applyPromoCode: (code: string) => { success: boolean; message: string };
   removePromoCode: () => void;
-  createOrder: (address: string, paymentMethod: string) => OrderItem | null;
+  createOrder: (address: string, paymentMethod: string, orderId?: string) => OrderItem | null;
   cartTotal: number;
   cartSubtotal: number;
   cartDiscount: number;
@@ -487,10 +487,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDiscountPercent(0);
   };
 
-  const createOrder = (address: string, paymentMethod: string): OrderItem | null => {
+  const createOrder = (address: string, paymentMethod: string, orderId?: string): OrderItem | null => {
     if (cart.length === 0) return null;
     const newOrder: OrderItem = {
-      orderid: `TG-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      orderid: orderId || `TG-${Math.floor(10000000 + Math.random() * 90000000)}`,
       name: cart[0].product.name,
       nameAr: cart[0].product.nameAr + (cart.length > 1 ? ` (+ ${cart.length - 1} أصناف أخرى)` : ''),
       description: `الدفع بواسطة ${paymentMethod} - العنوان: ${address}`,

@@ -8,6 +8,7 @@ export interface FirebaseProduct {
   discountedPrice?: number;
   imageUrl: string;
   itemNumber?: string;
+  importKey?: string;
   colors: string[];
   sizes: string[];
   inStock: boolean;

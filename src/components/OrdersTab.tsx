@@ -3,6 +3,7 @@ import type { FirebaseOrder } from '../types/firebase';
 import { orderService } from '../supabase/orders.service';
 import { InvoiceCardModal } from './InvoiceCardModal';
 import { OrderInvoiceData } from '../services/invoice-to-whatsapp';
+import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
 import { 
   FileText, 
   PhoneCall, 
@@ -201,6 +202,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
         <div className="space-y-4">
           {filteredOrders.map((o) => {
             const itemsPayload = (o as any).items || {};
+            const orderedItems = Array.isArray(itemsPayload.orderedItems) ? itemsPayload.orderedItems : [];
+            const orderItemsText = orderedItems.length > 0
+              ? orderedItems.map((item: any) => `- ${item.nameAr} × ${item.quantity}`).join('\n')
+              : `- ${o.productNameAr} × ${o.quantity}`;
             const phoneSec = itemsPayload.phoneSecondary;
             const landmark = itemsPayload.landmark;
             const deliveryWindow = itemsPayload.deliveryTimeWindow || o.selectedSize;
@@ -279,16 +284,16 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                         <PhoneCall size={12} />
                       </a>
                       <a
-                        href={`https://wa.me/2${o.customerPhone.replace(/^0+/, '')}?text=${encodeURIComponent(
-                          `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك فريق مبيعات طنطاوي جروب للأجهزة بخصوص طلبك رقم #${o.orderId} (${o.productNameAr}) للتأكيد على الأسعار وميعاد التوصيل.`
+                        href={`https://wa.me/${normalizeWhatsAppNumber(o.customerPhone)}?text=${encodeURIComponent(
+                          `السلام عليكم أ/ ${o.customerName}، بخصوص طلبك رقم #${o.orderId}:\n${orderItemsText}\n${o.totalPrice > 0 ? `إجمالي السعر: ${o.totalPrice} جنيه.` : 'جاري مراجعة الأسعار وسيتم إرسال عرض السعر لحضرتك.'}\nمع تحيات فريق مبيعات طنطاوي جروب.`
                         )}`}
                         target="_blank"
                         rel="noreferrer"
                         className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
-                        title="فتح محادثة واتساب مع العميل للتأكيد والتسعير"
+                        title="فتح واتساب لإرسال تفاصيل الطلب والسعر المسجل"
                       >
                         <MessageCircle size={12} />
-                        <span>رد واتساب 💬</span>
+                        <span>إرسال السعر واتساب 💬</span>
                       </a>
                     </div>
 

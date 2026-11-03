@@ -46,11 +46,13 @@ export const CheckoutModal: React.FC = () => {
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
   const [invoiceData, setInvoiceData] = useState<OrderInvoiceData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isCheckoutModalOpen) return null;
 
-  const handleConfirmOrder = (e: React.FormEvent) => {
+  const handleConfirmOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (!customerName.trim() || !phonePrimary.trim() || !deliveryAddress.trim()) {
       alert('يرجى استكمال البيانات الأساسية: الاسم ورقم الموبايل ومكان التوصيل.');
@@ -58,12 +60,14 @@ export const CheckoutModal: React.FC = () => {
     }
 
     const fullAddress = `${city} - ${deliveryAddress}${landmark ? ` (علامة مميزة: ${landmark})` : ''} - هاتف أساسي: ${phonePrimary}${phoneSecondary ? ` - هاتف بديل: ${phoneSecondary}` : ''} - موعد التوصيل: ${deliveryTimeWindow}${notes ? ` - ملاحظات: ${notes}` : ''}`;
-    
-    const order = createOrder(fullAddress, 'دفع عند الاستلام - طنطاوي جروب');
 
-    if (order) {
-      const generatedInvoice: OrderInvoiceData = {
-        orderId: order.orderid,
+    const orderId = `TG-${Math.floor(10000000 + Math.random() * 90000000)}`;
+    const orderTotal = Math.round(cart.reduce(
+      (sum, item) => sum + (item.product.actualprice || 0) * (1 - (item.product.discountpercent || 0) / 100) * item.quantity,
+      0
+    ));
+    const generatedInvoice: OrderInvoiceData = {
+        orderId,
         customerName: customerName.trim(),
         phonePrimary: phonePrimary.trim(),
         phoneSecondary: phoneSecondary.trim() || undefined,
@@ -80,8 +84,9 @@ export const CheckoutModal: React.FC = () => {
           color: item.product.color,
           brand: item.product.brand,
           quantity: item.quantity,
-          image: item.product.previewimage
+          image: item.product.previewimage,
         })),
+        totalPrice: orderTotal,
         createdAt: new Date().toLocaleDateString('ar-EG', {
           year: 'numeric',
           month: 'long',
@@ -90,6 +95,12 @@ export const CheckoutModal: React.FC = () => {
           minute: '2-digit'
         }),
       };
+
+    setIsSubmitting(true);
+    try {
+      await orderService.saveInvoiceOrder(generatedInvoice);
+      const order = createOrder(fullAddress, 'دفع عند الاستلام - طنطاوي جروب', orderId);
+      if (!order) throw new Error('السلة فارغة');
 
       setInvoiceData(generatedInvoice);
       setCompletedOrder(order);
@@ -104,8 +115,8 @@ export const CheckoutModal: React.FC = () => {
           customerName: customerName.trim(),
           customerPhone: phonePrimary.trim(),
           productNameAr: cart.length > 0 ? cart[0].product.nameAr : 'منتج من طنطاوي جروب',
-          quantity: cart.length,
-          totalPrice: Math.round(cart.reduce((s, it) => s + (it.product.actualprice || 0) * (1 - (it.product.discountpercent || 0) / 100) * it.quantity, 0)),
+          quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
+          totalPrice: orderTotal,
           status: 'pending',
           createdAt: new Date().toISOString(),
           address: deliveryAddress,
@@ -117,17 +128,14 @@ export const CheckoutModal: React.FC = () => {
         console.warn('localStorage save failed:', e);
       }
 
-      clearCart();
-
-      // حفظ كارت الفاتورة والطلب مباشرة في قاعدة بيانات سوبابيز (المصدر الأساسي للأونلاين)
-      orderService.saveInvoiceOrder(generatedInvoice).catch((err) => {
-        console.warn('Supabase order auto-save fallback (saved locally):', err);
-      });
-
-      // إشعار للعميل بأن الفاتورة تم رفعها برقم الموبايل
       alert(
         `تم رفع طلبك بنجاح! 🎉\nرقم الطلب: ${order.orderid}\nتم رفع الفاتورة برقم الموبايل: ${phonePrimary.trim()}\nسيتم التواصل معك على هذا الرقم لتأكيد السعر عبر واتساب ${whatsappNumber || '15218'}\nويمكنك متابعة الطلب من زر "تتبع طلبك".`
       );
+    } catch (err) {
+      console.error('Order submission failed:', err);
+      alert('تعذر تسجيل الطلب على الخادم. لم يتم تأكيد الطلب، برجاء المحاولة مرة أخرى أو التواصل معنا على واتساب.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -521,10 +529,11 @@ export const CheckoutModal: React.FC = () => {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-98 text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-lg transition flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-98 text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   <FileText size={18} />
-                  <span>تأكيد الطلب وتوليد كارت الفاتورة الرسمية 📄</span>
+                  <span>{isSubmitting ? 'جاري تسجيل الطلب...' : 'تأكيد الطلب وتوليد كارت الفاتورة الرسمية 📄'}</span>
                 </button>
               </div>
 

@@ -22,6 +22,7 @@ export const productService = {
       discountedPrice: item.discounted_price,
       imageUrl: item.image_url,
       itemNumber: item.item_number,
+      importKey: item.import_key,
       colors: item.colors || [],
       sizes: item.sizes || [],
       inStock: item.in_stock,
@@ -50,6 +51,7 @@ export const productService = {
       discountedPrice: data.discounted_price,
       imageUrl: data.image_url,
       itemNumber: data.item_number,
+      importKey: data.import_key,
       colors: data.colors || [],
       sizes: data.sizes || [],
       inStock: data.in_stock,
@@ -71,6 +73,7 @@ export const productService = {
       name_ar: data.nameAr,
       name_en: data.nameEn,
       item_number: data.itemNumber || null,
+      import_key: data.importKey || null,
       category: categoryValue,
       price: data.price,
       discounted_price: data.discountedPrice,
@@ -80,7 +83,7 @@ export const productService = {
       in_stock: data.inStock,
       brand: data.brand,
     }, {
-      onConflict: data.itemNumber ? 'item_number' : 'name_ar, category',
+      onConflict: data.importKey ? 'import_key' : 'name_ar, category',
     })
     .select('id')
     .single();
@@ -95,6 +98,7 @@ export const productService = {
     const { error } = await supabase.from(TABLE).upsert(
       items.map((item) => ({
         item_number: item.itemNumber || null,
+        import_key: item.importKey || null,
         name_ar: item.nameAr,
         name_en: item.nameEn,
         category: item.categoryAr,
@@ -106,7 +110,7 @@ export const productService = {
         in_stock: item.inStock,
         brand: item.brand,
       })),
-      { onConflict: 'item_number' }
+      { onConflict: 'import_key' }
     );
 
     if (error) throw error;
@@ -118,6 +122,7 @@ export const productService = {
   async update(id: string, data: Partial<FirebaseProduct>): Promise<void> {
     const updateData: Record<string, any> = {};
     if (data.itemNumber !== undefined) updateData.item_number = data.itemNumber || null;
+    if (data.importKey !== undefined) updateData.import_key = data.importKey || null;
     if (data.nameAr) updateData.name_ar = data.nameAr;
     if (data.nameEn) updateData.name_en = data.nameEn;
     if (data.categoryAr) updateData.category = data.categoryAr;

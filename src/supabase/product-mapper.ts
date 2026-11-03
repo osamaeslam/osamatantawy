@@ -39,6 +39,7 @@ export function mapSupabaseToProduct(item: any, index = 0): Product {
     inStock: item.in_stock !== false,
     brand: item.brand || 'طنطاوي جروب',
     itemNumber: item.item_number || `ITM-${String(item.id).slice(0, 8)}`,
+    importKey: item.import_key || undefined,
     unifiedCode: `TG-${String(item.id).slice(0, 6)}`,
     itemGroup: category,
     familyName: category,

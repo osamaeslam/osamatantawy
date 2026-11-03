@@ -110,6 +110,16 @@ export const GoogleSheetSync: React.FC = () => {
 
     const finalImage = imageLink && imageLink.startsWith('http') ? imageLink : fallbackImage;
     const finalName = nameAr || `منتج كود ${unifiedCode || itemNumber || index + 1}`;
+    let imageIdentity = finalImage;
+    try {
+      const imageUrl = new URL(finalImage);
+      imageIdentity = `${imageUrl.origin}${imageUrl.pathname}`;
+    } catch {
+      imageIdentity = finalImage.split(/[?#]/, 1)[0];
+    }
+    const importKey = [sector, finalName, imageIdentity]
+      .map((value) => value.trim().normalize('NFKC').toLowerCase())
+      .join('|');
 
     return {
       id: `custom-${unifiedCode || itemNumber || index + 1}-${Date.now().toString(36)}`,
@@ -133,6 +143,7 @@ export const GoogleSheetSync: React.FC = () => {
       inStock: true,
       brand: 'طنطاوي جروب',
       itemNumber: itemNumber || `ITM-${index + 1}`,
+      importKey,
       unifiedCode: unifiedCode || `TG-${index + 100}`,
       size: size || 'قياسي',
       color: color || 'أصلي',
@@ -257,6 +268,7 @@ export const GoogleSheetSync: React.FC = () => {
         nameAr: p.nameAr,
         nameEn: p.name || p.nameAr,
         itemNumber: p.itemNumber,
+        importKey: p.importKey,
         category: p.categoryAr || p.category || 'Home Appliances',
         categoryAr: p.categoryAr || p.categoryAr || 'أجهزة منزلية',
         price: typeof p.actualprice === 'number' ? p.actualprice : 0,
@@ -326,6 +338,7 @@ export const GoogleSheetSync: React.FC = () => {
             inStock: item.in_stock !== false,
             brand: item.brand || '',
             itemNumber: item.item_number || '',
+            importKey: item.import_key || undefined,
             unifiedCode: '',
             size: 'قياسي',
             color: 'أصلي',

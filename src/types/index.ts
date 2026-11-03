@@ -30,6 +30,7 @@ export interface Product {
   brand?: string;
   // أعمدة جوجل شيت المعتمدة
   itemNumber?: string;       // Item number
+  importKey?: string;
   unifiedCode?: string;      // كود موحد
   size?: string;             // Size
   color?: string;            // Color
