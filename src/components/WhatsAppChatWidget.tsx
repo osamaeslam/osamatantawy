@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { MessageCircle, X, Phone, Package, Truck, Store, Clock } from 'lucide-react';
+import { MessageCircle, X, Phone, Package, Truck, Store, Clock, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { normalizeWhatsAppNumber, TANTAWY_HOTLINE } from '../services/whatsapp-order';
+import { ItemRequestModal } from './ItemRequestModal';
 
 interface Props {
   /** رقم واتساب المبيعات (اختياري — الافتراضي من إعدادات الموقع) */
@@ -22,6 +23,7 @@ interface Props {
 export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
   const { whatsappNumber, homePageConfig, setIsOrderTrackingOpen, setActiveTab } = useApp();
   const [isOpen, setIsOpen] = useState(false);
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
 
   const activeWhatsApp = normalizeWhatsAppNumber(whatsappNumber || phoneNumber || '201521800000');
   const hotline = homePageConfig?.hotline || TANTAWY_HOTLINE;
@@ -53,6 +55,16 @@ export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
         ),
     },
     {
+      icon: <Search size={16} />,
+      title: 'بندور على صنف مش موجود',
+      subtitle: 'ابعت اسمه وصورته وهنحاول نوفره',
+      color: 'bg-purple-700 hover:bg-purple-800',
+      onClick: () => {
+        setIsRequestOpen(true);
+        setIsOpen(false);
+      },
+    },
+    {
       icon: <Truck size={16} />,
       title: 'تتبّع طلبي',
       subtitle: 'برقم الموبايل اللي طلبت بيه',
@@ -75,6 +87,7 @@ export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
   ];
 
   return (
+    <>
     <div className="fixed bottom-18 sm:bottom-6 right-3 sm:right-6 z-40">
       {/* زر الفتح العائم */}
       {!isOpen && (
@@ -152,6 +165,14 @@ export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
         </div>
       )}
     </div>
+
+    {/* نموذج «بندور على صنف مش موجود» */}
+    <ItemRequestModal
+      isOpen={isRequestOpen}
+      onClose={() => setIsRequestOpen(false)}
+      whatsappNumber={activeWhatsApp}
+    />
+    </>
   );
 };
 

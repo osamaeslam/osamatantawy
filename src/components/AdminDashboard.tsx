@@ -18,6 +18,7 @@ import { ClicksTab } from './ClicksTab';
 import { HomePageCMS } from './HomePageCMS';
 import { CategoriesTab } from './CategoriesTab';
 import { StaffManagementTab } from './StaffManagementTab';
+import { ItemRequestsTab } from './ItemRequestsTab';
 import { staffService } from '../services/staff.service';
 import type { StaffUser, StaffRole } from '../services/staff.service';
 
@@ -43,7 +44,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     products: appProducts 
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff' | 'requests'>(() => {
     try {
       const h = window.location.hash.toLowerCase();
       if (h.includes('cms') || h.includes('banner')) return 'cms';
@@ -528,6 +529,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 { id: 'overview', label: 'نظرة عامة 📊' },
                 { id: 'cms', label: '🖼️ تعديل البانرات والواجهة (CMS) 🎨' },
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
+                { id: 'requests', label: 'طلبات أصناف غير موجودة 🧾' },
                 { id: 'staff', label: 'فريق العمل وحسابات الموظفين 👥' },
                 { id: 'categories', label: 'أسماء الأقسام 🗂️' },
                 { id: 'excel', label: 'شيت جوجل ورفع إكسل 📊' },
@@ -557,6 +559,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {/* Tab Contents */}
         {activeTab === 'overview' && isSuperAdmin && <OverviewTab orders={orders} recentVisitors={recentVisitors} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} onRefresh={loadData} />}
+        {activeTab === 'requests' && isSuperAdmin && <ItemRequestsTab />}
         {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab currentStaff={currentStaff} />}
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
         {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
