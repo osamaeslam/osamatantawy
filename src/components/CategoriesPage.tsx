@@ -11,6 +11,7 @@ import {
   ShoppingCart, 
   Heart,
   ChevronRight,
+  ChevronLeft,
   Filter,
   Check,
   MessageCircle
@@ -34,6 +35,7 @@ export const CategoriesPage: React.FC = () => {
 
   const [sortBy, setSortBy] = useState<'default' | 'rating' | 'name'>('default');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
+  const [itemGroupSearch, setItemGroupSearch] = useState('');
 
   // Identify active sector
   const isHomeSector = selectedCategory === 'أجهزة منزلية' || selectedCategory === 'Home Appliances';
@@ -53,26 +55,125 @@ export const CategoriesPage: React.FC = () => {
     return true;
   });
 
-  // Extract distinct Family Names / Item Groups dynamically from the current sector products
-  const availableFamilies = Array.from(
+  // Standard predefined Item Groups
+  const HOME_ITEM_GROUPS = [
+    'أطقم حلل وأواني طهي',
+    'مقالي وصواني طهي',
+    'صواني تقديم وطهي',
+    'مجات وكاسات وشوب',
+    'فناجين شاي وقهوة',
+    'أطقم ملاعق وسكاكين',
+    'أطقم توزيع وسيليكون',
+    'أطقم توابل ومطبخ',
+    'بولات تقديم وأيس كريم',
+    'بمبونيرات وتحف',
+    'شيالات كحك وتسالي',
+    'برادات وترامس وكنك',
+    'حوافظ وعلب طعام',
+    'أطقم سفرة وميلامين',
+    'قوالب كيك ومستلزمات فرن',
+    'ثلاجات',
+    'ديب فريزر',
+    'غسالات ملابس وأطباق',
+    'بوتاجازات ومسطحات بلت إن',
+    'سخانات مياه',
+    'مبردات مياه'
+  ];
+
+  const ELECTRIC_ITEM_GROUPS = [
+    'هاند بلندر ومحضرات',
+    'مكاوي بخار',
+    'محضرات طعام',
+    'عجانات ومضارب بيض',
+    'كبات ومفارم لحوم',
+    'غلايات مياه',
+    'قلايات هوائية',
+    'عصارات فواكه',
+    'أفران كهربائية وميكروويف',
+    'صانعات قهوة ومطاحن',
+    'خلاطات وعجانات',
+    'مراوح سقف واستاند',
+    'دفايات',
+    'موازين إلكترونية',
+    'توستر وساندوتش ميكر',
+    'شاشات وتلفزيونات',
+    'تكييفات هواء',
+    'مكانس كهربائية',
+    'أجهزة عناية شخصية واستشوار'
+  ];
+
+  // Dynamically extract all unique item groups and family names from actual products
+  const productItemGroups = Array.from(
     new Set(
       sectorProducts
-        .map((p) => p.familyName || p.itemGroup)
+        .flatMap((p) => [p.itemGroup, p.familyName])
         .filter((val): val is string => Boolean(val && val.trim() !== ''))
     )
   );
 
-  // Filter products by selected category and subcategory (Family Name)
+  // Combine standard list according to sector + any custom groups found in product data
+  const baseGroups = isHomeSector 
+    ? HOME_ITEM_GROUPS 
+    : isElectricSector 
+    ? ELECTRIC_ITEM_GROUPS 
+    : [...HOME_ITEM_GROUPS, ...ELECTRIC_ITEM_GROUPS];
+
+  // Merge unique groups ensuring product data groups are present
+  const allAvailableGroups = Array.from(
+    new Set([...baseGroups, ...productItemGroups])
+  );
+
+  // Helper function to check if a product matches a given subcategory / item group
+  const matchesSubcategory = (p: Product, sub: string): boolean => {
+    if (!sub || sub === 'الكل') return true;
+    const target = sub.trim().toLowerCase();
+    const itemGroup = (p.itemGroup || '').toLowerCase().trim();
+    const familyName = (p.familyName || '').toLowerCase().trim();
+    const nameAr = (p.nameAr || '').toLowerCase();
+    const nameEn = (p.name || '').toLowerCase();
+
+    // 1. Exact or direct containment on itemGroup / familyName
+    if (itemGroup === target || familyName === target) return true;
+    if (itemGroup && (itemGroup.includes(target) || target.includes(itemGroup))) return true;
+    if (familyName && (familyName.includes(target) || target.includes(familyName))) return true;
+
+    // 2. Exact match in product title
+    if (nameAr.includes(target) || nameEn.includes(target)) return true;
+
+    // 3. Meaningful keywords matching (ignoring generic stop words like "أجهزة" which caused 736 false matches)
+    const stopWords = ['أجهزة', 'جهاز', 'اجهزة', 'في', 'من', 'و', 'كافة', 'جميع', 'قسم'];
+    const meaningfulWords = target
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !stopWords.includes(w));
+
+    if (meaningfulWords.length > 0 && meaningfulWords.some((w) => nameAr.includes(w) || nameEn.includes(w))) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Calculate count for each group in the current sector
+  const groupCounts: Record<string, number> = {};
+  allAvailableGroups.forEach((group) => {
+    groupCounts[group] = sectorProducts.filter((p) => matchesSubcategory(p, group)).length;
+  });
+
+  // Only retain groups that actually contain products (> 0) or the currently selected group
+  const activeAvailableGroups = allAvailableGroups
+    .filter((group) => (groupCounts[group] || 0) > 0 || group === selectedSubcategory)
+    .sort((a, b) => (groupCounts[b] || 0) - (groupCounts[a] || 0));
+
+  // Filter products by selected category and subcategory (Item Group)
   let filtered = sectorProducts;
   if (selectedSubcategory) {
-    filtered = filtered.filter(
-      (p) =>
-        p.familyName === selectedSubcategory ||
-        p.itemGroup === selectedSubcategory ||
-        p.categoryAr === selectedSubcategory ||
-        p.nameAr.includes(selectedSubcategory)
-    );
+    filtered = filtered.filter((p) => matchesSubcategory(p, selectedSubcategory));
   }
+
+  // Filter groups list if user types in search
+  const visibleGroups = activeAvailableGroups.filter((group) =>
+    itemGroupSearch ? group.toLowerCase().includes(itemGroupSearch.trim().toLowerCase()) : true
+  );
 
   // Pagination setup - show 10 products per page (applied to the fully filtered list)
   const { paginatedProducts, currentPage, totalPages, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
@@ -93,53 +194,61 @@ export const CategoriesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Page Title */}
-      <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-6">
-        أقسام وتصنيفات طنطاوي جروب
-      </h1>
-
-      {/* Category Pills Header */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base md:text-lg font-black text-gray-900 flex items-center gap-2">
-            <span>
+      {/* Category Pills Header & Sector Selector */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base md:text-lg font-black text-gray-900 flex items-center gap-2">
+              <span>
+                {isHomeSector
+                  ? 'أجهزة منزلية كبرى'
+                  : isElectricSector
+                  ? 'أجهزة كهربيه وشاشات وتكييفات'
+                  : selectedCategory || 'جميع منتجات وأقسام طنطاوي جروب'}
+              </span>
+              <span className="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
+                {filtered.length} صنف معروض
+              </span>
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
               {isHomeSector
-                ? 'أجهزة منزلية كبرى'
+                ? 'تضم 21 قسماً داخلياً (ثلاجات، غسالات، بوتاجازات، ديب فريزر، ميكروويف...)'
                 : isElectricSector
-                ? 'أجهزة كهربيه وشاشات وتكييفات'
-                : selectedCategory || 'جميع منتجات وأقسام طنطاوي جروب'}
-            </span>
-            <span className="text-xs bg-gray-100 text-gray-600 font-bold px-2.5 py-0.5 rounded-full">
-              {filtered.length} صنف معروض
-            </span>
-          </h2>
+                ? 'تضم 15 قسماً داخلياً (شاشات 4K، تكييفات، مكانس، مراوح، دفايات...)'
+                : 'تصفح كافة القطاعات والأقسام الداخلية المعتمدة مع إمكانية الفحص الكامل وكارت الفاتورة'}
+            </p>
+          </div>
+
           {(selectedCategory || selectedSubcategory) && (
             <button
               onClick={() => {
                 setSelectedCategory(null);
                 setSelectedSubcategory(null);
               }}
-              className="text-xs text-blue-800 font-bold hover:underline"
+              className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-3 py-1.5 rounded-lg transition"
             >
-              عرض كل المنتجات
+              إلغاء التصفية وعرض الكل
             </button>
           )}
         </div>
 
-        {/* Sectors scrollable chips */}
+        {/* Sectors primary tabs */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           <button
             onClick={() => {
               setSelectedCategory(null);
               setSelectedSubcategory(null);
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${
               selectedCategory === null
                 ? 'bg-blue-900 text-white shadow-xs'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            جميع المنتجات ({products.length})
+            <span>جميع المنتجات</span>
+            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${selectedCategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+              {products.length}
+            </span>
           </button>
 
           <button
@@ -147,13 +256,16 @@ export const CategoriesPage: React.FC = () => {
               setSelectedCategory('أجهزة منزلية');
               setSelectedSubcategory(null);
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${
               isHomeSector
                 ? 'bg-blue-900 text-white shadow-xs'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            أجهزة منزلية ({homeCount})
+            <span>أجهزة منزلية (21 قسم)</span>
+            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${isHomeSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+              {homeCount}
+            </span>
           </button>
 
           <button
@@ -161,45 +273,97 @@ export const CategoriesPage: React.FC = () => {
               setSelectedCategory('أجهزة كهربيه');
               setSelectedSubcategory(null);
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${
               isElectricSector
                 ? 'bg-blue-900 text-white shadow-xs'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            أجهزة كهربيه ({electricCount})
+            <span>أجهزة كهربيه (15 قسم)</span>
+            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${isElectricSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+              {electricCount}
+            </span>
           </button>
         </div>
 
-        {/* Dynamic Subcategories (Family Name) from the loaded items */}
-        {selectedCategory && availableFamilies.length > 0 && (
-          <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] text-gray-500 font-bold shrink-0 ml-1">الأصناف والعائلات:</span>
+        {/* Inner Subcategories (Item Groups) Section */}
+        <div className="pt-3 border-t border-gray-100 space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-gray-900">
+                {isHomeSector 
+                  ? 'الأقسام الداخلية للأجهزة المنزلية (21 صنف):' 
+                  : isElectricSector 
+                  ? 'الأقسام الداخلية للأجهزة الكهربية (15 صنف):' 
+                  : 'الأقسام الداخلية والأصناف (Item Group):'}
+              </span>
+              {selectedSubcategory && (
+                <span className="text-[11px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  محدد: {selectedSubcategory}
+                  <button onClick={() => setSelectedSubcategory(null)} className="text-amber-800 hover:text-black font-black">✕</button>
+                </span>
+              )}
+            </div>
+
+            {/* Quick search inside item groups */}
+            <input
+              type="text"
+              placeholder="بحث في الأقسام..."
+              value={itemGroupSearch}
+              onChange={(e) => setItemGroupSearch(e.target.value)}
+              className="text-[11px] bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 w-28 sm:w-40 outline-none focus:border-blue-900 focus:bg-white transition"
+            />
+          </div>
+
+          {/* Subcategories pills */}
+          <div className="flex flex-wrap items-center gap-1.5 max-h-36 overflow-y-auto pr-1">
             <button
               onClick={() => setSelectedSubcategory(null)}
-              className={`text-xs px-2.5 py-1 rounded-lg font-bold shrink-0 transition ${
+              className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1 ${
                 selectedSubcategory === null
-                  ? 'bg-blue-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-900 text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              الكل
+              <span>الكل</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedSubcategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                {sectorProducts.length}
+              </span>
             </button>
-            {availableFamilies.map((family) => (
-              <button
-                key={family}
-                onClick={() => setSelectedSubcategory(selectedSubcategory === family ? null : family)}
-                className={`text-xs px-2.5 py-1 rounded-lg font-medium shrink-0 transition ${
-                  selectedSubcategory === family
-                    ? 'bg-blue-100 text-blue-900 font-bold ring-1 ring-blue-300'
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                {family}
-              </button>
-            ))}
+
+            {visibleGroups.map((group) => {
+              const count = groupCounts[group] || 0;
+              const isSelected = selectedSubcategory === group;
+
+              return (
+                <button
+                  key={group}
+                  onClick={() => setSelectedSubcategory(isSelected ? null : group)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-900 text-white font-bold ring-2 ring-blue-300 shadow-xs'
+                      : count > 0
+                      ? 'bg-gray-50 text-gray-800 hover:bg-blue-50 border border-gray-200 font-semibold'
+                      : 'bg-gray-50/60 text-gray-400 hover:bg-gray-100 border border-gray-100'
+                  }`}
+                >
+                  <span>{group}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isSelected
+                        ? 'bg-blue-800 text-white'
+                        : count > 0
+                        ? 'bg-blue-100 text-blue-900 font-bold'
+                        : 'bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Control Bar: Sort and View Style */}
@@ -400,6 +564,43 @@ export const CategoriesPage: React.FC = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 select-none">
+          {hasPreviousPage && (
+            <button
+              onClick={() => goTo(currentPage - 1)}
+              className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
+              title="الصفحة السابقة"
+            >
+              <ChevronRight size={18} />
+            </button>
+          )}
+          {pageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => goTo(page)}
+              className={`font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition shadow-xs ${
+                currentPage === page 
+                  ? 'bg-blue-900 text-white shadow-sm' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          {hasNextPage && (
+            <button
+              onClick={() => goTo(currentPage + 1)}
+              className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
+              title="الصفحة التالية"
+            >
+              <ChevronLeft size={18} />
+            </button>
+          )}
         </div>
       )}
     </div>

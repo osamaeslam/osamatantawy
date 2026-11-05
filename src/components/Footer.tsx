@@ -175,6 +175,17 @@ export const Footer: React.FC = () => {
             >
               📖 دليل الاستخدام
             </button>
+            <span>•</span>
+            <button
+              onClick={() => {
+                window.location.hash = '#admin-cms';
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+              }}
+              className="text-gray-400 hover:text-yellow-300 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
+              title="لوحة الإدارة وتعديل البانرات والواجهة"
+            >
+              <span>لوحة الإدارة والبانرات 🔐</span>
+            </button>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-emerald-400 font-bold">دفع عند الاستلام بعد الفحص</span>

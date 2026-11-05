@@ -52,11 +52,24 @@ export interface HeroBanner {
   linkCategory?: string;
 }
 
+export interface PromoBanner {
+  id: string;
+  badge: string;
+  badgeBg?: string;
+  title: string;
+  subtitle: string;
+  buttonText: string;
+  image: string;
+  bgGradient: string;
+  linkCategory: string;
+}
+
 export interface HomePageConfig {
   announcementText: string;
   hotline: string;
   whatsappNumber?: string;
   heroBanners: HeroBanner[];
+  promoBanners?: PromoBanner[];
 }
 
 export interface CategoryItem {

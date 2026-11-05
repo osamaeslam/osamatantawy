@@ -37,40 +37,52 @@ export const CheckoutModal: React.FC = () => {
   const [customerName, setCustomerName] = useState('');
   const [phonePrimary, setPhonePrimary] = useState('');
   const [phoneSecondary, setPhoneSecondary] = useState('');
+  const [contactPreference, setContactPreference] = useState<'whatsapp' | 'call' | 'both'>('whatsapp');
   const [city, setCity] = useState('القاهرة والجيزة');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [deliveryTimeWindow, setDeliveryTimeWindow] = useState('خلال 24 إلى 48 ساعة');
   const [notes, setNotes] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
   const [invoiceData, setInvoiceData] = useState<OrderInvoiceData | null>(null);
   const [copied, setCopied] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isCheckoutModalOpen) return null;
 
-  const handleConfirmOrder = async (e: React.FormEvent) => {
+  // التحقق من صحة رقم الموبايل المصري
+  const validateEgyptianPhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/[^0-9]/g, '');
+    return cleaned.length === 11 && /^01[0125]/.test(cleaned);
+  };
+
+  const handleConfirmOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
 
     if (!customerName.trim() || !phonePrimary.trim() || !deliveryAddress.trim()) {
       alert('يرجى استكمال البيانات الأساسية: الاسم ورقم الموبايل ومكان التوصيل.');
       return;
     }
 
-    const fullAddress = `${city} - ${deliveryAddress}${landmark ? ` (علامة مميزة: ${landmark})` : ''} - هاتف أساسي: ${phonePrimary}${phoneSecondary ? ` - هاتف بديل: ${phoneSecondary}` : ''} - موعد التوصيل: ${deliveryTimeWindow}${notes ? ` - ملاحظات: ${notes}` : ''}`;
+    const cleanedPhone = phonePrimary.replace(/[^0-9]/g, '');
+    if (!validateEgyptianPhone(cleanedPhone)) {
+      setPhoneError('يرجى كتابة رقم موبايل مصري صحيح مكون من 11 رقم يبدأ بـ 010 أو 011 أو 012 أو 015 لتأكيد الأوردر.');
+      return;
+    }
+    setPhoneError('');
 
-    const orderId = `TG-${Math.floor(10000000 + Math.random() * 90000000)}`;
-    const orderTotal = Math.round(cart.reduce(
-      (sum, item) => sum + (item.product.actualprice || 0) * (1 - (item.product.discountpercent || 0) / 100) * item.quantity,
-      0
-    ));
-    const generatedInvoice: OrderInvoiceData = {
-        orderId,
+    const fullAddress = `${city} - ${deliveryAddress}${landmark ? ` (علامة مميزة: ${landmark})` : ''} - هاتف أساسي: ${cleanedPhone}${phoneSecondary ? ` - هاتف بديل: ${phoneSecondary}` : ''} - طريقة التواصل: ${contactPreference === 'whatsapp' ? 'واتساب' : contactPreference === 'call' ? 'مكالمة' : 'كلاهما'} - موعد التوصيل: ${deliveryTimeWindow}${notes ? ` - ملاحظات: ${notes}` : ''}`;
+    
+    const order = createOrder(fullAddress, 'دفع عند الاستلام - طنطاوي جروب');
+
+    if (order) {
+      const generatedInvoice: OrderInvoiceData = {
+        orderId: order.orderid,
         customerName: customerName.trim(),
-        phonePrimary: phonePrimary.trim(),
+        phonePrimary: cleanedPhone,
         phoneSecondary: phoneSecondary.trim() || undefined,
+        contactPreference,
         deliveryAddress: deliveryAddress.trim(),
         city: city,
         landmark: landmark.trim() || undefined,
@@ -84,9 +96,8 @@ export const CheckoutModal: React.FC = () => {
           color: item.product.color,
           brand: item.product.brand,
           quantity: item.quantity,
-          image: item.product.previewimage,
+          image: item.product.previewimage
         })),
-        totalPrice: orderTotal,
         createdAt: new Date().toLocaleDateString('ar-EG', {
           year: 'numeric',
           month: 'long',
@@ -96,46 +107,15 @@ export const CheckoutModal: React.FC = () => {
         }),
       };
 
-    setIsSubmitting(true);
-    try {
-      await orderService.saveInvoiceOrder(generatedInvoice);
-      const order = createOrder(fullAddress, 'دفع عند الاستلام - طنطاوي جروب', orderId);
-      if (!order) throw new Error('السلة فارغة');
-
       setInvoiceData(generatedInvoice);
       setCompletedOrder(order);
-      setTrackingPhone(phonePrimary.trim());
+      setTrackingPhone(cleanedPhone);
+      clearCart();
 
-      // حفظ نسخة احتياطية محلية فوراً (تعمل حتى لو انقطع الإنترنت)
-      try {
-        const savedOrdersRaw = localStorage.getItem('tantawy_saved_orders');
-        const savedOrders = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
-        const orderToSave = {
-          orderId: order.orderid,
-          customerName: customerName.trim(),
-          customerPhone: phonePrimary.trim(),
-          productNameAr: cart.length > 0 ? cart[0].product.nameAr : 'منتج من طنطاوي جروب',
-          quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
-          totalPrice: orderTotal,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-          address: deliveryAddress,
-          city: city,
-          notes: notes || ''
-        };
-        localStorage.setItem('tantawy_saved_orders', JSON.stringify([...savedOrders, orderToSave]));
-      } catch (e) {
-        console.warn('localStorage save failed:', e);
-      }
-
-      alert(
-        `تم رفع طلبك بنجاح! 🎉\nرقم الطلب: ${order.orderid}\nتم رفع الفاتورة برقم الموبايل: ${phonePrimary.trim()}\nسيتم التواصل معك على هذا الرقم لتأكيد السعر عبر واتساب ${whatsappNumber || '15218'}\nويمكنك متابعة الطلب من زر "تتبع طلبك".`
-      );
-    } catch (err) {
-      console.error('Order submission failed:', err);
-      alert('تعذر تسجيل الطلب على الخادم. لم يتم تأكيد الطلب، برجاء المحاولة مرة أخرى أو التواصل معنا على واتساب.');
-    } finally {
-      setIsSubmitting(false);
+      // حفظ كارت الفاتورة والطلب مباشرة في قاعدة بيانات سوبابيز
+      orderService.saveInvoiceOrder(generatedInvoice).catch((err) => {
+        console.warn('Supabase order auto-save fallback:', err);
+      });
     }
   };
 
@@ -402,19 +382,28 @@ export const CheckoutModal: React.FC = () => {
                       type="tel"
                       required
                       value={phonePrimary}
-                      onChange={(e) => setPhonePrimary(e.target.value)}
+                      onChange={(e) => {
+                        setPhonePrimary(e.target.value);
+                        if (phoneError) setPhoneError('');
+                      }}
                       placeholder="01012345678"
-                      className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-mono font-bold text-left outline-none focus:ring-2 focus:ring-blue-600 transition"
+                      className={`w-full p-3 bg-white border ${phoneError ? 'border-red-500 ring-2 ring-red-100' : 'border-gray-300'} rounded-xl text-xs font-mono font-bold text-left outline-none focus:ring-2 focus:ring-blue-600 transition`}
                       dir="ltr"
                     />
                     <PhoneCall size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   </div>
-                  <span className="text-[10px] text-gray-500 block">رقم للتواصل وتأكيد الأوردر</span>
+                  {phoneError ? (
+                    <span className="text-[11px] text-red-600 font-bold block animate-pulse">
+                      ⚠️ {phoneError}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 block">رقم للتواصل وتأكيد الأوردر (11 رقم)</span>
+                  )}
                 </div>
 
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-gray-800">
-                    رقم موبايل إضافي (بديل) <span className="text-gray-400 font-normal">(مفضل)</span>:
+                    رقم موبايل إضافي (بديل) <span className="text-gray-400 font-normal">(اختياري)</span>:
                   </label>
                   <div className="relative">
                     <input
@@ -429,6 +418,53 @@ export const CheckoutModal: React.FC = () => {
                   </div>
                   <span className="text-[10px] text-gray-500 block">في حال كان الهاتف الأول غير متاح</span>
                 </div>
+              </div>
+
+              {/* 2.5 Contact Preference Selector */}
+              <div className="space-y-1.5 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-800">
+                  كيف تفضل أن نتواصل معك لتأكيد الأسعار وتفاصيل الطلب؟ <span className="text-red-500">*</span>:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setContactPreference('whatsapp')}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border ${
+                      contactPreference === 'whatsapp'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-102'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>🟢 عبر واتساب</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setContactPreference('call')}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border ${
+                      contactPreference === 'call'
+                        ? 'bg-blue-900 text-white border-blue-900 shadow-xs scale-102'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>📞 مكالمة هاتفية</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setContactPreference('both')}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border ${
+                      contactPreference === 'both'
+                        ? 'bg-purple-900 text-white border-purple-900 shadow-xs scale-102'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>💬 كلاهما متاح</span>
+                  </button>
+                </div>
+                <span className="text-[10px] text-gray-500 block">
+                  سيقوم موظف المبيعات بمراسلتك أو الاتصال بك وفق رغبتك لإفادتك بالأسعار وحساب الفاتورة
+                </span>
               </div>
 
               {/* 3. Delivery Location & City */}
@@ -529,11 +565,10 @@ export const CheckoutModal: React.FC = () => {
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-98 text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full bg-blue-900 hover:bg-blue-950 active:scale-98 text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-lg transition flex items-center justify-center gap-2"
                 >
                   <FileText size={18} />
-                  <span>{isSubmitting ? 'جاري تسجيل الطلب...' : 'تأكيد الطلب وتوليد كارت الفاتورة الرسمية 📄'}</span>
+                  <span>تأكيد الطلب وتوليد كارت الفاتورة الرسمية 📄</span>
                 </button>
               </div>
 

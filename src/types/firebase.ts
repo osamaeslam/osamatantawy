@@ -27,13 +27,13 @@ export interface FirebaseOrder {
   selectedSize: string;
   quantity: number;
   totalPrice: number;
-  status: "pending" | "quoted" | "partially_accepted" | "confirmed" | "dispatched" | "delivered" | "cancelled";
+  status: "pending" | "priced" | "confirmed" | "dispatched" | "delivered" | "cancelled";
   createdAt: any;
-  items?: Record<string, any>;
   whatsappMessageId?: string;
   customerAddress?: string;
   imageUrl?: string;
   whatsappSent?: boolean;
+  items?: any;
 }
 
 export type BotState =

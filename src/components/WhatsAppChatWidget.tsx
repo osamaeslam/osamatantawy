@@ -38,23 +38,23 @@ export const WhatsAppChatWidget: React.FC<Props> = ({ phoneNumber }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-18 sm:bottom-6 right-3 sm:right-6 z-40">
       {/* زر الفتح العائم */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="relative w-14 h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl transition hover:scale-105 group"
+          className="relative w-12 h-12 sm:w-14 sm:h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl transition hover:scale-105 group border-2 border-white/80"
           aria-label="تحدث مع مبيعات طنطاوي جروب واتساب"
           title="تحدث مع مبيعات طنطاوي جروب واتساب"
         >
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white animate-pulse" />
-          <MessageCircle size={28} />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 rounded-full border-2 border-white animate-pulse" />
+          <MessageCircle size={24} className="sm:w-7 sm:h-7" />
         </button>
       )}
 
       {/* نافذة الدردشة */}
       {isOpen && (
-        <div className="flex flex-col h-[520px] w-[340px] bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="flex flex-col h-[480px] sm:h-[520px] w-[calc(100vw-32px)] sm:w-[340px] max-w-[360px] bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm">

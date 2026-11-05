@@ -84,6 +84,7 @@ export const orderService = {
     customerName: string;
     phonePrimary: string;
     phoneSecondary?: string;
+    contactPreference?: 'whatsapp' | 'call' | 'both';
     deliveryAddress: string;
     city?: string;
     landmark?: string;
@@ -102,6 +103,7 @@ export const orderService = {
     const fullItemsPayload = {
       phonePrimary: invoice.phonePrimary,
       phoneSecondary: invoice.phoneSecondary || '',
+      contactPreference: invoice.contactPreference || 'whatsapp',
       city: invoice.city || '',
       deliveryAddress: invoice.deliveryAddress,
       landmark: invoice.landmark || '',
@@ -145,26 +147,24 @@ export const orderService = {
     if (error) throw error;
   },
 
-  async updateQuote(
+  async updateOrderFull(
     id: string,
-    items: Record<string, any>,
-    totalPrice: number,
-    status: FirebaseOrder['status'],
-    productNameAr: string,
-    quantity: number,
-    deliveryTimeWindow: string
+    updates: {
+      totalPrice?: number;
+      status?: FirebaseOrder['status'];
+      items?: any;
+      quantity?: number;
+      productNameAr?: string;
+    }
   ): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE)
-      .update({
-        items,
-        total_price: totalPrice,
-        status,
-        product_name_ar: productNameAr,
-        quantity,
-        selected_size: deliveryTimeWindow,
-      })
-      .eq('id', id);
+    const updatePayload: Record<string, any> = {};
+    if (updates.totalPrice !== undefined) updatePayload.total_price = updates.totalPrice;
+    if (updates.status !== undefined) updatePayload.status = updates.status;
+    if (updates.items !== undefined) updatePayload.items = updates.items;
+    if (updates.quantity !== undefined) updatePayload.quantity = updates.quantity;
+    if (updates.productNameAr !== undefined) updatePayload.product_name_ar = updates.productNameAr;
+
+    const { error } = await supabase.from(TABLE).update(updatePayload).eq('id', id);
     if (error) throw error;
   },
 

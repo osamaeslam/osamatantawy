@@ -37,7 +37,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     products: appProducts 
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff'>(() => {
+    try {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('cms') || h.includes('banner')) return 'cms';
+    } catch {}
+    return 'overview';
+  });
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [currentStaff, setCurrentStaff] = useState<StaffUser | null>(() => staffService.getCurrentUser());
@@ -487,10 +493,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         <div className="flex gap-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
           {(isSuperAdmin
             ? [
-                { id: 'overview', label: 'نظرة عامة' },
+                { id: 'overview', label: 'نظرة عامة 📊' },
+                { id: 'cms', label: '🖼️ تعديل البانرات والواجهة (CMS) 🎨' },
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
                 { id: 'staff', label: 'فريق العمل وحسابات الموظفين 👥' },
-                { id: 'cms', label: 'تخصيص الواجهة ورقم الواتساب 🎨📱' },
                 { id: 'categories', label: 'أسماء الأقسام 🗂️' },
                 { id: 'excel', label: 'شيت جوجل ورفع إكسل 📊' },
                 { id: 'products', label: 'المنتجات 📦' },

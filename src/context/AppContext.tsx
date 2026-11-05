@@ -308,6 +308,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             dbConfig.heroBanners && dbConfig.heroBanners.length > 0
               ? dbConfig.heroBanners
               : prev.heroBanners,
+          promoBanners:
+            dbConfig.promoBanners && dbConfig.promoBanners.length > 0
+              ? dbConfig.promoBanners
+              : prev.promoBanners,
         };
         try {
           localStorage.setItem('tantawy_homepage_config', JSON.stringify(merged));

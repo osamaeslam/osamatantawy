@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useProductPagination } from '../hooks/useProductPagination';
+import { CATEGORIES } from '../data/mockData';
 import { 
   Zap, 
   ChevronRight, 
@@ -17,10 +18,12 @@ import {
   Flame,
   Award,
   PhoneCall,
-  MessageCircle
+  MessageCircle,
+  Edit3
 } from 'lucide-react';
 import { Product } from '../types';
 import { BrandsGrid } from './BrandsGrid';
+import { NestedCategoriesSection } from './NestedCategoriesSection';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 import { normalizeImageUrl } from '../services/image-url';
 
@@ -33,11 +36,11 @@ export const HomePage: React.FC = () => {
     setSelectedProduct, 
     setActiveTab, 
     setSelectedCategory,
+    setSelectedSubcategory,
     setIsAboutModalOpen,
     searchQuery,
     setSelectedBrand,
-    homePageConfig,
-    categories
+    homePageConfig
   } = useApp();
 
   const heroBanners = homePageConfig.heroBanners && homePageConfig.heroBanners.length > 0 
@@ -51,7 +54,7 @@ export const HomePage: React.FC = () => {
           buttonText: 'تصفح الأجهزة المنزلية',
           category: 'أجهزة منزلية',
           bgGradient: 'from-blue-950 via-blue-900 to-indigo-900',
-          image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=1600&auto=format&fit=crop&q=80',
+          image: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=1600&auto=format&fit=crop&q=80',
           linkCategory: 'أجهزة منزلية'
         }
       ];
@@ -125,7 +128,6 @@ export const HomePage: React.FC = () => {
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
                   <img
-                    loading="lazy"
                     src={normalizeImageUrl(banner.image)} referrerPolicy="no-referrer"
                     alt={banner.title}
                     className="w-full h-full object-cover object-center"
@@ -274,46 +276,83 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          {categories.map((cat) => (
-            <div
-              key={cat.name}
-              onClick={() => {
-                setSelectedCategory(cat.name);
-                setActiveTab('categories');
-              }}
-              className="bg-white hover:bg-blue-50/60 border border-gray-200 hover:border-blue-300 rounded-3xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 group shadow-xs hover:shadow-md"
-            >
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-900 to-indigo-950 flex items-center justify-center text-white group-hover:scale-110 transition duration-300 shadow-sm shrink-0">
-                  <Sparkles size={24} className="text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-black text-gray-900 group-hover:text-blue-900 transition">
-                    {cat.nameAr}
-                  </h3>
-                  <span className="text-[11px] text-gray-500 font-medium line-clamp-1">
-                    {cat.descriptionAr}
-                  </span>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {CATEGORIES.map((cat) => {
+            const isHome = cat.nameAr === 'أجهزة منزلية' || cat.name === 'Home Appliances';
+            const countLabel = isHome ? '21 قسماً داخلياً' : '15 قسماً داخلياً';
 
-              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100">
-                {cat.subcategoriesAr.slice(0, 3).map((sub) => (
-                  <span key={sub} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-medium">
-                    {sub}
-                  </span>
-                ))}
-                {cat.subcategoriesAr.length > 3 && (
-                  <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold">
-                    +{cat.subcategoriesAr.length - 3} المزيد
-                  </span>
-                )}
+            return (
+              <div
+                key={cat.name}
+                onClick={() => {
+                  setSelectedCategory(cat.nameAr);
+                  setSelectedSubcategory(null);
+                  setActiveTab('categories');
+                }}
+                className="bg-white hover:bg-blue-50/40 border border-gray-200 hover:border-blue-300 rounded-3xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 group shadow-xs hover:shadow-md"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-blue-900 to-indigo-950 flex items-center justify-center text-white group-hover:scale-105 transition duration-300 shadow-sm shrink-0">
+                        <Sparkles size={22} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-black text-gray-900 group-hover:text-blue-900 transition">
+                            {cat.nameAr}
+                          </h3>
+                          <span className="text-[10px] bg-blue-100 text-blue-900 font-black px-2 py-0.5 rounded-full">
+                            {countLabel}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-gray-500 font-medium line-clamp-1 mt-0.5">
+                          {cat.descriptionAr}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clickable Inner Item Groups Chips */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[11px] font-bold text-gray-700 mb-2">الأقسام الداخلية والأصناف المتاحة:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.subcategoriesAr.slice(0, 8).map((sub) => (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategory(cat.nameAr);
+                            setSelectedSubcategory(sub);
+                            setActiveTab('categories');
+                          }}
+                          className="text-[11px] bg-gray-100 hover:bg-blue-900 hover:text-white text-gray-700 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                      {cat.subcategoriesAr.length > 8 && (
+                        <span className="text-[11px] bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg font-bold">
+                          +{cat.subcategoriesAr.length - 8} أقسام أخرى...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 flex items-center justify-between text-xs font-bold text-blue-800 group-hover:text-blue-950">
+                  <span>تصفح كافة منتجات {cat.nameAr}</span>
+                  <ChevronLeft size={16} className="group-hover:-translate-x-1 transition" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
+
+      {/* Nested Subcategories Hierarchy Explorer (Item Groups) */}
+      <NestedCategoriesSection />
 
       {/* Flash Deals / Thunder Section */}
       <section className="bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900 text-white p-5 md:p-7 rounded-3xl space-y-5 shadow-md">
@@ -394,9 +433,6 @@ export const HomePage: React.FC = () => {
                         متاح بالمعارض
                       </span>
                       <span className="text-[10px] text-gray-500 font-medium">شحن لجميع المحافظات</span>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="text-[10px] font-bold">السعر يعتمد على حالة المعاينة ويعرف عند إتمام الفاتورة عبر واتساب</span>
-                    </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 w-full">
@@ -425,60 +461,99 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Two Side-By-Side Branded Promotional Banners */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div 
-          onClick={() => {
-            setSelectedCategory('Major Appliances');
-            setActiveTab('categories');
-          }}
-          className="cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-blue-950 to-blue-800 text-white p-6 md:p-8 flex items-center justify-between shadow-md hover:shadow-lg transition group relative"
-        >
-          <div className="space-y-2 z-10 max-w-[65%]">
-            <span className="text-[11px] bg-red-600 font-black px-2.5 py-0.5 rounded-full inline-block">
-              أجهزة منزلية كبرى
-            </span>
-            <h3 className="text-lg md:text-xl font-black">ثلاجات، غسالات وبوتاجازات</h3>
-            <p className="text-xs text-blue-200">شارب، إل جي، فريش، وكاريير بضمان الوكيل المعتمد</p>
-            <span className="text-xs font-bold text-yellow-300 flex items-center gap-1 pt-1">
-              <span>تصفح الأجهزة الكبرى</span>
-              <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition" />
-            </span>
+      {/* Two Side-By-Side Branded Promotional Banners (Editable via Admin CMS) */}
+      <section className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <span className="text-xs font-black text-gray-800">أقوى العروض الحصرية والماركات المعتمدة (طنطاوي جروب)</span>
           </div>
-          <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0">
-            <img
-              src="https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80"
-              alt="Major Appliances"
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = '#admin-cms';
+              window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }}
+            className="text-[11px] font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-blue-200 shadow-2xs group"
+            title="انقر لتعديل صور ونصوص هذين البانرين من لوحة الإدارة مباشرة"
+          >
+            <Edit3 size={13} className="text-blue-700 group-hover:scale-110 transition" />
+            <span>تعديل هذا البانر في لوحة الإدارة ✏️</span>
+          </button>
         </div>
 
-        <div 
-          onClick={() => {
-            setSelectedCategory('Smart TVs');
-            setActiveTab('categories');
-          }}
-          className="cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 md:p-8 flex items-center justify-between shadow-md hover:shadow-lg transition group relative"
-        >
-          <div className="space-y-2 z-10 max-w-[65%]">
-            <span className="text-[11px] bg-amber-500 font-black text-black px-2.5 py-0.5 rounded-full inline-block">
-              شاشات وتلفزيونات 4K
-            </span>
-            <h3 className="text-lg md:text-xl font-black">شاشات سامسونج وتوشيبا وإل جي</h3>
-            <p className="text-xs text-gray-300">وضوح كريستالي مع ريسيفر داخلي وتوصيل سريع</p>
-            <span className="text-xs font-bold text-yellow-300 flex items-center gap-1 pt-1">
-              <span>تصفح الشاشات الذكية</span>
-              <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition" />
-            </span>
-          </div>
-          <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0">
-            <img
-              src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&auto=format&fit=crop&q=80"
-              alt="Smart TV"
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {(homePageConfig.promoBanners && homePageConfig.promoBanners.length > 0 
+          ? homePageConfig.promoBanners 
+          : [
+              {
+                id: 'promo-1',
+                badge: 'أجهزة منزلية كبرى',
+                badgeBg: 'bg-red-600 text-white',
+                title: 'ثلاجات، غسالات وبوتاجازات',
+                subtitle: 'شارب، إل جي، فريش، وكاريير بضمان الوكيل المعتمد وضمان طنطاوي',
+                buttonText: 'تصفح الأجهزة الكبرى',
+                image: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop&q=80',
+                bgGradient: 'from-blue-950 to-blue-800',
+                linkCategory: 'أجهزة منزلية'
+              },
+              {
+                id: 'promo-2',
+                badge: 'شاشات وتلفزيونات 4K',
+                badgeBg: 'bg-amber-500 text-black',
+                title: 'شاشات سامسونج وتوشيبا وإل جي',
+                subtitle: 'وضوح كريستالي مع ريسيفر داخلي وتوصيل سريع لكافة المحافظات',
+                buttonText: 'تصفح الشاشات الذكية',
+                image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+                bgGradient: 'from-slate-900 to-indigo-950',
+                linkCategory: 'أجهزة كهربيه'
+              }
+            ]
+        ).map((promo, idx) => {
+          // Ensure promo image is never a food or invalid placeholder
+          const isInvalidPromoImage = 
+            !promo.image || 
+            promo.image.includes('1556911220') || 
+            promo.image.includes('yarn') ||
+            promo.image.includes('skillet');
+          
+          const cleanPromoImage = isInvalidPromoImage
+            ? (heroBanners[idx]?.image || (idx === 0 
+                ? 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop&q=80' 
+                : 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80'))
+            : promo.image;
+
+          return (
+            <div 
+              key={promo.id || idx}
+              onClick={() => {
+                setSelectedCategory(promo.linkCategory || 'أجهزة منزلية');
+                setActiveTab('categories');
+              }}
+              className={`cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r ${promo.bgGradient || 'from-blue-950 to-blue-800'} text-white p-6 md:p-8 flex items-center justify-between shadow-md hover:shadow-lg transition group relative`}
+            >
+              <div className="space-y-2 z-10 max-w-[65%]">
+                <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full inline-block ${promo.badgeBg || 'bg-red-600 text-white'}`}>
+                  {promo.badge}
+                </span>
+                <h3 className="text-lg md:text-xl font-black">{promo.title}</h3>
+                <p className="text-xs text-blue-200 line-clamp-2">{promo.subtitle}</p>
+                <span className="text-xs font-bold text-yellow-300 flex items-center gap-1 pt-1">
+                  <span>{promo.buttonText || 'تصفح الأصناف'}</span>
+                  <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition" />
+                </span>
+              </div>
+              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0 bg-white/10">
+                <img
+                  src={normalizeImageUrl(cleanPromoImage)}
+                  referrerPolicy="no-referrer"
+                  alt={promo.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                />
+              </div>
+            </div>
+          );
+        })}
         </div>
       </section>
 
@@ -583,11 +658,6 @@ export const HomePage: React.FC = () => {
               <Award size={14} className="text-yellow-400" />
               <span>نادي عملاء طنطاوي جروب المميزين (VIP Club)</span>
             </div>
-            {/* Promotional Tag */}
-            <div className="inline-flex items-center gap-2 bg-emerald-600/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-400/30 mt-2 md:mt-0">
-              <Truck size={10} className="shrink-0" />
-              <span>اشتري الآن وادفع عقب الفحص</span>
-            </div>
             <h3 className="text-xl md:text-3xl font-black">
               تسوق بثقة تامة مع أكبر صرح للأجهزة والأدوات المنزلية
             </h3>
@@ -619,22 +689,24 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Pagination Controls */}
-      <div className="mt-6 flex justify-center space-x-2">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
         {hasPreviousPage && (
           <button
             onClick={() => goTo(currentPage - 1)}
-            className="bg-white hover:bg-gray-100 text-gray-900 font-bold px-4 py-2 rounded-lg transition"
+            className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
             title="الصفحة السابقة"
           >
-            <ChevronLeft size={18} />
+            <ChevronRight size={18} />
           </button>
         )}
         {pageNumbers().map((page) => (
           <button
             key={page}
             onClick={() => goTo(page)}
-            className={`bg-${currentPage === page ? 'blue-600' : 'white'} text-gray-900 font-bold px-4 py-2 rounded-lg transition ${
-              currentPage === page ? 'text-white' : 'text-gray-800'
+            className={`font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition shadow-xs ${
+              currentPage === page 
+                ? 'bg-blue-900 text-white shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
             }`}
           >
             {page}
@@ -643,10 +715,10 @@ export const HomePage: React.FC = () => {
         {hasNextPage && (
           <button
             onClick={() => goTo(currentPage + 1)}
-            className="bg-white hover:bg-gray-100 text-gray-900 font-bold px-4 py-2 rounded-lg transition"
+            className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
             title="الصفحة التالية"
           >
-            <ChevronRight size={18} />
+            <ChevronLeft size={18} />
           </button>
         )}
       </div>

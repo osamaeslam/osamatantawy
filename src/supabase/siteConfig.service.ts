@@ -1,12 +1,12 @@
 import { supabase } from './config';
-import type { HeroBanner, HomePageConfig } from '../types';
+import type { HeroBanner, HomePageConfig, PromoBanner } from '../types';
 
 const CONFIG_TABLE = 'site_configs';
 const BANNERS_TABLE = 'hero_banners';
 
 /**
  * خدمة إعدادات الموقع - تقرأ وتكتب في Supabase بشكل دائم
- * (Hotline / WhatsApp / Announcement / Hero Banners)
+ * (Hotline / WhatsApp / Announcement / Hero Banners / Promo Banners)
  */
 export const siteConfigService = {
   /** قراءة قيمة إعداد واحدة بالـ key */
@@ -85,18 +85,30 @@ export const siteConfigService = {
   /** قراءة إعدادات الصفحة الرئيسية كاملة من قاعدة البيانات */
   async getHomePageConfig(): Promise<Partial<HomePageConfig> | null> {
     try {
-      const [announcement, hotline, whatsapp, banners] = await Promise.all([
+      const [announcement, hotline, whatsapp, banners, promoBannersStr] = await Promise.all([
         this.getValue('announcement_text'),
         this.getValue('hotline'),
         this.getValue('whatsapp_sales_number'),
         this.getBanners(),
+        this.getValue('homepage_promo_banners'),
       ]);
+
+      let promoBanners: PromoBanner[] | undefined = undefined;
+      if (promoBannersStr) {
+        try {
+          const parsed = JSON.parse(promoBannersStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            promoBanners = parsed;
+          }
+        } catch {}
+      }
 
       return {
         announcementText: announcement ?? undefined,
         hotline: hotline ?? undefined,
         whatsappNumber: whatsapp ?? undefined,
         heroBanners: banners,
+        promoBanners,
       };
     } catch (err) {
       console.warn('siteConfigService.getHomePageConfig error:', err);
@@ -111,6 +123,9 @@ export const siteConfigService = {
       this.setValue('hotline', config.hotline || ''),
       config.whatsappNumber
         ? this.setValue('whatsapp_sales_number', config.whatsappNumber)
+        : Promise.resolve(),
+      config.promoBanners && config.promoBanners.length > 0
+        ? this.setValue('homepage_promo_banners', JSON.stringify(config.promoBanners))
         : Promise.resolve(),
     ]);
     await this.replaceBanners(config.heroBanners || []);

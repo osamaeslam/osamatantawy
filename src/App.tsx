@@ -17,13 +17,12 @@ import { UserGuideModal } from './components/UserGuideModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
-import { Smartphone, Monitor, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { visitorService } from './supabase/visitor.service';
 
 const MainLayout: React.FC = () => {
   const { 
     activeTab, 
-    viewMode, 
-    setViewMode, 
     isOrderTrackingOpen, 
     setIsOrderTrackingOpen, 
     isUserGuideOpen, 
@@ -33,21 +32,25 @@ const MainLayout: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
-  // اكتشاف مسار لوحة الإدارة تلقائياً
+  // تتبع الزائر واكتشاف مسار لوحة الإدارة تلقائياً
   React.useEffect(() => {
-    if (
-      window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/admin' ||
-      window.location.hash === '#admin'
-    ) {
-      setShowAdmin(true);
-    }
-    const handleHash = () => {
-      if (window.location.hash === '#admin') {
+    visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
+
+    const checkAdminRouting = () => {
+      const h = window.location.hash.toLowerCase();
+      if (
+        window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/admin' ||
+        h === '#admin' ||
+        h === '#admin-cms' ||
+        h === '#cms'
+      ) {
         setShowAdmin(true);
       }
     };
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+
+    checkAdminRouting();
+    window.addEventListener('hashchange', checkAdminRouting);
+    return () => window.removeEventListener('hashchange', checkAdminRouting);
   }, []);
 
   // فتح لوحة الإدارة بشكل كامل وشامل كصفحة مستقلة
@@ -103,70 +106,9 @@ const MainLayout: React.FC = () => {
     }
   };
 
-  // If user selected mobile mockup mode
-  if (viewMode === 'mobile') {
-    return (
-      <div className="min-h-screen bg-neutral-900 py-4 sm:py-8 px-2 flex flex-col items-center justify-center font-['Cairo',sans-serif]">
-        {/* Top Control Bar for Mobile Mode */}
-        <div className="w-full max-w-sm mb-3 flex items-center justify-between text-white text-xs px-2">
-          <div className="flex items-center gap-1.5 font-bold">
-            <Smartphone size={16} className="text-blue-500" />
-            <span>محاكي تطبيق طنطاوي جروب (Tantawy Group Mobile App)</span>
-          </div>
-          <button
-            onClick={() => setViewMode('web')}
-            className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-[11px] font-bold transition flex items-center gap-1"
-          >
-            <Monitor size={13} />
-            <span>تبديل لمتجر ويب كامل</span>
-          </button>
-        </div>
-
-        {/* Smartphone Shell Frame */}
-        <div className="w-full max-w-[420px] h-[860px] bg-white rounded-[44px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border-[10px] border-neutral-800 overflow-hidden relative flex flex-col">
-          {/* Phone Dynamic Island / Notch */}
-          <div className="bg-neutral-800 h-6 w-full flex items-center justify-center relative shrink-0">
-            <div className="w-24 h-4 bg-neutral-950 rounded-full" />
-          </div>
-
-          {/* Mobile Install Top Banner */}
-          <MobilePWAInstallBanner />
-
-          {/* App Header */}
-          <Header />
-
-          {/* Scrollable Screen Content */}
-          <main className="flex-1 overflow-y-auto px-3 py-4 pb-20 bg-gray-50 no-scrollbar relative">
-            {renderContent()}
-          </main>
-
-          {/* Phone Bottom Navigation */}
-          <BottomNavigation />
-
-          {/* Floating Hotline Button */}
-          <FloatingHotlineButton />
-        </div>
-
-        {/* Modals */}
-        <ProductDetailModal />
-        <AboutCompanyModal />
-        <CheckoutModal />
-        <OrderTrackingModal
-          isOpen={isOrderTrackingOpen}
-          onClose={() => setIsOrderTrackingOpen(false)}
-          initialPhone={trackingPhone}
-        />
-        <UserGuideModal
-          isOpen={isUserGuideOpen}
-          onClose={() => setIsUserGuideOpen(false)}
-        />
-      </div>
-    );
-  }
-
-  // Full-width Responsive Web & Real Mobile View
+  // Render pristine edge-to-edge responsive layout with native mobile elegance
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-['Cairo',sans-serif]">
+    <div className="min-h-screen flex flex-col bg-gray-50 font-['Cairo',sans-serif] selection:bg-blue-600 selection:text-white">
       {/* Mobile PWA Installation Banner */}
       <MobilePWAInstallBanner />
 

@@ -1,6 +1,7 @@
 import { getStoredWhatsAppNumber, normalizeWhatsAppNumber } from './whatsapp-order';
 
 export interface OrderItemInvoice {
+  id?: string;
   nameAr: string;
   itemNumber?: string;
   unifiedCode?: string;
@@ -8,9 +9,9 @@ export interface OrderItemInvoice {
   color?: string;
   brand?: string;
   quantity: number;
+  unitPrice?: number;         // سعر الوحدة بالجنيه المصري (يدخله الموظف)
+  totalItemPrice?: number;    // إجمالي الصنف = unitPrice * quantity
   image?: string;
-  unitPrice?: number;
-  decision?: 'pending' | 'accepted' | 'rejected';
 }
 
 export interface OrderInvoiceData {
@@ -18,81 +19,134 @@ export interface OrderInvoiceData {
   customerName: string;
   phonePrimary: string;
   phoneSecondary?: string;
+  contactPreference?: 'whatsapp' | 'call' | 'both'; // طريقة التواصل المفضلة
   deliveryAddress: string;
   city?: string;
   landmark?: string;            // علامة مميزة لمكان التوصيل
-  deliveryTimeWindow?: string;   // مدة التوصيل من - إلى
+  deliveryTimeWindow?: string;   // مدة وميعاد التوصيل المفضل من - إلى
   notes?: string;
   items: OrderItemInvoice[];
-  totalPrice?: number;
+  itemsSubtotal?: number;       // مجموع أسعار الأصناف
+  deliveryFee?: number;         // مصاريف الشحن
+  discount?: number;            // الخصم المعتمد
+  totalPrice?: number;          // الإجمالي النهائي للفاتورة
   createdAt: string;
   status?: string;
 }
 
 /**
- * صياغة رسالة واتساب رسمية واحترافية لكارت الفاتورة
- * يرسلها العميل لموظف المبيعات ليرد بالأسعار وقيمة الفاتورة وموعد وصول الشحنة
+ * رسالة الواتساب الأولى: رسالة ذكية ومختصرة واحدة فقط بدون رص نصوص طويل
+ * ترسل لإدارة المبيعات برقم الطلب وبيانات العميل وعدد الأصناف لسرعة المعالجة
  */
-export const generateInvoiceMessage = (order: OrderInvoiceData): string => {
-  const itemsText = order.items
+export const generateCustomerOrderRequestMessage = (order: OrderInvoiceData): string => {
+  const totalQty = order.items.reduce((acc, curr) => acc + (Number(curr.quantity) || 1), 0);
+  
+  const contactText = order.contactPreference === 'whatsapp' 
+    ? '🟢 واتساب فقط' 
+    : order.contactPreference === 'call' 
+    ? '📞 اتصال هاتفي' 
+    : '📱 واتساب أو اتصال';
+
+  const secondaryPhoneText = order.phoneSecondary ? `\n📞 *موبايل إضافي:* ${order.phoneSecondary}` : '';
+  const landmarkText = order.landmark ? `\n🏛️ *علامة مميزة:* ${order.landmark}` : '';
+  const windowText = order.deliveryTimeWindow ? `\n⏱️ *موعد التوصيل:* ${order.deliveryTimeWindow}` : '';
+  const notesText = order.notes ? `\n📝 *ملاحظات:* ${order.notes}` : '';
+
+  // ملخص سريع للأصناف بالكود فقط دون سرد نصوص مكررة
+  const itemsSummary = order.items
     .map((item, i) => {
-      const specs = [item.size, item.color].filter(Boolean).join(' - ');
-      const specsText = specs ? ` [${specs}]` : '';
-      const priceText = item.unitPrice !== undefined ? `\n   سعر الوحدة: ${item.unitPrice} جنيه` : '';
-      return `${i + 1}. *${item.nameAr}*${specsText}\n   الكمية المطلوبة: ${item.quantity} قطع${priceText}`;
+      const code = item.unifiedCode || item.itemNumber ? ` [كود: ${item.unifiedCode || item.itemNumber}]` : '';
+      return `• ${item.nameAr}${code} × (عدد ${item.quantity})`;
     })
-    .join('\n\n');
+    .join('\n');
 
-  const secondaryPhoneText = order.phoneSecondary ? `\n📞 *رقم الموبايل الإضافي:* ${order.phoneSecondary}` : '';
-  const landmarkText = order.landmark ? `\n🏛️ *علامة مميزة للعنوان:* ${order.landmark}` : '';
-  const windowText = order.deliveryTimeWindow ? `\n⏱️ *مدة وميعاد التوصيل المفضل:* ${order.deliveryTimeWindow}` : '';
-  const notesText = order.notes ? `\n📝 *ملاحظات العميل:* ${order.notes}` : '';
-
-  return `*📋 كارت فاتورة طلب جديد - طنطاوي جروب للأجهزة المنزلية والكهربية*
+  return `*🛒 طلب شراء جديد - دريم طنطاوي جروب للأجهزة*
 ━━━━━━━━━━━━━━━━━━━━━
-🔢 *رقم كارت الطلب:* #${order.orderId}
-📅 *تاريخ الطلب:* ${order.createdAt}
+🔢 *رقم الطلب:* #${order.orderId}
+📅 *التاريخ:* ${order.createdAt}
 
-👤 *بيانات العميل المستلم:*
+👤 *بيانات العميل والتوصيل:*
 • الاسم: *${order.customerName}*
-• رقم الموبايل الأساسي: *${order.phonePrimary}*${secondaryPhoneText}
-• عنوان التوصيل: *${order.city ? `${order.city} - ` : ''}${order.deliveryAddress}*${landmarkText}${windowText}${notesText}
+• الموبايل: *${order.phonePrimary}* (${contactText})${secondaryPhoneText}
+• العنوان: *${order.city ? `${order.city} - ` : ''}${order.deliveryAddress}*${landmarkText}${windowText}${notesText}
 
-🛍️ *الأصناف المطلوبة في الأوردر:*
-${itemsText}
-
+📦 *الأصناف المطلوبة (${order.items.length} صنف / ${totalQty} قطعة):*
+${itemsSummary}
 ━━━━━━━━━━━━━━━━━━━━━
-⚠️ *ملاحظة هامة لموظف المبيعات والتوزيع:*
-برجاء الإفادة بأسعار الأصناف المعتمدة وإجمالي قيمة الفاتورة وتأكيد ميعاد خروج الشحنة مع المندوب.
+⚠️ *ملاحظة للمبيعات:* برجاء تسجيل الأسعار على كارت الفاتورة وإرسالها للعميل للتأكيد.
 📞 الخط الساخن: 15218`;
 };
 
-export const generateQuoteMessage = (order: OrderInvoiceData): string => {
+/**
+ * رسالة كارت الفاتورة النهائي المعتمد:
+ * يرسلها الموظف إلى واتساب العميل بضغطة زر واحدة بعد كتابة الأسعار
+ */
+export const generateFinalCustomerInvoiceMessage = (order: OrderInvoiceData): string => {
   const itemsText = order.items
-    .map((item, index) => {
-      const lineTotal = (item.unitPrice || 0) * item.quantity;
-      return `${index + 1}. ${item.nameAr}\n   الكمية: ${item.quantity} × ${item.unitPrice || 0} جنيه = ${lineTotal} جنيه`;
+    .map((item, i) => {
+      const code = item.unifiedCode || item.itemNumber ? ` (كود: ${item.unifiedCode || item.itemNumber})` : '';
+      const unit = item.unitPrice && item.unitPrice > 0 ? `${item.unitPrice.toLocaleString('ar-EG')} ج.م` : 'قيد التقدير';
+      const total = item.unitPrice && item.unitPrice > 0 
+        ? `${((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('ar-EG')} ج.م` 
+        : '-';
+      return `${i + 1}. *${item.nameAr}*${code}\n   الكمية: ${item.quantity} | سعر الوحدة: ${unit} | الإجمالي: ${total}`;
     })
     .join('\n\n');
 
-  return `السلام عليكم أ/ ${order.customerName}،\nعرض السعر لطلب رقم #${order.orderId}:\n\n${itemsText}\n\nإجمالي الطلب: ${order.totalPrice || 0} جنيه\nمدة التوصيل: ${order.deliveryTimeWindow || 'يتم التأكيد عند اعتماد الطلب'}\n\nبرجاء تأكيد الأصناف المطلوبة أو إرسال التعديلات.\nطنطاوي جروب`;
+  const subtotal = order.itemsSubtotal || order.items.reduce((acc, curr) => acc + ((curr.unitPrice || 0) * (curr.quantity || 1)), 0);
+  const delivery = order.deliveryFee || 0;
+  const discount = order.discount || 0;
+  const grandTotal = order.totalPrice || (subtotal + delivery - discount);
+
+  return `*🧾 كارت الفاتورة المعتمد - طنطاوي جروب للأجهزة المنزلية والكهربية*
+━━━━━━━━━━━━━━━━━━━━━
+🔢 *رقم الفاتورة:* #${order.orderId}
+📅 *التاريخ:* ${order.createdAt}
+
+👤 *السيد/ة:* *${order.customerName}*
+📍 *عنوان التوصيل:* *${order.city ? `${order.city} - ` : ''}${order.deliveryAddress}*
+${order.landmark ? `🏛️ *علامة مميزة:* ${order.landmark}\n` : ''}${order.deliveryTimeWindow ? `⏱️ *مدة التوصيل:* ${order.deliveryTimeWindow}\n` : ''}
+📋 *تفاصيل الأصناف والأسعار المعتمدة:*
+${itemsText}
+━━━━━━━━━━━━━━━━━━━━━
+💵 *إجمالي قيمة الأصناف:* ${subtotal.toLocaleString('ar-EG')} ج.م
+🚚 *مصاريف الشحن والتوصيل:* ${delivery > 0 ? `${delivery.toLocaleString('ar-EG')} ج.م` : 'شحن مجاني 🎁'}
+${discount > 0 ? `🏷️ *خصم خاص:* ${discount.toLocaleString('ar-EG')} ج.م\n` : ''}💰 *المبلغ النهائي المطلوب عند الاستلام:* ${grandTotal.toLocaleString('ar-EG')} ج.م
+━━━━━━━━━━━━━━━━━━━━━
+🛡️ *شروط وضمانات الاستلام:*
+• دفع عند الاستلام بعد الفحص والمعاينة الشاملة للأجهزة.
+• ضمان طنطاوي جروب الرسمي وضمان الوكيل المعتمد لجميع المحافظات.
+• الخط الساخن المباشر لخدمة العملاء: 15218
+
+💬 *برجاء الرد بكلمة (موافق) على هذه الرسالة لتأكيد تجهيز الأوردر وخروج الشحنة فوراً.*`;
 };
 
 /**
- * إرسال الفاتورة مباشرة لواتساب المبيعات المعتمد
+ * متوافق مع الاستدعاءات القديمة لإنشاء الرسالة
+ */
+export const generateInvoiceMessage = generateCustomerOrderRequestMessage;
+
+/**
+ * إرسال إشعار الطلب الجديد لواتساب المبيعات
  */
 export const sendInvoiceToWhatsApp = (
   order: OrderInvoiceData,
   customSalesPhone?: string
 ): void => {
   const phone = normalizeWhatsAppNumber(customSalesPhone || getStoredWhatsAppNumber());
-  const message = generateInvoiceMessage(order);
+  const message = generateCustomerOrderRequestMessage(order);
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, '_blank');
 };
 
-export const sendQuoteToCustomerWhatsApp = (order: OrderInvoiceData): void => {
-  const phone = normalizeWhatsAppNumber(order.phonePrimary);
-  const message = generateQuoteMessage(order);
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+/**
+ * إرسال الفاتورة النهائية مباشرة إلى رقم هاتف العميل نفسه على الواتساب
+ */
+export const sendFinalInvoiceToCustomerWhatsApp = (
+  order: OrderInvoiceData
+): void => {
+  const customerPhone = normalizeWhatsAppNumber(order.phonePrimary);
+  const message = generateFinalCustomerInvoiceMessage(order);
+  const url = `https://wa.me/${customerPhone}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
 };
