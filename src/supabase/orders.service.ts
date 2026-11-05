@@ -37,6 +37,9 @@ export const orderService = {
       status: item.status as FirebaseOrder['status'],
       createdAt: item.created_at,
       respondedAt: item.responded_at || null,
+      assignedTo: item.assigned_to || null,
+      assignedAt: item.assigned_at || null,
+      followUpNote: item.follow_up_note || null,
       items: item.items,
     }));
   },
@@ -190,6 +193,7 @@ export const orderService = {
       items?: any;
       quantity?: number;
       productNameAr?: string;
+      assignedTo?: string | null;
     }
   ): Promise<void> {
     const updatePayload: Record<string, any> = {};
@@ -198,9 +202,37 @@ export const orderService = {
     if (updates.items !== undefined) updatePayload.items = updates.items;
     if (updates.quantity !== undefined) updatePayload.quantity = updates.quantity;
     if (updates.productNameAr !== undefined) updatePayload.product_name_ar = updates.productNameAr;
+    if (updates.assignedTo !== undefined) {
+      updatePayload.assigned_to = updates.assignedTo;
+      updatePayload.assigned_at = updates.assignedTo ? new Date().toISOString() : null;
+    }
 
     const { error } = await supabase.from(TABLE).update(updatePayload).eq('id', id);
     if (error) throw error;
+  },
+
+  /** تعيين الطلب لموظف/مندوب للمتابعة */
+  async assignTo(id: string, staffName: string | null): Promise<void> {
+    const { error } = await supabase
+      .from(TABLE)
+      .update({
+        assigned_to: staffName,
+        assigned_at: staffName ? new Date().toISOString() : null,
+      })
+      .eq('id', id);
+
+    if (error) {
+      const message = String(error.message || '');
+      if (
+        message.includes('assigned_to') ||
+        message.includes('assigned_at') ||
+        error.code === 'PGRST204' ||
+        error.code === '42703'
+      ) {
+        throw new Error('حقل تعيين المسؤول غير مفعّل. شغّل supabase/cs_advanced.sql في Supabase أولاً.');
+      }
+      throw error;
+    }
   },
 
   async delete(id: string): Promise<void> {

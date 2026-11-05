@@ -31,6 +31,10 @@ export interface FirebaseOrder {
   createdAt: any;
   /** أول لحظة اتغيّرت فيها الحالة من pending (لمؤشرات خدمة العملاء) */
   respondedAt?: string | null;
+  /** اسم الموظف/المندوب المسؤول عن متابعة الطلب */
+  assignedTo?: string | null;
+  assignedAt?: string | null;
+  followUpNote?: string | null;
   whatsappMessageId?: string;
   customerAddress?: string;
   imageUrl?: string;

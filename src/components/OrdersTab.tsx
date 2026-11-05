@@ -6,6 +6,7 @@ import { SmartOrderPricingModal } from './SmartOrderPricingModal';
 import { OrderInvoiceData } from '../services/invoice-to-whatsapp';
 import { buildCustomerWhatsAppUrl } from '../services/customer-messages';
 import { CustomerMessageMenu } from './CustomerMessageMenu';
+import { staffService } from '../services/staff.service';
 import { 
   FileText, 
   PhoneCall, 
@@ -32,6 +33,15 @@ interface OrdersTabProps {
 
 export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onRefresh }) => {
   const [ordersList, setOrdersList] = useState<FirebaseOrder[]>(initialOrders);
+  const [staffNames, setStaffNames] = useState<string[]>([]);
+
+  // قائمة أسماء الفريق (لتعيين مسؤول متابعة) — بتفشل بهدوء لو المستخدم مش مدير
+  useEffect(() => {
+    staffService
+      .getAll()
+      .then((list) => setStaffNames(list.filter((u) => u.isActive).map((u) => u.fullName)))
+      .catch(() => setStaffNames([]));
+  }, []);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'priced' | 'confirmed' | 'dispatched' | 'delivered'>('all');
@@ -65,6 +75,19 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
       );
     } catch (e: any) {
       alert('تعذر تحديث حالة الطلب: ' + e.message);
+    }
+  };
+
+  /** تعيين مسؤول متابعة للطلب */
+  const handleAssign = async (order: FirebaseOrder, staffName: string) => {
+    if (!order.id) return;
+    try {
+      await orderService.assignTo(order.id, staffName || null);
+      setOrdersList((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, assignedTo: staffName || null } : o))
+      );
+    } catch (e: any) {
+      alert('تعذر تعيين المسؤول: ' + e.message);
     }
   };
 
@@ -246,7 +269,41 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* تنبيه التأخير: طلب معلّق أكتر من 24 ساعة */}
+                    {(!o.status || o.status === 'pending') &&
+                      Date.now() - new Date(o.createdAt as any).getTime() > 24 * 3600 * 1000 && (
+                        <span
+                          className="text-[10px] font-black bg-red-100 text-red-800 border border-red-300 px-2 py-1 rounded-lg flex items-center gap-1"
+                          title="الطلب بانتظار المتابعة أكتر من 24 ساعة"
+                        >
+                          <AlertCircle size={11} />
+                          متأخر {Math.round((Date.now() - new Date(o.createdAt as any).getTime()) / 36e5)} ساعة
+                        </span>
+                      )}
+
+                    {/* تعيين مسؤول متابعة */}
+                    <select
+                      value={o.assignedTo || ''}
+                      onChange={(e) => handleAssign(o, e.target.value)}
+                      className={`text-[11px] font-bold px-2 py-1.5 rounded-xl border outline-none cursor-pointer ${
+                        o.assignedTo
+                          ? 'bg-indigo-50 text-indigo-900 border-indigo-300'
+                          : 'bg-gray-50 text-gray-500 border-gray-300'
+                      }`}
+                      title="تعيين الطلب لموظف/مندوب للمتابعة"
+                    >
+                      <option value="">👤 غير معيّن</option>
+                      {staffNames.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                      {o.assignedTo && !staffNames.includes(o.assignedTo) && (
+                        <option value={o.assignedTo}>{o.assignedTo}</option>
+                      )}
+                    </select>
+
                     <select
                       value={o.status}
                       onChange={(e) => handleUpdateStatus(o.id || '', e.target.value as any)}

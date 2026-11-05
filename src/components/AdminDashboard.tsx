@@ -19,6 +19,8 @@ import { HomePageCMS } from './HomePageCMS';
 import { CategoriesTab } from './CategoriesTab';
 import { StaffManagementTab } from './StaffManagementTab';
 import { ItemRequestsTab } from './ItemRequestsTab';
+import { CustomersTab } from './CustomersTab';
+import { OrderIssuesTab } from './OrderIssuesTab';
 import { staffService } from '../services/staff.service';
 import type { StaffUser, StaffRole } from '../services/staff.service';
 
@@ -44,7 +46,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     products: appProducts 
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff' | 'requests'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff' | 'requests' | 'customers' | 'issues'>(() => {
     try {
       const h = window.location.hash.toLowerCase();
       if (h.includes('cms') || h.includes('banner')) return 'cms';
@@ -530,6 +532,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 { id: 'cms', label: '🖼️ تعديل البانرات والواجهة (CMS) 🎨' },
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
                 { id: 'requests', label: 'طلبات أصناف غير موجودة 🧾' },
+                { id: 'customers', label: 'العملاء (CRM) 🤝' },
+                { id: 'issues', label: 'المرتجعات والشكاوى ♻️' },
                 { id: 'staff', label: 'فريق العمل وحسابات الموظفين 👥' },
                 { id: 'categories', label: 'أسماء الأقسام 🗂️' },
                 { id: 'excel', label: 'شيت جوجل ورفع إكسل 📊' },
@@ -560,6 +564,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {activeTab === 'overview' && isSuperAdmin && <OverviewTab orders={orders} recentVisitors={recentVisitors} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} onRefresh={loadData} />}
         {activeTab === 'requests' && isSuperAdmin && <ItemRequestsTab />}
+        {activeTab === 'customers' && isSuperAdmin && <CustomersTab orders={orders} />}
+        {activeTab === 'issues' && isSuperAdmin && (
+          <OrderIssuesTab orders={orders} currentUserName={currentStaff?.fullName} />
+        )}
         {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab currentStaff={currentStaff} />}
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
         {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
