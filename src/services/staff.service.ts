@@ -1,168 +1,309 @@
+import { supabase } from '../supabase/config';
+
+/**
+ * نظام دخول الإدارة/الموظفين — معتمد بالكامل على Supabase Auth.
+ *
+ * قبل كده كان الدخول بيتم من localStorage بكلمات مرور مكتوبة في الكود،
+ * وده كان معناه إن أي زائر يقدر يكتب في localStorage ويبقى "مدير عام"
+ * من غير أي كلمة مرور. دلوقتي:
+ *   • الهوية = حساب Supabase Auth حقيقي (JWT موقّع).
+ *   • الصلاحية (role) = جدول staff_members في قاعدة البيانات.
+ *   • مفيش أي كلمة مرور مخزّنة في الكود أو في المتصفح.
+ *
+ * يتطلب تشغيل: supabase/security_hardening.sql
+ */
+
+export type StaffRole = 'admin' | 'sales_rep' | 'delivery_rep';
+
 export interface StaffUser {
   id: string;
+  userId?: string | null;
+  email: string;
   fullName: string;
-  username: string;
-  password: string;
-  role: 'admin' | 'sales_rep' | 'delivery_rep';
+  role: StaffRole;
   phone?: string;
-  isActive: boolean;
-  createdAt: string;
-  lastLogin?: string;
   notes?: string;
+  isActive: boolean;
+  createdAt?: string | null;
+  lastLogin?: string | null;
 }
 
-const STORAGE_KEY = 'tantawy_staff_users';
+export interface SaveStaffInput {
+  id?: string;
+  email: string;
+  fullName: string;
+  role: StaffRole;
+  phone?: string;
+  notes?: string;
+  isActive?: boolean;
+}
 
-export const INITIAL_STAFF_USERS: StaffUser[] = [
-  {
-    id: 'staff-admin-1',
-    fullName: 'المدير العام - طنطاوي جروب',
-    username: 'saja',
-    password: 'osama442',
-    role: 'admin',
-    phone: '15218',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    notes: 'حساب المدير العام الرئيسي'
-  },
-  {
-    id: 'staff-admin-2',
-    fullName: 'مسؤول النظام (Admin)',
-    username: 'admin',
-    password: 'admin123',
-    role: 'admin',
-    phone: '15218',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    notes: 'حساب مدير النظام البديل'
-  },
-  {
-    id: 'staff-emp-1',
-    fullName: 'ك/ كريم حسني (موظف مبيعات وخدمة عملاء)',
-    username: 'sales1',
-    password: '123456',
-    role: 'sales_rep',
-    phone: '01012345678',
-    isActive: true,
-    createdAt: '2026-02-01T00:00:00.000Z',
-    notes: 'مسؤول متابعة فواتير واتساب وتسعير الأجهزة للعملاء'
-  },
-  {
-    id: 'staff-emp-2',
-    fullName: 'ك/ محمد طارق (مسؤول فواتير وشحن)',
-    username: 'shipping1',
-    password: '123456',
-    role: 'delivery_rep',
-    phone: '01123456789',
-    isActive: true,
-    createdAt: '2026-02-15T00:00:00.000Z',
-    notes: 'مسؤول تأكيد العناوين ومواعيد خروج الشحنات'
+const TABLE = 'staff_members';
+const CACHE_KEY = 'tantawy_current_staff';
+
+const mapRow = (row: any): StaffUser => ({
+  id: String(row.id),
+  userId: row.user_id || null,
+  email: row.email || '',
+  fullName: row.full_name || '',
+  role: (row.role as StaffRole) || 'sales_rep',
+  phone: row.phone || undefined,
+  notes: row.notes || undefined,
+  isActive: row.is_active !== false,
+  createdAt: row.created_at || null,
+  lastLogin: row.last_login || null,
+});
+
+/** رسائل أخطاء عربية مفهومة بدل رسائل Supabase الخام */
+const translateAuthError = (message: string): string => {
+  const m = (message || '').toLowerCase();
+  if (m.includes('invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+  if (m.includes('email not confirmed')) return 'الحساب لسه مش مفعّل. افتح رسالة التأكيد في بريدك الإلكتروني ثم سجّل الدخول.';
+  if (m.includes('user already registered')) return 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.';
+  if (m.includes('password should be at least')) return 'كلمة المرور ضعيفة: لازم 6 أحرف أو أكثر.';
+  if (m.includes('rate limit') || m.includes('too many requests')) return 'محاولات كثيرة في وقت قصير. استنى دقيقة وجرّب تاني.';
+  if (m.includes('unable to validate email')) return 'صيغة البريد الإلكتروني غير صحيحة.';
+  return message || 'تعذر إتمام العملية.';
+};
+
+/** رسالة واضحة لو ملف الـ SQL لسه ما اشتغلش */
+const translateDbError = (error: any): string => {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '');
+  if (code === '42P01' || code === 'PGRST205' || message.includes('could not find the table')) {
+    return 'جدول فريق العمل غير موجود. شغّل ملف supabase/security_hardening.sql في Supabase أولاً.';
   }
-];
+  if (code === '42501' || message.toLowerCase().includes('row-level security')) {
+    return 'مفيش صلاحية لهذه العملية. تأكد إن حسابك مسجّل كمدير عام ونشط من صفحة فريق العمل.';
+  }
+  if (code === '23505') return 'البريد الإلكتروني مسجل بالفعل لموظف آخر.';
+  return message || 'تعذر تنفيذ العملية على قاعدة البيانات.';
+};
 
-export const staffService = {
-  getAll(): StaffUser[] {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('Error reading staff users:', e);
+const readCache = (): StaffUser | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // نتجاهل أي كاش قديم (كان بيحفظ كلمة المرور) أو أي جسم مزيّف بدون بريد
+    if (!parsed || !parsed.id || !parsed.email || typeof parsed.isActive !== 'boolean') {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
     }
-    // Initialize defaults
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STAFF_USERS));
-    } catch (e) {}
-    return INITIAL_STAFF_USERS;
-  },
-
-  save(user: Omit<StaffUser, 'id' | 'createdAt'> & { id?: string }): StaffUser {
-    const users = this.getAll();
-    const existingIndex = user.id ? users.findIndex((u) => u.id === user.id) : -1;
-
-    let savedUser: StaffUser;
-
-    if (existingIndex > -1) {
-      savedUser = {
-        ...users[existingIndex],
-        ...user,
-        id: users[existingIndex].id,
-      };
-      users[existingIndex] = savedUser;
-    } else {
-      savedUser = {
-        ...user,
-        id: `staff-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-        createdAt: new Date().toISOString(),
-      };
-      users.push(savedUser);
-    }
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-    } catch (e) {
-      console.error('Error saving staff user:', e);
-    }
-
-    return savedUser;
-  },
-
-  toggleActive(id: string): boolean {
-    const users = this.getAll();
-    const u = users.find((x) => x.id === id);
-    if (!u) return false;
-    u.isActive = !u.isActive;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-    } catch (e) {}
-    return u.isActive;
-  },
-
-  delete(id: string): boolean {
-    const users = this.getAll().filter((x) => x.id !== id);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-    } catch (e) {}
-    return true;
-  },
-
-  login(username: string, password: string): StaffUser | null {
-    const users = this.getAll();
-    const u = users.find(
-      (x) =>
-        x.username.trim().toLowerCase() === username.trim().toLowerCase() &&
-        x.password === password
-    );
-
-    if (!u) return null;
-    if (!u.isActive) {
-      throw new Error('تم تعطيل هذا الحساب من قِبل إدارة طنطاوي جروب. برجاء مراجعة المدير العام.');
-    }
-
-    u.lastLogin = new Date().toISOString();
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-      localStorage.setItem('tantawy_current_staff', JSON.stringify(u));
-    } catch (e) {}
-
-    return u;
-  },
-
-  getCurrentUser(): StaffUser | null {
-    try {
-      const saved = localStorage.getItem('tantawy_current_staff');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    return parsed as StaffUser;
+  } catch {
     return null;
-  },
-
-  logout(): void {
-    try {
-      localStorage.removeItem('tantawy_current_staff');
-    } catch (e) {}
   }
 };
+
+const writeCache = (staff: StaffUser | null): void => {
+  try {
+    if (staff) localStorage.setItem(CACHE_KEY, JSON.stringify(staff));
+    else localStorage.removeItem(CACHE_KEY);
+  } catch {
+    /* التخزين المحلي مش متاح — مش مشكلة، الجلسة نفسها محفوظة بواسطة Supabase */
+  }
+};
+
+export const staffService = {
+  /** هل الحساب مدير عام؟ */
+  isAdmin(staff: StaffUser | null): boolean {
+    return Boolean(staff && staff.isActive && staff.role === 'admin');
+  },
+
+  /** الملف الشخصي المحفوظ محلياً — قراءة فورية (بدون أي باسورد) */
+  getCurrentUser(): StaffUser | null {
+    return readCache();
+  },
+
+  /** جلب سطر الموظف المرتبط بحساب Auth */
+  async fetchProfile(userId: string): Promise<StaffUser | null> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) throw new Error(translateDbError(error));
+    return data ? mapRow(data) : null;
+  },
+
+  /** تسجيل الدخول بالبريد وكلمة المرور */
+  async login(email: string, password: string): Promise<StaffUser> {
+    const cleanEmail = email.trim().toLowerCase();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) throw new Error(translateAuthError(error.message));
+    if (!data.user) throw new Error('تعذر تسجيل الدخول. جرّب مرة أخرى.');
+
+    let profile: StaffUser | null = null;
+    try {
+      profile = await this.fetchProfile(data.user.id);
+    } catch (err: any) {
+      await supabase.auth.signOut();
+      throw err;
+    }
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      throw new Error(
+        'هذا الحساب مسجل لكنه غير موجود في فريق العمل. اطلب من المدير العام إضافة بريدك الإلكتروني أولاً.'
+      );
+    }
+
+    if (!profile.isActive) {
+      await supabase.auth.signOut();
+      throw new Error('تم تعطيل هذا الحساب من قِبل الإدارة. برجاء مراجعة المدير العام.');
+    }
+
+    writeCache(profile);
+
+    // تحديث "آخر دخول" — اختياري، وفشله مش بيوقف تسجيل الدخول
+    supabase.rpc('touch_staff_login').then(
+      () => undefined,
+      () => undefined
+    );
+
+    return profile;
+  },
+
+  /**
+   * إنشاء حساب موظف جديد.
+   * الصلاحية بتتحدد من سطر staff_members المسجّل بنفس البريد (تلقائياً عبر trigger).
+   */
+  async signUp(
+    email: string,
+    password: string,
+    fullName: string
+  ): Promise<{ needsEmailConfirmation: boolean; staff: StaffUser | null }> {
+    const cleanEmail = email.trim().toLowerCase();
+
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: { data: { full_name: fullName.trim() } },
+    });
+
+    if (error) throw new Error(translateAuthError(error.message));
+
+    if (!data.session) {
+      return { needsEmailConfirmation: true, staff: null };
+    }
+
+    const profile = data.user ? await this.fetchProfile(data.user.id) : null;
+    if (profile && profile.isActive) writeCache(profile);
+
+    return { needsEmailConfirmation: false, staff: profile };
+  },
+
+  /** استرجاع الجلسة عند فتح الصفحة (لو Supabase لسه فاكر الدخول) */
+  async restoreSession(): Promise<StaffUser | null> {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session?.user) {
+      writeCache(null);
+      return null;
+    }
+
+    try {
+      const profile = await this.fetchProfile(data.session.user.id);
+      if (!profile || !profile.isActive) {
+        await supabase.auth.signOut();
+        writeCache(null);
+        return null;
+      }
+      writeCache(profile);
+      return profile;
+    } catch {
+      // لو قاعدة البيانات مش جاهزة، سيب الجلسة والملف المخزّن محلياً زي ما هو
+      return readCache();
+    }
+  },
+
+  /** قائمة كل الموظفين (للمدير العام) */
+  async getAll(): Promise<StaffUser[]> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) throw new Error(translateDbError(error));
+    return (data || []).map(mapRow);
+  },
+
+  /** إضافة أو تعديل موظف */
+  async save(input: SaveStaffInput): Promise<StaffUser> {
+    const payload = {
+      email: input.email.trim().toLowerCase(),
+      full_name: input.fullName.trim(),
+      role: input.role,
+      phone: input.phone?.trim() || null,
+      notes: input.notes?.trim() || null,
+      is_active: input.isActive ?? true,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (input.id) {
+      const { data, error } = await supabase
+        .from(TABLE)
+        .update(payload)
+        .eq('id', input.id)
+        .select('*')
+        .single();
+
+      if (error) throw new Error(translateDbError(error));
+      return mapRow(data);
+    }
+
+    const { data, error } = await supabase
+      .from(TABLE)
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) throw new Error(translateDbError(error));
+    return mapRow(data);
+  },
+
+  /** تفعيل / تعطيل حساب */
+  async setActive(id: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase
+      .from(TABLE)
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw new Error(translateDbError(error));
+
+    const cached = readCache();
+    if (cached && cached.id === id) writeCache({ ...cached, isActive });
+  },
+
+  /** حذف موظف */
+  async remove(id: string): Promise<void> {
+    const { error } = await supabase.from(TABLE).delete().eq('id', id);
+    if (error) throw new Error(translateDbError(error));
+
+    const cached = readCache();
+    if (cached && cached.id === id) writeCache(null);
+  },
+
+  /** ربط سطر الموظف بحساب Auth مسجّل بنفس البريد (للمدير فقط) */
+  async linkAccount(id: string): Promise<void> {
+    const { error } = await supabase.rpc('link_staff_member', { p_staff_id: id });
+    if (error) throw new Error(translateDbError(error));
+  },
+
+  /** تسجيل الخروج */
+  async logout(): Promise<void> {
+    writeCache(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* الجلسة انتهت أصلاً */
+    }
+  },
+};
+

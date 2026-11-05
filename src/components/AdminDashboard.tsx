@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ExcelUpload } from './ExcelUpload';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { visitorService } from '../supabase/visitor.service';
-import { adminAuthService } from '../supabase/admin-auth.service';
 import { whatsappClickService } from '../supabase/whatsapp-click.service';
 import { orderService } from '../supabase/orders.service';
 import { productService } from '../supabase/products.service';
@@ -19,11 +18,18 @@ import { ClicksTab } from './ClicksTab';
 import { HomePageCMS } from './HomePageCMS';
 import { CategoriesTab } from './CategoriesTab';
 import { StaffManagementTab } from './StaffManagementTab';
-import { StaffUser, staffService } from '../services/staff.service';
+import { staffService } from '../services/staff.service';
+import type { StaffUser, StaffRole } from '../services/staff.service';
 
 interface AdminDashboardProps {
   onExit?: () => void;
 }
+
+const roleLabelAr = (role: StaffRole | string): string => {
+  if (role === 'admin') return 'المدير العام';
+  if (role === 'sales_rep') return 'موظف مبيعات وفواتير';
+  return 'مسؤول شحن وتوصيل';
+};
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const { 
@@ -44,13 +50,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     } catch {}
     return 'overview';
   });
-  const [adminUsername, setAdminUsername] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminFullName, setAdminFullName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [currentStaff, setCurrentStaff] = useState<StaffUser | null>(() => staffService.getCurrentUser());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(staffService.getCurrentUser()));
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const cached = staffService.getCurrentUser();
+    return Boolean(cached && cached.isActive);
+  });
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const { stats, loading } = useDashboardStats();
+  const { stats, loading } = useDashboardStats(isAuthenticated);
   const [products, setProducts] = useState<FirebaseProduct[]>([]);
   const [orders, setOrders] = useState<FirebaseOrder[]>([]);
   const [recentVisitors, setRecentVisitors] = useState<any[]>([]);
@@ -78,47 +89,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     }
   };
 
+  // استرجاع جلسة Supabase Auth عند فتح لوحة التحكم (تأكيد إن الحساب لسه نشط)
+  useEffect(() => {
+    let cancelled = false;
+    staffService
+      .restoreSession()
+      .then((staff) => {
+        if (cancelled) return;
+        if (staff && staff.isActive) {
+          setCurrentStaff(staff);
+          setIsAuthenticated(true);
+          setActiveTab(staff.role === 'admin' ? 'overview' : 'orders');
+        } else {
+          setCurrentStaff(null);
+          setIsAuthenticated(false);
+        }
+      })
+      .catch(() => {
+        /* فشل الشبكة: سيب الحالة زي ما هي */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadData();
     }
   }, [isAuthenticated]);
 
+  const enterWithStaff = (staff: StaffUser) => {
+    setCurrentStaff(staff);
+    setIsAuthenticated(true);
+    setActiveTab(staff.role === 'admin' ? 'overview' : 'orders');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoggingIn(true);
     try {
-      // 1) فحص نظام الموظفين وفريق العمل
-      const staff = staffService.login(adminUsername.trim(), adminPassword);
-      if (staff) {
-        setCurrentStaff(staff);
-        setIsAuthenticated(true);
-        if (staff.role === 'sales_rep' || staff.role === 'delivery_rep') {
-          setActiveTab('orders');
-        } else {
-          setActiveTab('overview');
+      if (authMode === 'signup') {
+        if (!adminFullName.trim()) {
+          alert('يرجى كتابة الاسم بالكامل لإنشاء الحساب.');
+          return;
         }
+        const result = await staffService.signUp(adminEmail.trim(), adminPassword, adminFullName.trim());
+        if (result.needsEmailConfirmation) {
+          alert(
+            'تم إنشاء الحساب. افتح رسالة التأكيد في بريدك الإلكتروني ثم سجّل الدخول.\n\nملاحظة للمدير: يمكن إيقاف تأكيد الإيميل من Supabase → Authentication → Providers → Email.'
+          );
+          setAuthMode('login');
+          return;
+        }
+        if (result.staff) {
+          enterWithStaff(result.staff);
+          alert(`أهلاً ${result.staff.fullName || ''} — تم الدخول كـ ${roleLabelAr(result.staff.role)}.`);
+          return;
+        }
+        alert(
+          'تم إنشاء الحساب بنجاح، لكنه لم يُسند له دور بعد. اطلب من المدير العام إضافة بريدك الإلكتروني في صفحة فريق العمل.'
+        );
         return;
       }
 
-      // 2) احتياطي عبر قاعدة بيانات سوبابيز
-      const admin = await adminAuthService.login(adminUsername.trim(), adminPassword);
-      if (admin) {
-        const dummyStaff: StaffUser = {
-          id: admin.id,
-          fullName: admin.full_name || 'مدير النظام',
-          username: admin.username,
-          password: '',
-          role: 'admin',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        };
-        setCurrentStaff(dummyStaff);
-        setIsAuthenticated(true);
-        setActiveTab('overview');
-      } else {
-        alert('اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التأكد من البيانات أو مراجعة المدير العام.');
-      }
+      const staff = await staffService.login(adminEmail.trim(), adminPassword);
+      enterWithStaff(staff);
     } catch (err: any) {
       alert(err.message || 'حدث خطأ أثناء التحقق من الحساب');
     } finally {
@@ -126,21 +163,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     }
   };
 
-  const handleLogout = () => {
-    staffService.logout();
+  const handleLogout = async () => {
+    await staffService.logout();
     setCurrentStaff(null);
     setIsAuthenticated(false);
+    setAdminEmail('');
+    setAdminPassword('');
   };
 
-  // تسجيل دخول فوري لحساب موظف من لوحة الإدارة لاختبار الواجهة
-  const handleSwitchToUser = (user: StaffUser) => {
-    setCurrentStaff(user);
-    if (user.role === 'sales_rep' || user.role === 'delivery_rep') {
-      setActiveTab('orders');
-    }
-  };
-
-  const isSuperAdmin = !currentStaff || currentStaff.role === 'admin';
+  const isSuperAdmin = staffService.isAdmin(currentStaff);
 
   if (!isAuthenticated) {
     return (
@@ -169,25 +200,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            {authMode === 'signup' && (
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">الاسم بالكامل:</label>
+                <input
+                  type="text"
+                  value={adminFullName}
+                  onChange={(e) => setAdminFullName(e.target.value)}
+                  placeholder="مثال: ك/ محمد طارق"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-bold"
+                  required
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">اسم المستخدم (Username):</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">البريد الإلكتروني (Email):</label>
               <input
-                type="text"
-                value={adminUsername}
-                onChange={(e) => setAdminUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-mono font-bold"
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="name@example.com"
+                autoComplete="username"
+                dir="ltr"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-mono font-bold text-left"
                 required
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1.5">كلمة المرور (Password):</label>
               <input
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="أدخل كلمة المرور"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-mono font-bold"
+                placeholder="••••••••"
+                autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+                minLength={6}
+                dir="ltr"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-mono font-bold text-left"
                 required
               />
             </div>
@@ -197,50 +248,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               disabled={loggingIn}
               className="w-full bg-blue-900 hover:bg-blue-950 text-white font-black py-3 rounded-xl transition disabled:opacity-50 text-sm shadow-md"
             >
-              {loggingIn ? 'جاري التحقق من الصلاحيات...' : 'تسجيل الدخول للمنظومة 🔐'}
+              {loggingIn
+                ? 'جاري التحقق من الصلاحيات...'
+                : authMode === 'signup'
+                ? 'إنشاء الحساب 🔐'
+                : 'تسجيل الدخول للمنظومة 🔐'}
             </button>
           </form>
 
-          {/* Quick Login Helpers for testing */}
-          <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3.5 text-xs space-y-2">
-            <span className="text-[11px] font-black text-blue-950 block">حسابات الدخول المعتمدة للتجربة السريعة:</span>
-            <div className="flex flex-col gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminUsername('saja');
-                  setAdminPassword('osama442');
-                }}
-                className="text-right p-1.5 hover:bg-white rounded-lg transition text-[11px] text-gray-700 flex items-center justify-between"
-              >
-                <span className="font-bold text-blue-900">👑 المدير العام:</span>
-                <span className="font-mono text-gray-500">saja / osama442 (اضغط للتعبئة)</span>
-              </button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+              className="text-xs font-bold text-blue-800 hover:underline"
+            >
+              {authMode === 'login'
+                ? 'موظف جديد؟ إنشاء حساب بالبريد الإلكتروني'
+                : 'لديك حساب بالفعل؟ تسجيل الدخول'}
+            </button>
+          </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminUsername('sales1');
-                  setAdminPassword('123456');
-                }}
-                className="text-right p-1.5 hover:bg-white rounded-lg transition text-[11px] text-gray-700 flex items-center justify-between"
-              >
-                <span className="font-bold text-emerald-800">📱 موظف مبيعات وفواتير:</span>
-                <span className="font-mono text-gray-500">sales1 / 123456 (اضغط للتعبئة)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminUsername('shipping1');
-                  setAdminPassword('123456');
-                }}
-                className="text-right p-1.5 hover:bg-white rounded-lg transition text-[11px] text-gray-700 flex items-center justify-between"
-              >
-                <span className="font-bold text-purple-800">🚚 مسؤول شحن وتوصيل:</span>
-                <span className="font-mono text-gray-500">shipping1 / 123456 (اضغط للتعبئة)</span>
-              </button>
-            </div>
+          {/* شرح طريقة الصلاحيات */}
+          <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3.5 text-[11px] leading-relaxed text-gray-700 space-y-1.5">
+            <span className="font-black text-blue-950 block">إزاي الصلاحيات بتتحدد؟</span>
+            <p>• الدخول بحساب بريد إلكتروني حقيقي عبر Supabase Auth (مفيش كلمات مرور مكتوبة في الكود).</p>
+            <p>• المدير العام يضيف بريد الموظف ودوره من صفحة «فريق العمل»، والموظف ينشئ حسابه بنفس البريد فيتفعّل تلقائياً.</p>
           </div>
 
           <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
@@ -525,7 +557,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {/* Tab Contents */}
         {activeTab === 'overview' && isSuperAdmin && <OverviewTab orders={orders} recentVisitors={recentVisitors} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} onRefresh={loadData} />}
-        {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab onSwitchUser={handleSwitchToUser} />}
+        {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab currentStaff={currentStaff} />}
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
         {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
         {activeTab === 'excel' && isSuperAdmin && <ExcelUpload />}

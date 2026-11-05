@@ -1,7 +1,18 @@
 import { supabase } from './config';
 import type { FirebaseOrder } from '../types/firebase';
 
+/**
+ * خدمة الطلبات الوحيدة في المشروع.
+ * (كان فيه نسخة تانية src/supabase/order.service.ts بتكتب أعمدة غير موجودة
+ *  في الجدول مثل customer_address / product_name / whatsapp_sent وبالتالي
+ *  كانت بتفشل في حفظ الطلبات — اتشالت واتوحدت هنا.)
+ */
 const TABLE = 'orders';
+
+/** يحوّل أي رقم مكتوب بأي شكل إلى أرقام فقط */
+export const normalizePhone = (phone: string): string =>
+  (phone || '').replace(/[^0-9]/g, '');
+
 
 export const orderService = {
   async getAll(): Promise<FirebaseOrder[]> {
@@ -30,10 +41,13 @@ export const orderService = {
   },
 
   async getByPhone(phone: string): Promise<FirebaseOrder[]> {
+    const cleanPhone = normalizePhone(phone);
+    if (!cleanPhone) return [];
+
     const { data, error } = await supabase
       .from(TABLE)
       .select('*')
-      .eq('customer_phone', phone)
+      .ilike('customer_phone', `%${cleanPhone}%`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -55,6 +69,26 @@ export const orderService = {
   },
 
   async create(data: Omit<FirebaseOrder, 'id'> & { items?: any }): Promise<string> {
+    // نبني حزمة items بشكل موحّد: العنوان والصورة بيتخزنوا جوه items
+    // لأن الجدول مفيهوش أعمدة مخصصة ليهم.
+    const rawItems: any = data.items;
+    const itemsPayload: any =
+      rawItems && typeof rawItems === 'object' && !Array.isArray(rawItems) ? { ...rawItems } : {};
+
+    if (!Array.isArray(itemsPayload.orderedItems) || itemsPayload.orderedItems.length === 0) {
+      itemsPayload.orderedItems = [
+        {
+          nameAr: data.productNameAr,
+          quantity: data.quantity || 1,
+          image: data.imageUrl || '',
+          color: data.selectedColor || undefined,
+          size: data.selectedSize || undefined,
+        },
+      ];
+    }
+    if (data.customerAddress) itemsPayload.deliveryAddress = data.customerAddress;
+    if (data.imageUrl) itemsPayload.image = data.imageUrl;
+
     const { data: inserted, error } = await supabase
       .from(TABLE)
       .insert([
@@ -62,14 +96,14 @@ export const orderService = {
           order_id: data.orderId,
           customer_phone: data.customerPhone,
           customer_name: data.customerName,
-          product_id: data.productId,
+          product_id: data.productId || null,
           product_name_ar: data.productNameAr,
-          selected_color: data.selectedColor,
-          selected_size: data.selectedSize,
-          quantity: data.quantity,
+          selected_color: data.selectedColor || null,
+          selected_size: data.selectedSize || null,
+          quantity: data.quantity || 1,
           total_price: data.totalPrice || 0,
           status: data.status || 'pending',
-          items: data.items || [],
+          items: itemsPayload,
         },
       ])
       .select('id')
@@ -171,5 +205,42 @@ export const orderService = {
   async delete(id: string): Promise<void> {
     const { error } = await supabase.from(TABLE).delete().eq('id', id);
     if (error) throw error;
+  },
+
+  /**
+   * تتبّع طلب العميل برقم الموبايل — للاستخدام من صفحة الزائر.
+   *
+   * بعد تشغيل security_hardening.sql بقى قراءة جدول الطلبات مقصور على الموظفين
+   * (لأنه فيه أسماء وتليفونات وعناوين كل العملاء)، والتتبّع بيمر عبر دالة
+   * track_order اللي بترجّع صفوف الطلبات المطابقة لصاحب الرقم فقط.
+   *
+   * ولو الملف لسه ما اشتغلش، بنرجع للطريقة القديمة تلقائياً.
+   */
+  async trackOrderByPhone(phone: string): Promise<FirebaseOrder[]> {
+    const cleanPhone = normalizePhone(phone);
+    if (cleanPhone.length < 6) return [];
+
+    const { data, error } = await supabase.rpc('track_order', { p_phone: cleanPhone });
+
+    if (error) {
+      // الدالة لسه غير موجودة (ملف التقوية ما اشتغلش) → الطريقة القديمة
+      return orderService.getByPhone(cleanPhone);
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.order_id,
+      orderId: row.order_id,
+      customerName: row.customer_name,
+      customerPhone: cleanPhone,
+      productId: '',
+      productNameAr: row.product_name_ar,
+      selectedColor: '',
+      selectedSize: row.selected_size || '',
+      quantity: row.quantity || 1,
+      totalPrice: row.total_price || 0,
+      status: row.status as FirebaseOrder['status'],
+      createdAt: row.created_at,
+      customerAddress: row.delivery_address || row.city || undefined,
+    }));
   },
 };

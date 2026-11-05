@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { orderService } from '../supabase/order.service';
+import { orderService } from '../supabase/orders.service';
 import { 
   X, 
   Search, 
@@ -70,8 +70,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     setHasSearched(true);
 
     try {
-      // 1. Fetch from Supabase
-      const serverOrders = await orderService.getByPhone(searchTarget);
+      // 1. Fetch from Supabase (عبر دالة track_order الآمنة)
+      const serverOrders = await orderService.trackOrderByPhone(searchTarget);
 
       // 2. Fetch from localAppOrders or localStorage
       const savedOrdersRaw = localStorage.getItem('tantawy_saved_orders');

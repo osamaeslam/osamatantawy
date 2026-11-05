@@ -5,7 +5,7 @@ import { orderService } from '../supabase/orders.service';
 import { productService } from '../supabase/products.service';
 import type { DashboardStats } from '../types/supabase-extended';
 
-export function useDashboardStats() {
+export function useDashboardStats(enabled: boolean = true) {
   const [stats, setStats] = useState<DashboardStats>({
     total_visitors: 0,
     total_whatsapp_clicks: 0,
@@ -17,6 +17,14 @@ export function useDashboardStats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
     const load = async () => {
       try {
         const [visitors, clicks, orders, products, todayVisitors] = await Promise.all([
@@ -26,6 +34,8 @@ export function useDashboardStats() {
           productService.getAll(),
           visitorService.getTodayCount(),
         ]);
+
+        if (cancelled) return;
 
         setStats({
           total_visitors: visitors,
@@ -41,12 +51,16 @@ export function useDashboardStats() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     load();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
 
   return { stats, loading };
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { FirebaseProduct } from '../types/firebase';
-import { orderService } from '../supabase/order.service';
+import { orderService } from '../supabase/orders.service';
 import { sendInvoiceToWhatsApp } from '../services/invoice-to-whatsapp';
 import { PhoneCall, MapPin, User, ShoppingCart, Send, Truck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -36,8 +36,10 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
         orderId,
         customerPhone: form.phone,
         customerName: form.name,
+        customerAddress: form.address,
         productId: product.id || '',
         productNameAr: product.nameAr,
+        imageUrl: product.imageUrl || (product as any).previewimage || '',
         selectedColor: '',
         selectedSize: '',
         quantity: Number(form.quantity),
