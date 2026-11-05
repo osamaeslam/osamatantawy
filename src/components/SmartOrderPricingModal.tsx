@@ -36,6 +36,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
+import { useApp } from '../context/AppContext';
 
 interface Props {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
   order,
   onOrderUpdated,
 }) => {
+  const { products: storeProducts } = useApp();
   if (!isOpen || !order) return null;
 
   // Extract nested items and metadata
@@ -118,7 +120,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
   const deliveryAddress = rawItemsData.deliveryAddress || order.customerAddress || 'عنوان العميل';
   const city = rawItemsData.city;
   const landmark = rawItemsData.landmark;
-  const deliveryTimeWindow = rawItemsData.deliveryTimeWindow || order.selectedSize;
+  const deliveryTimeWindow = rawItemsData.deliveryTimeWindow || 'من يومين إلى 7 أيام عمل';
 
   // Handle changing an item's unit price
   const handlePriceChange = (index: number, newPrice: number) => {
@@ -528,54 +530,99 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                 </button>
               </div>
 
-              {/* Add item collapsible row */}
+              {/* Add item collapsible row with Smart Catalog Suggestions */}
               {showAddItem && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2 print:hidden">
-                  <div className="text-xs font-bold text-blue-950">إضافة جهاز أو صنف جديد لطلب العميل:</div>
+                <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2.5 print:hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-yellow-600" />
+                      <span>إضافة جهاز أو صنف جديد لطلب العميل (من كتالوج طنطاوي جروب أو صنف مخصص):</span>
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold">
+                      ابحث بالاسم لتظهر اقتراحات من المنتجات الـ 3,824
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                    <input
-                      type="text"
-                      placeholder="اسم الجهاز / الصنف"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      className="p-2 bg-white border border-gray-300 rounded-lg text-xs"
-                    />
+                    <div className="relative sm:col-span-1">
+                      <input
+                        type="text"
+                        placeholder="ابحث عن الصنف (مثال: حلة، شاشة، خلاط...)"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="w-full p-2 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+
                     <input
                       type="text"
                       placeholder="كود الصنف (اختياري)"
                       value={newItemCode}
                       onChange={(e) => setNewItemCode(e.target.value)}
-                      className="p-2 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                      className="p-2 bg-white border border-gray-300 rounded-xl text-xs font-mono font-bold"
                     />
+
                     <div className="flex items-center gap-1">
-                      <span className="text-[11px] text-gray-600">الكمية:</span>
+                      <span className="text-[11px] text-gray-600 font-bold">الكمية:</span>
                       <input
                         type="number"
                         min="1"
                         value={newItemQty}
                         onChange={(e) => setNewItemQty(Number(e.target.value) || 1)}
-                        className="w-16 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-center"
+                        className="w-16 p-2 bg-white border border-gray-300 rounded-xl text-xs font-bold text-center"
                       />
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[11px] text-gray-600">سعر الوحدة:</span>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-gray-600 font-bold">السعر:</span>
                       <input
                         type="number"
                         min="0"
                         placeholder="ج.م"
                         value={newItemPrice || ''}
                         onChange={(e) => setNewItemPrice(Number(e.target.value) || 0)}
-                        className="w-24 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold font-mono text-center"
+                        className="w-24 p-2 bg-white border border-gray-300 rounded-xl text-xs font-bold font-mono text-center text-blue-950"
                       />
                       <button
                         type="button"
                         onClick={handleAddNewItem}
-                        className="bg-blue-900 hover:bg-blue-950 text-white px-3 py-2 rounded-lg text-xs font-bold transition shrink-0"
+                        className="bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 shadow-2xs"
                       >
-                        إضافة
+                        إضافة +
                       </button>
                     </div>
                   </div>
+
+                  {/* Top matching catalog suggestions */}
+                  {newItemName.trim().length >= 2 && (
+                    <div className="pt-1 border-t border-blue-200">
+                      <span className="text-[10px] text-blue-900 font-bold block mb-1">
+                        أقرب أصناف من الكتالوج (اضغط للاختيار التلقائي):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                        {storeProducts
+                          .filter((p) => p.nameAr.toLowerCase().includes(newItemName.trim().toLowerCase()))
+                          .slice(0, 5)
+                          .map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                setNewItemName(p.nameAr);
+                                setNewItemCode(p.unifiedCode || p.itemNumber || '');
+                                if (p.actualprice && p.actualprice > 0) {
+                                  setNewItemPrice(p.actualprice);
+                                }
+                              }}
+                              className="text-[11px] bg-white hover:bg-blue-100 text-blue-950 border border-blue-200 px-2 py-1 rounded-lg text-right font-medium transition flex items-center gap-1.5 shadow-2xs"
+                            >
+                              <span className="font-bold truncate max-w-[200px]">{p.nameAr}</span>
+                              <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1 rounded">{p.unifiedCode || p.brand}</span>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

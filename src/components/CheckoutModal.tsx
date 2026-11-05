@@ -41,7 +41,7 @@ export const CheckoutModal: React.FC = () => {
   const [city, setCity] = useState('القاهرة والجيزة');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [deliveryTimeWindow, setDeliveryTimeWindow] = useState('خلال 24 إلى 48 ساعة');
+  const deliveryTimeWindow = 'من يومين إلى 7 أيام عمل';
   const [notes, setNotes] = useState('');
   const [phoneError, setPhoneError] = useState('');
 
@@ -519,15 +519,17 @@ export const CheckoutModal: React.FC = () => {
 
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-gray-800">
-                    مدة ومواعيد التوصيل المفضلة (من - إلى):
+                    مدة التوصيل المعتمدة:
                   </label>
-                  <input
-                    type="text"
-                    value={deliveryTimeWindow}
-                    onChange={(e) => setDeliveryTimeWindow(e.target.value)}
-                    placeholder="مثال: خلال 24 إلى 48 ساعة / من الأحد إلى الثلاثاء"
-                    className="w-full p-3 bg-white border border-gray-300 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 transition"
-                  />
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-950 flex items-center gap-2">
+                    <Truck size={16} className="text-emerald-700 shrink-0" />
+                    <div>
+                      <span>من يومين إلى 7 أيام عمل</span>
+                      <span className="text-[10px] text-emerald-800 block font-medium">
+                        لجميع محافظات مصر مع المعاينة والفحص عند الاستلام
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

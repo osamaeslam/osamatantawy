@@ -105,7 +105,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           status: so.status as any,
           statusLabelAr: label,
           currentStep: step,
-          expectedTime: 'خلال 24 إلى 48 ساعة كحد أقصى',
+          expectedTime: 'من يومين إلى 7 أيام عمل (وفقاً للمحافظة وتأكيد الاتصال)',
           representativeName: 'ك/ محمد طارق (مسؤول التسليم والشحن)',
           representativePhone: '01012345678',
           createdAt: so.createdAt || new Date().toISOString(),
