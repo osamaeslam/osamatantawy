@@ -4,6 +4,8 @@ import { orderService } from '../supabase/orders.service';
 import { InvoiceCardModal } from './InvoiceCardModal';
 import { SmartOrderPricingModal } from './SmartOrderPricingModal';
 import { OrderInvoiceData } from '../services/invoice-to-whatsapp';
+import { buildCustomerWhatsAppUrl } from '../services/customer-messages';
+import { CustomerMessageMenu } from './CustomerMessageMenu';
 import { 
   FileText, 
   PhoneCall, 
@@ -287,6 +289,13 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                       <Eye size={13} />
                       <span className="hidden sm:inline">PDF</span>
                     </button>
+
+                    {/* رسائل خدمة العملاء الجاهزة (تحديث الحالة / تأكيد / اعتذار / متابعة) */}
+                    <CustomerMessageMenu
+                      order={o}
+                      phone={o.customerPhone}
+                      label="إرسال تحديث للعميل"
+                    />
                   </div>
                 </div>
 
@@ -308,9 +317,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                         <PhoneCall size={12} />
                       </a>
                       <a
-                        href={`https://wa.me/2${o.customerPhone.replace(/^0+/, '')}?text=${encodeURIComponent(
-                          `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك فريق مبيعات طنطاوي جروب للأجهزة بخصوص طلبك رقم #${o.orderId} (${o.productNameAr}) للتأكيد على الأسعار وميعاد التوصيل.`
-                        )}`}
+                        href={buildCustomerWhatsAppUrl(
+                          o.customerPhone,
+                          `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك فريق مبيعات دريم طنطاوي جروب بخصوص طلبك رقم #${o.orderId} (${o.productNameAr}) للتأكيد على الأسعار وميعاد التوصيل.`
+                        )}
                         target="_blank"
                         rel="noreferrer"
                         className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
@@ -335,9 +345,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                           <PhoneCall size={12} />
                         </a>
                         <a
-                          href={`https://wa.me/2${phoneSec.replace(/^0+/, '')}?text=${encodeURIComponent(
-                            `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك مبيعات طنطاوي جروب بخصوص طلبك رقم #${o.orderId}.`
-                          )}`}
+                          href={buildCustomerWhatsAppUrl(
+                            phoneSec,
+                            `السلام عليكم ورحمة الله أستاذ/ة ${o.customerName}، مع حضرتك مبيعات دريم طنطاوي جروب بخصوص طلبك رقم #${o.orderId}.`
+                          )}
                           target="_blank"
                           rel="noreferrer"
                           className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded font-bold text-[10px] flex items-center gap-1"

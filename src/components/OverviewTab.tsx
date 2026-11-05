@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { FirebaseOrder } from '../types/firebase';
 import { SmartOrderPricingModal } from './SmartOrderPricingModal';
+import { CustomerMessageMenu } from './CustomerMessageMenu';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -219,14 +220,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ orders, recentVisitors
                         </span>
                       </td>
                       <td className="p-2.5 text-left">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrderForPricing(o)}
-                          className="bg-blue-900 hover:bg-blue-950 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition shadow-2xs flex items-center gap-1"
-                        >
-                          <Sparkles size={12} className="text-yellow-400" />
-                          <span>كارت الفاتورة 📄</span>
-                        </button>
+                        <div className="flex items-center justify-start gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrderForPricing(o)}
+                            className="bg-blue-900 hover:bg-blue-950 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition shadow-2xs flex items-center gap-1"
+                          >
+                            <Sparkles size={12} className="text-yellow-400" />
+                            <span>كارت الفاتورة 📄</span>
+                          </button>
+                          <CustomerMessageMenu
+                            order={o}
+                            phone={o.customerPhone}
+                            label="تحديث العميل"
+                          />
+                        </div>
                       </td>
                     </tr>
                   );
