@@ -1,3 +1,21 @@
+/**
+ * ⛔️ البوت متوقف حالياً (PARKED) — لا يتم استدعاؤه من أي مكان في التطبيق.
+ *
+ * ليه متوقف؟
+ *  1) الـ webhook اللي بيشغّله (src/server/whatsapp-webhook.ts) مش متركّب على
+ *     أي سيرفر: المشروع Vite static على Vercel، مفيش Express app ولا endpoint
+ *     منشور، فمفيش رسائل واتساب بتوصل أصلاً.
+ *  2) حتى لو اتركّب: إرسال الرد الفعلي عبر WhatsApp Business API لسه TODO.
+ *  3) منطق البوت الحالي بيبعت أسعار للعميل، والكتالوج كله (٣٨٢٤ منتج) أصلاً
+ *     بدون أسعار لأنها جملة — يعني البوت هيرد "السعر: 0 جنيه".
+ *  4) الجلسات متخزنة في Map في الذاكرة → بتضيع مع أي restart.
+ *
+ * قبل التفعيل: راجع WHATSAPP_BOT.md (قسم "خطوات التفعيل")، وأهم شرط إن
+ * سياسة الأسعار تتحدد الأول: هل البوت يرد بأسعار ولا لأ.
+ *
+ * البديل الشغال حالياً للعملاء: زر خدمة العملاء العائم
+ * (src/components/WhatsAppChatWidget.tsx) — واتساب مباشر + تتبّع طلب + خط ساخن.
+ */
 import type { FirebaseProduct, FirebaseOrder } from "../types/firebase";
 import type { UserSession, BotState } from "../types/firebase";
 

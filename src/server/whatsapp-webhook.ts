@@ -1,3 +1,17 @@
+/**
+ * ⛔️ غير مفعّل (PARKED) — هذا الملف لا يُركّب على أي سيرفر ولا يُستدعى من التطبيق.
+ *
+ * المشروع بيتبني كـ Vite static ويُنشر على Vercel، ومفيش Express server
+ * في التشغيل (راجع package.json: مفيش start script ولا server.js)، فالـ
+ * endpoint /webhook/whatsapp غير موجود على الدومين.
+ *
+ * كمان السطر 124 (TODO) بيثبت إن إرسال الرد الفعلي للعميل لسه مش متعمل —
+ * البوت بيرد في الـ console بس.
+ *
+ * التفعيل بيحتاج: سيرفر دائم (Render / Railway / Vercel Function) +
+ * WhatsApp Business Cloud API (Meta) + verify token + App Secret + ربط
+ * الرقم — راجع WHATSAPP_BOT.md.
+ */
 import express from "express";
 import { WhatsAppBot } from "../services/whatsapp-bot";
 import { productService } from "../supabase/products.service";
