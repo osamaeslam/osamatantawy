@@ -29,6 +29,8 @@ export interface FirebaseOrder {
   totalPrice: number;
   status: "pending" | "priced" | "confirmed" | "dispatched" | "delivered" | "cancelled";
   createdAt: any;
+  /** أول لحظة اتغيّرت فيها الحالة من pending (لمؤشرات خدمة العملاء) */
+  respondedAt?: string | null;
   whatsappMessageId?: string;
   customerAddress?: string;
   imageUrl?: string;

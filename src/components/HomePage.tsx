@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../types';
 import { BrandsGrid } from './BrandsGrid';
+import { FAQSection } from './FAQSection';
 import { NestedCategoriesSection } from './NestedCategoriesSection';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 import { normalizeImageUrl } from '../services/image-url';
@@ -722,6 +723,9 @@ export const HomePage: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* الأسئلة الشائعة */}
+      <FAQSection />
     </div>
   );
 };

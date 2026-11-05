@@ -36,6 +36,7 @@ export const orderService = {
       totalPrice: item.total_price,
       status: item.status as FirebaseOrder['status'],
       createdAt: item.created_at,
+      respondedAt: item.responded_at || null,
       items: item.items,
     }));
   },

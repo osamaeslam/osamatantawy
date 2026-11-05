@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { FirebaseOrder } from '../types/firebase';
 import { SmartOrderPricingModal } from './SmartOrderPricingModal';
 import { CustomerMessageMenu } from './CustomerMessageMenu';
+import { ServiceMetrics } from './ServiceMetrics';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -38,6 +39,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ orders, recentVisitors
 
   return (
     <div className="space-y-6">
+      {/* مؤشرات خدمة العملاء */}
+      <ServiceMetrics orders={orders} />
+
       {/* Commercial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Sales Value */}
