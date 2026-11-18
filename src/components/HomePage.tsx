@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { useProductPagination } from '../hooks/useProductPagination';
 import { CATEGORIES } from '../data/mockData';
@@ -19,7 +19,11 @@ import {
   Award,
   PhoneCall,
   MessageCircle,
-  Edit3
+  Edit3,
+  Search,
+  X,
+  Barcode,
+  Package
 } from 'lucide-react';
 import { Product } from '../types';
 import { BrandsGrid } from './BrandsGrid';
@@ -27,6 +31,19 @@ import { FAQSection } from './FAQSection';
 import { NestedCategoriesSection } from './NestedCategoriesSection';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 import { normalizeImageUrl } from '../services/image-url';
+
+const normalizeSearchText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[إأآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[\-_/\\,.]/g, ' ')
+    .replace(/\s+/g, ' ');
+};
 
 export const HomePage: React.FC = () => {
   const { 
@@ -40,6 +57,7 @@ export const HomePage: React.FC = () => {
     setSelectedSubcategory,
     setIsAboutModalOpen,
     searchQuery,
+    setSearchQuery,
     setSelectedBrand,
     homePageConfig
   } = useApp();
@@ -70,16 +88,59 @@ export const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [heroBanners.length]);
 
-  // Filter products if search is active
-  const filteredProducts = searchQuery
-    ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.nameAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.categoryAr.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : products;
+  const [isQuickSearchFocused, setIsQuickSearchFocused] = useState(false);
+
+  // Fast catalog search by product name, unified code, item number, brand, or group
+  const filteredProducts = useMemo(() => {
+    const raw = searchQuery.trim();
+    if (!raw) return products;
+
+    const normQuery = normalizeSearchText(raw);
+    const compactQuery = raw.toLowerCase().replace(/[\s\-_]/g, '');
+    const queryWords = normQuery.split(' ').filter(Boolean);
+
+    const scored: { product: Product; score: number }[] = [];
+
+    products.forEach((p) => {
+      const nameAr = normalizeSearchText(p.nameAr || '');
+      const nameEn = (p.name || '').toLowerCase();
+      const brand = normalizeSearchText(p.brand || '');
+      const category = normalizeSearchText(p.category || '');
+      const categoryAr = normalizeSearchText(p.categoryAr || '');
+      const itemGroup = normalizeSearchText(p.itemGroup || '');
+      const familyName = normalizeSearchText(p.familyName || '');
+      const code = (p.unifiedCode || '').toLowerCase();
+      const itemNum = (p.itemNumber || '').toLowerCase();
+      const importKey = (p.importKey || '').toLowerCase();
+      const compactCode = `${code}${itemNum}${importKey}`.replace(/[\s\-_]/g, '');
+
+      let score = 0;
+
+      if (code === raw.toLowerCase() || itemNum === raw.toLowerCase()) score += 250;
+      else if (compactCode.includes(compactQuery) && compactQuery.length >= 2) score += 170;
+      else if (code.includes(raw.toLowerCase()) || itemNum.includes(raw.toLowerCase())) score += 140;
+
+      if (nameAr.startsWith(normQuery)) score += 150;
+      else if (nameAr.includes(' ' + normQuery)) score += 90;
+      else if (nameAr.includes(normQuery)) score += 60;
+
+      if (brand.includes(normQuery)) score += 50;
+      if (itemGroup.includes(normQuery) || familyName.includes(normQuery)) score += 45;
+      if (categoryAr.includes(normQuery) || category.includes(normQuery) || nameEn.includes(normQuery)) score += 30;
+
+      if (score === 0 && queryWords.length > 1) {
+        const haystack = `${nameAr} ${nameEn} ${brand} ${itemGroup} ${familyName} ${code} ${itemNum}`;
+        if (queryWords.every((w) => haystack.includes(w))) {
+          score += 80;
+        }
+      }
+
+      if (score > 0) scored.push({ product: p, score });
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((s) => s.product);
+  }, [products, searchQuery]);
 
   // Single pagination source of truth - show 10 products per page
   // (search results when searching, all products otherwise)
@@ -92,26 +153,269 @@ export const HomePage: React.FC = () => {
   const pageProducts = paginatedProducts();
   const deals = pageProducts.filter((p) => p.isDeal);
   const newArrivals = pageProducts.slice(2, 7);
+  const quickSuggestions = searchQuery.trim() ? filteredProducts.slice(0, 5) : [];
+
+  const quickTags = ['شاشة', 'ثلاجة', 'خلاط', 'مكواة', 'طقم حلل', 'قلاية'];
 
   return (
     <div className="space-y-6 md:space-y-10 pb-16">
-      {/* Search Result Notification if user searched */}
-      {searchQuery && (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">نتائج البحث في طنطاوي جروب عن:</span>
-            <span className="text-sm font-bold text-blue-900">"{searchQuery}"</span>
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-              ({filteredProducts.length > 0 ? filteredProducts.length : products.length} منتج)
-            </span>
+      {/* Fast Home Catalog Search Bar (By Name or Code) */}
+      <section className="bg-gradient-to-l from-blue-950 via-blue-900 to-indigo-950 rounded-3xl p-4 sm:p-6 shadow-md border border-blue-800/40 relative">
+        <div className="max-w-4xl mx-auto space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-white">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-yellow-400 text-blue-950 flex items-center justify-center shrink-0 shadow-xs">
+                <Search size={18} strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-black flex items-center gap-2">
+                  <span>البحث السريع في كتالوج طنطاوي جروب</span>
+                  <span className="text-[10px] bg-white/15 text-yellow-300 px-2 py-0.5 rounded-full font-bold">
+                    {products.length.toLocaleString('ar-EG')} صنف
+                  </span>
+                </h2>
+                <p className="text-[11px] text-blue-200">
+                  ابحث فوراً باسم المنتج أو الكود الموحد أو رقم الصنف أو الماركة
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-blue-100 bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+              <Barcode size={14} className="text-yellow-300" />
+              <span>يدعم البحث بالكود (مثل: TG- أو رقم الصنف)</span>
+            </div>
           </div>
-          <button
-            onClick={() => setActiveTab('categories')}
-            className="text-xs text-blue-700 font-bold hover:underline"
-          >
-            تصفح كل الفئات
-          </button>
+
+          {/* Search Input Box */}
+          <div className="relative">
+            <div className="flex items-center bg-white rounded-2xl shadow-lg border-2 border-transparent focus-within:border-yellow-400 transition overflow-hidden">
+              <span className="pr-4 pl-2 text-gray-400">
+                <Search size={20} className="text-blue-900" />
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setIsQuickSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsQuickSearchFocused(false), 180)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="اكتب اسم المنتج أو الكود الموحد أو الماركة للوصول السريع..."
+                className="w-full py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none bg-transparent"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="px-3 py-2 text-gray-400 hover:text-red-600 transition flex items-center gap-1 text-xs font-bold shrink-0"
+                  title="مسح البحث"
+                >
+                  <X size={16} />
+                  <span className="hidden sm:inline">مسح</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsQuickSearchFocused(false)}
+                className="bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black text-xs sm:text-sm px-4 sm:px-6 py-3 sm:py-3.5 transition shrink-0"
+              >
+                بحث فوري
+              </button>
+            </div>
+
+            {/* Instant Autocomplete Suggestions */}
+            {isQuickSearchFocused && quickSuggestions.length > 0 && (
+              <div className="absolute right-0 left-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-30 overflow-hidden divide-y divide-gray-100">
+                <div className="px-3.5 py-2 bg-gray-50 flex items-center justify-between text-[11px] font-bold text-gray-500">
+                  <span>أقرب المنتجات المطابقة ({filteredProducts.length} نتيجة)</span>
+                  <span className="text-blue-900">اضغط على الصنف لفتح التفاصيل</span>
+                </div>
+                {quickSuggestions.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onMouseDown={() => {
+                      setSelectedProduct(item);
+                      setIsQuickSearchFocused(false);
+                    }}
+                    className="w-full p-2.5 sm:px-4 hover:bg-blue-50/70 transition flex items-center justify-between gap-3 text-right"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={normalizeImageUrl(item.previewimage, undefined, 200)}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
+                        alt={item.nameAr}
+                        className="w-10 h-10 rounded-lg object-contain bg-gray-50 border border-gray-100 p-0.5 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate">{item.nameAr}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
+                          <span className="text-blue-800 font-bold">{item.brand}</span>
+                          <span>•</span>
+                          <span>{item.itemGroup || item.categoryAr}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {(item.unifiedCode || item.itemNumber) && (
+                        <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
+                          {item.unifiedCode || item.itemNumber}
+                        </span>
+                      )}
+                      <ChevronLeft size={15} className="text-gray-400" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Suggested Keywords */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="text-blue-200 font-bold ml-1">أشهر عمليات البحث:</span>
+            {quickTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSearchQuery(tag)}
+                className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                  searchQuery === tag
+                    ? 'bg-yellow-400 text-blue-950'
+                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/15'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
+      </section>
+
+      {/* Dedicated Search Results Section when searchQuery is active */}
+      {searchQuery.trim() && (
+        <section className="space-y-4">
+          <div className="bg-white p-4 rounded-2xl shadow-xs border border-blue-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Package size={18} className="text-blue-900" />
+              <span className="text-xs sm:text-sm text-gray-600">نتائج البحث في الكتالوج عن:</span>
+              <span className="text-xs sm:text-sm font-black text-blue-900 bg-blue-50 px-2.5 py-0.5 rounded-lg">
+                "{searchQuery}"
+              </span>
+              <span className="text-xs bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full font-black">
+                {filteredProducts.length.toLocaleString('ar-EG')} منتج مطابق
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-xs text-red-600 hover:bg-red-50 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition"
+              >
+                إلغاء البحث ✕
+              </button>
+              <button
+                onClick={() => setActiveTab('categories')}
+                className="text-xs text-blue-800 hover:bg-blue-50 font-bold px-3 py-1.5 rounded-lg border border-blue-200 transition"
+              >
+                تصفح كل الأقسام
+              </button>
+            </div>
+          </div>
+
+          {pageProducts.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center space-y-3">
+              <Search size={36} className="text-gray-300 mx-auto" />
+              <h3 className="text-base font-black text-gray-800">لم نجد منتجات مطابقة لـ "{searchQuery}"</h3>
+              <p className="text-xs text-gray-500">
+                جرب البحث بكلمة أقصر، أو برقم الكود الموحد، أو تصفح الأقسام الداخلية مباشرة.
+              </p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition"
+              >
+                عرض جميع المنتجات
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {pageProducts.map((product) => {
+                const inWish = isInWishlist(product.id);
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between group relative"
+                  >
+                    <div className="absolute top-2 right-2 z-10 bg-blue-900 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                      {product.brand}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(product);
+                      }}
+                      className="absolute top-2 left-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full text-gray-400 hover:text-red-500 shadow-xs transition"
+                    >
+                      <Heart size={16} className={inWish ? 'text-red-500 fill-red-500' : ''} />
+                    </button>
+
+                    <div
+                      onClick={() => setSelectedProduct(product)}
+                      className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
+                    >
+                      <img
+                        src={normalizeImageUrl(product.previewimage, undefined, 500)}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
+                        alt={product.nameAr}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+
+                    <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] text-blue-800 font-bold truncate">
+                            {product.itemGroup || product.categoryAr}
+                          </span>
+                          {(product.unifiedCode || product.itemNumber) && (
+                            <span className="text-[10px] font-mono font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                              {product.unifiedCode || product.itemNumber}
+                            </span>
+                          )}
+                        </div>
+                        <h3
+                          onClick={() => setSelectedProduct(product)}
+                          className="text-xs md:text-sm font-bold text-gray-800 hover:text-blue-700 transition cursor-pointer line-clamp-2"
+                        >
+                          {product.nameAr}
+                        </h3>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-1.5">
+                        <button
+                          onClick={() => addToCart(product, 1)}
+                          className="flex-1 py-1.5 px-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition text-[11px] font-bold flex items-center justify-center gap-1 shadow-xs"
+                        >
+                          <ShoppingCart size={13} />
+                          <span>إضافة للطلب</span>
+                        </button>
+                        <a
+                          href={createProductWhatsAppUrl(product)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-xs flex items-center justify-center"
+                          title="طلب فوري واستفسار عبر واتساب"
+                        >
+                          <MessageCircle size={14} />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Hero Carousel (Exclusive Tantawy Group Banners) */}
@@ -408,7 +712,10 @@ export const HomePage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={normalizeImageUrl(product.previewimage)} referrerPolicy="no-referrer"
+                    src={normalizeImageUrl(product.previewimage, undefined, 500)}
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
@@ -546,8 +853,10 @@ export const HomePage: React.FC = () => {
               </div>
               <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0 bg-white/10">
                 <img
-                  src={normalizeImageUrl(cleanPromoImage)}
+                  src={normalizeImageUrl(cleanPromoImage, undefined, 600)}
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                   alt={promo.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                 />
@@ -604,7 +913,10 @@ export const HomePage: React.FC = () => {
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={normalizeImageUrl(product.previewimage)} referrerPolicy="no-referrer"
+                    src={normalizeImageUrl(product.previewimage, undefined, 500)}
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                     alt={product.nameAr}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />

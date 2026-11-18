@@ -6,7 +6,11 @@
  */
 import { DEFAULT_PRODUCT_FALLBACK } from '../utils/imageHelper';
 
-export function normalizeImageUrl(url?: string | null, fallback = DEFAULT_PRODUCT_FALLBACK): string {
+export function normalizeImageUrl(
+  url?: string | null,
+  fallback = DEFAULT_PRODUCT_FALLBACK,
+  width = 600
+): string {
   if (!url || typeof url !== 'string' || !url.trim()) return fallback;
   const trimmed = url.trim();
 
@@ -18,8 +22,8 @@ export function normalizeImageUrl(url?: string | null, fallback = DEFAULT_PRODUC
       trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
 
     if (match && match[1]) {
-      // الصيغة المباشرة الأكثر استقرارًا لعرض صور درايف
-      return `https://lh3.googleusercontent.com/d/${match[1]}=w1600`;
+      // مقاس متوازن وسريع للكروت والموبايل ويقلل استهلاك الباندويث
+      return `https://lh3.googleusercontent.com/d/${match[1]}=w${width}`;
     }
   }
 
