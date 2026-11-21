@@ -2,6 +2,6 @@
   "name": "طنطاوي جروب — كتالوج الجملة وإدارة البيع",
   "description": "منصة طنطاوي جروب (ودريم) للأجهزة المنزلية والكهربية والأدوات المنزلية: كتالوج جملة كامل، بحث وأقسام، طلب عبر واتساب، ودفع عند الاستلام بعد الفحص. لوحة إدارة للطلبات والتسعير وفريق العمل.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
 

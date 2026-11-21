@@ -8,14 +8,15 @@ import {
   Truck, 
   CheckCircle,
   Clock,
-  Sparkles,
-  MapPinOff,
-  Headphones,
   User,
 } from 'lucide-react';
+import { DeveloperBadge } from './DeveloperBadge';
+import { STOREFRONT_TEXT } from '../i18n/translations';
 
 export const AboutCompanyModal: React.FC = () => {
-  const { isAboutModalOpen, setIsAboutModalOpen } = useApp();
+  const { isAboutModalOpen, setIsAboutModalOpen, language } = useApp();
+  const isRtl = language === 'ar';
+  const t = STOREFRONT_TEXT[language].about;
 
   if (!isAboutModalOpen) return null;
 
@@ -27,11 +28,12 @@ export const AboutCompanyModal: React.FC = () => {
       <div 
         className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-100 p-6 md:p-8 space-y-6"
         onClick={(e) => e.stopPropagation()}
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Close Button */}
         <button
           onClick={() => setIsAboutModalOpen(false)}
-          className="absolute top-4 left-4 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition"
+          className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition`}
         >
           <X size={18} />
         </button>
@@ -42,12 +44,8 @@ export const AboutCompanyModal: React.FC = () => {
             <img src="/logo.png" alt="Tantawy Group Logo" className="h-full w-auto object-contain" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-black text-blue-950">
-              مجموعة طنطاوي (TANTAWY GROUP)
-            </h2>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">
-              الصرح الرائد في تجارة وتوزيع الأجهزة المنزلية الكبرى والشاشات والأجهزة الخفيفة
-            </p>
+            <h2 className="text-xl md:text-2xl font-black text-blue-950">{t.title}</h2>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">{t.subtitle}</p>
           </div>
         </div>
 
@@ -55,10 +53,18 @@ export const AboutCompanyModal: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-2xl p-5 space-y-3 shadow-sm">
           <h3 className="text-sm font-black flex items-center gap-2">
             <Award size={18} className="text-yellow-400" />
-            <span>رؤيتنا ورسالتنا</span>
+            <span>{t.visionTitle}</span>
           </h3>
           <p className="text-xs text-gray-200 leading-relaxed">
-            انطلقت <strong>مجموعة طنطاوي</strong> بهدف تقديم تجربة شراء أجهزة منزلية موثوقة ومريحة لكافة الأسر في جمهورية مصر العربية. نوفر لكم أفضل الماركات العالمية والمحلية في عالم الثلاجات، الغسالات، البوتاجازات، الشاشات الذكية، والأجهزة المنزلية الخفيفة مع خدمة معاينة حرة ودفع موحد عند الاستلام.
+            {isRtl ? (
+              <>
+                انطلقت <strong>مجموعة طنطاوي</strong> بهدف تقديم تجربة شراء أجهزة منزلية موثوقة ومريحة لكافة الأسر في جمهورية مصر العربية. نوفر لكم أفضل الماركات العالمية والمحلية في عالم الثلاجات، الغسالات، البوتاجازات، الشاشات الذكية، والأجهزة المنزلية الخفيفة مع خدمة معاينة حرة ودفع موحد عند الاستلام.
+              </>
+            ) : (
+              <>
+                <strong>Tantawy Group</strong> was founded to provide families and wholesalers across Egypt with a trusted, seamless appliance buying experience. We supply top international & local brands across refrigerators, washers, cookers, Smart TVs, and small kitchen appliances with open inspection before Cash on Delivery.
+              </>
+            )}
           </p>
         </div>
 
@@ -66,47 +72,55 @@ export const AboutCompanyModal: React.FC = () => {
         <div className="space-y-3">
           <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
             <ShieldCheck size={18} className="text-emerald-600" />
-            <span>مميزات وضمانات طنطاوي جروب الذهبية:</span>
+            <span>{t.guaranteesTitle}</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
-              <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
+              <strong className="text-blue-950 font-bold flex items-center gap-1.5">
                 <CheckCircle size={15} className="text-emerald-600" />
-                <span>دفع موحد ومعاينة قبل الاستلام</span>
+                <span>{isRtl ? 'دفع موحد ومعاينة قبل الاستلام' : 'Full Inspection Before Payment'}</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                لك كامل الحق في فتح الشحنة وفحص الجهاز والتأكد من مطابقة المواصفات قبل دفع أي جنيه للمندوب.
+                {isRtl
+                  ? 'لك كامل الحق في فتح الشحنة وفحص الجهاز والتأكد من مطابقة المواصفات قبل دفع أي جنيه للمندوب.'
+                  : 'Inspect the appliance and confirm specs upon delivery before paying any cash.'}
               </p>
             </div>
 
             <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
-              <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
+              <strong className="text-blue-950 font-bold flex items-center gap-1.5">
                 <Truck size={15} className="text-blue-600" />
-                <span>شحن وتوصيل لكافة محافظات مصر</span>
+                <span>{isRtl ? 'شحن وتوصيل لكافة محافظات مصر' : 'Nationwide Egypt Delivery'}</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                خدمة توصيل سريعة ومباشرة إلى باب بيتك في القاهرة الكبرى، الإسكندرية، الدلتا، القناة، والصعيد.
+                {isRtl
+                  ? 'خدمة توصيل سريعة ومباشرة إلى باب بيتك في القاهرة الكبرى، الإسكندرية، الدلتا، القناة، والصعيد.'
+                  : 'Fast doorstep delivery across Cairo, Giza, Alexandria, Delta, Canal, and Upper Egypt.'}
               </p>
             </div>
 
             <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
-              <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
+              <strong className="text-blue-950 font-bold flex items-center gap-1.5">
                 <Award size={15} className="text-amber-500" />
-                <span>ضمان الوكيل الرسمي وضمان طنطاوي</span>
+                <span>{isRtl ? 'ضمان الوكيل الرسمي وضمان طنطاوي' : 'Official Agent & Tantawy Warranty'}</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                جميع الأجهزة أصلية 100% ومرفقة بشهادات الضمان المعتمدة والفاتورة الضريبية.
+                {isRtl
+                  ? 'جميع الأجهزة أصلية 100% ومرفقة بشهادات الضمان المعتمدة والفاتورة الضريبية.'
+                  : '100% genuine sealed appliances accompanied by official warranty cards and tax invoices.'}
               </p>
             </div>
 
             <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
-              <strong className="text-blue-950 font-bold block flex items-center gap-1.5">
+              <strong className="text-blue-950 font-bold flex items-center gap-1.5">
                 <Clock size={15} className="text-red-500" />
-                <span>استبدال واسترجاع مضمون</span>
+                <span>{isRtl ? 'استبدال واسترجاع مضمون' : '14-Day Guaranteed Exchange'}</span>
               </strong>
               <p className="text-gray-500 text-[11px]">
-                إمكانية استبدال أو استرجاع الأجهزة خلال 14 يوماً وفق معايير جهاز حماية المستهلك.
+                {isRtl
+                  ? 'إمكانية استبدال أو استرجاع الأجهزة خلال 14 يوماً وفق معايير جهاز حماية المستهلك.'
+                  : '14-day return and exchange coverage in accordance with consumer protection standards.'}
               </p>
             </div>
           </div>
@@ -116,10 +130,20 @@ export const AboutCompanyModal: React.FC = () => {
         <div className="p-4 bg-blue-50/70 rounded-2xl border border-blue-200/80 space-y-2 text-xs">
           <div className="flex items-center gap-2 text-blue-950 font-bold">
             <Truck size={17} className="text-blue-700" />
-            <span>طلب المعاينة والشحن المباشر لجميع المحافظات:</span>
+            <span>
+              {isRtl ? 'طلب المعاينة والشحن المباشر لجميع المحافظات:' : 'Direct Inspection & Nationwide Shipping:'}
+            </span>
           </div>
           <p className="text-gray-600 text-[11px] leading-relaxed">
-            يتم استقبال كافة طلبات المعاينة والاستفسارات عبر منظومة خدمة العملاء والخط الساخن الموحد <strong>15218</strong>، حيث يتولى فريقنا شحن وتوصيل الصنف المطلوب مباشرة إلى موقعك مع إمكانية الفحص الكامل قبل الدفع.
+            {isRtl ? (
+              <>
+                يتم استقبال كافة طلبات المعاينة والاستفسارات عبر منظومة خدمة العملاء والخط الساخن الموحد <strong>15218</strong>، حيث يتولى فريقنا شحن وتوصيل الصنف المطلوب مباشرة إلى موقعك مع إمكانية الفحص الكامل قبل الدفع.
+              </>
+            ) : (
+              <>
+                All orders and inspection requests are handled via our unified hotline <strong>15218</strong>, shipping directly to your address with full pre-payment verification.
+              </>
+            )}
           </p>
         </div>
 
@@ -130,38 +154,61 @@ export const AboutCompanyModal: React.FC = () => {
               <PhoneCall size={18} />
             </div>
             <div>
-              <span className="font-bold text-emerald-950 block">الخط الساخن الموحد لخدمة عملاء طنطاوي جروب:</span>
+              <span className="font-bold text-emerald-950 block">
+                {isRtl ? 'الخط الساخن الموحد لخدمة عملاء طنطاوي جروب:' : 'Tantawy Group Unified Hotline:'}
+              </span>
               <a href="tel:15218" className="text-emerald-700 text-lg font-black tracking-wider hover:underline flex items-center gap-1">
                 <span>15218</span>
-                <span className="text-xs font-normal text-emerald-600">(اتصال مباشر)</span>
+                <span className="text-xs font-normal text-emerald-600">
+                  {isRtl ? '(اتصال مباشر)' : '(Direct Call)'}
+                </span>
               </a>
             </div>
           </div>
-          <span className="text-gray-600 text-[11px] font-medium">متاح يومياً 9:00 ص - 11:00 م</span>
+          <span className="text-gray-600 text-[11px] font-medium">
+            {isRtl ? 'متاح يومياً 9:00 ص - 11:00 م' : 'Daily 9:00 AM – 11:00 PM'}
+          </span>
         </div>
 
-        {/* Engineer Saji Osama Section */}
+        {/* Leadership Highlight */}
         <div className="bg-pink-50 border border-pink-200 rounded-2xl p-5 space-y-3 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="p-2 bg-pink-400 text-white rounded-lg shadow-sm">
               <User size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-pink-900">المهندسة سجي اسامه</h3>
-              <p className="text-xs text-pink-700 font-bold">المسؤولة عن مجموعة طنطاوي</p>
+              <h3 className="text-sm font-black text-pink-900">
+                {isRtl ? 'المهندسة سجي اسامه' : 'Eng. Saji Osama'}
+              </h3>
+              <p className="text-xs text-pink-700 font-bold">
+                {isRtl ? 'المسؤولة عن مجموعة طنطاوي' : 'Managing Director — Tantawy Group'}
+              </p>
             </div>
           </div>
           <p className="text-xs text-gray-700 leading-relaxed">
-            المهندسة <strong>سجي اسامه</strong> هي المسؤولة عن إدارة وتطوير مجموعة طنطاوي للأجهزة المنزلية والتجارة بالجملة. تشرف على جودة المنتجات وخدمة العملاء وضمان رضا التجار والعملاء في جميع المحافظات.
+            {isRtl ? (
+              <>
+                المهندسة <strong>سجي اسامه</strong> هي المسؤولة عن إدارة وتطوير مجموعة طنطاوي للأجهزة المنزلية والتجارة بالجملة. تشرف على جودة المنتجات وخدمة العملاء وضمان رضا التجار والعملاء في جميع المحافظات.
+              </>
+            ) : (
+              <>
+                Eng. <strong>Saji Osama</strong> oversees operations and growth at Tantawy Group for home appliances & wholesale distribution, ensuring top product quality and customer satisfaction nationwide.
+              </>
+            )}
           </p>
         </div>
 
-        <div className="text-center pt-2">
+        {/* Developer Credit Badge */}
+        <div className="flex justify-center pt-1">
+          <DeveloperBadge variant="light" />
+        </div>
+
+        <div className="text-center pt-1">
           <button
             onClick={() => setIsAboutModalOpen(false)}
             className="bg-blue-950 hover:bg-black text-white font-bold text-xs py-2.5 px-8 rounded-xl transition"
           >
-            إغلاق
+            {t.close}
           </button>
         </div>
       </div>

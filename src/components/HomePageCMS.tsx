@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { HeroBanner, HomePageConfig, PromoBanner } from '../types';
+import { HeroBanner, HomePageConfig, PromoBanner, SectionBanner, SectionBannersConfig } from '../types';
 import { INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
 import { RefreshCw } from 'lucide-react';
 import { 
@@ -25,8 +25,10 @@ import {
 import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
 import { normalizeImageUrl } from '../services/image-url';
 
+const DEFAULT_SECTION_BANNERS: SectionBannersConfig = INITIAL_HOMEPAGE_CONFIG.sectionBanners!;
+
 export const HomePageCMS: React.FC = () => {
-  const { homePageConfig, updateHomePageConfig } = useApp();
+  const { homePageConfig, updateHomePageConfig, saveHomePageConfigToDatabase } = useApp();
 
   const [announcementText, setAnnouncementText] = useState(homePageConfig.announcementText);
   const [hotline, setHotline] = useState(homePageConfig.hotline);
@@ -38,11 +40,28 @@ export const HomePageCMS: React.FC = () => {
       ? homePageConfig.promoBanners 
       : (INITIAL_HOMEPAGE_CONFIG.promoBanners || [])
   );
+  const [sectionBanners, setSectionBanners] = useState<SectionBannersConfig>(() => ({
+    homeAppliances: {
+      ...DEFAULT_SECTION_BANNERS.homeAppliances,
+      ...(homePageConfig.sectionBanners?.homeAppliances || {}),
+    },
+    electricalAppliances: {
+      ...DEFAULT_SECTION_BANNERS.electricalAppliances,
+      ...(homePageConfig.sectionBanners?.electricalAppliances || {}),
+    },
+    deals: {
+      ...DEFAULT_SECTION_BANNERS.deals,
+      ...(homePageConfig.sectionBanners?.deals || {}),
+    },
+  }));
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [activeSection, setActiveSection] = useState<'all' | 'promos' | 'hero' | 'contact'>(() => {
+  const [activeSection, setActiveSection] = useState<'all' | 'promos' | 'sections' | 'hero' | 'contact'>(() => {
     try {
       const h = window.location.hash.toLowerCase();
-      if (h.includes('promo') || h.includes('cms')) return 'promos';
+      if (h.includes('sections')) return 'sections';
+      if (h.includes('promo') || h.includes('cms')) return 'all';
     } catch {}
     return 'all';
   });
@@ -55,6 +74,22 @@ export const HomePageCMS: React.FC = () => {
     setBanners(homePageConfig.heroBanners || []);
     if (homePageConfig.promoBanners && homePageConfig.promoBanners.length > 0) {
       setPromoBanners(homePageConfig.promoBanners);
+    }
+    if (homePageConfig.sectionBanners) {
+      setSectionBanners({
+        homeAppliances: {
+          ...DEFAULT_SECTION_BANNERS.homeAppliances,
+          ...(homePageConfig.sectionBanners.homeAppliances || {}),
+        },
+        electricalAppliances: {
+          ...DEFAULT_SECTION_BANNERS.electricalAppliances,
+          ...(homePageConfig.sectionBanners.electricalAppliances || {}),
+        },
+        deals: {
+          ...DEFAULT_SECTION_BANNERS.deals,
+          ...(homePageConfig.sectionBanners.deals || {}),
+        },
+      });
     }
   }, [homePageConfig]);
 
@@ -116,31 +151,61 @@ export const HomePageCMS: React.FC = () => {
     setSelectedBannerIndex(targetIndex);
   };
 
-  const handleSaveAll = () => {
+  const updateSectionBanner = (
+    key: keyof SectionBannersConfig,
+    field: keyof SectionBanner,
+    value: string
+  ) => {
+    setSectionBanners((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    setSaveError(null);
     const cleanNumber = normalizeWhatsAppNumber(whatsappNumber);
     const newConfig: HomePageConfig = {
       announcementText,
       hotline,
       whatsappNumber: cleanNumber,
       heroBanners: banners,
-      promoBanners: promoBanners
+      promoBanners,
+      sectionBanners,
     };
-    updateHomePageConfig(newConfig);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 4000);
+    try {
+      await saveHomePageConfigToDatabase(newConfig);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 4500);
+    } catch (err: any) {
+      console.error('CMS Save Error:', err);
+      updateHomePageConfig(newConfig);
+      setSaveError('تم الحفظ محلياً، لكن تعذر الحفظ في قاعدة البيانات حالياً. تأكد من الاتصال بالإنترنت.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleResetToDefault = () => {
-    if (confirm('هل تريد استعادة إعدادات وبنرات الصفحة الرئيسية الافتراضية؟')) {
-      updateHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+  const handleResetToDefault = async () => {
+    if (confirm('هل تريد استعادة إعدادات وبنرات الموقع الافتراضية؟')) {
       setAnnouncementText(INITIAL_HOMEPAGE_CONFIG.announcementText);
       setHotline(INITIAL_HOMEPAGE_CONFIG.hotline);
       setWhatsappNumber(INITIAL_HOMEPAGE_CONFIG.whatsappNumber || '201521800000');
       setBanners(INITIAL_HOMEPAGE_CONFIG.heroBanners);
       setPromoBanners(INITIAL_HOMEPAGE_CONFIG.promoBanners || []);
+      setSectionBanners(DEFAULT_SECTION_BANNERS);
       setSelectedBannerIndex(0);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 4000);
+      try {
+        await saveHomePageConfigToDatabase(INITIAL_HOMEPAGE_CONFIG);
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 4000);
+      } catch {
+        updateHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+      }
     }
   };
 
@@ -151,16 +216,17 @@ export const HomePageCMS: React.FC = () => {
         <div>
           <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
             <Palette className="text-blue-700" size={22} />
-            <span>إدارة وتخصيص محتوى الصفحة الرئيسية (CMS)</span>
+            <span>إدارة وتخصيص جميع بنرات وواجهات المتجر (CMS)</span>
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            تحكم كامل في النصوص، بنرات السلايدر، الصور، وروابط الأقسام بدون الاعتماد على أي مطور.
+            تحكم كامل في السلايدر الرئيسي، البانرات الثنائية، وبانرات المنزلي والكهربا والعروض (يدعم روابط صور Google Drive مباشرة).
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={handleResetToDefault}
+            disabled={saving}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5"
           >
             <RotateCcw size={14} />
@@ -168,10 +234,11 @@ export const HomePageCMS: React.FC = () => {
           </button>
           <button
             onClick={handleSaveAll}
-            className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-xs px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2"
+            disabled={saving}
+            className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-xs px-6 py-2.5 rounded-xl transition shadow-md flex items-center gap-2 disabled:opacity-60"
           >
             <CheckCircle2 size={16} />
-            <span>حفظ ونشر التعديلات فوراً 🚀</span>
+            <span>{saving ? 'جاري الحفظ في القاعدة...' : 'حفظ ونشر التعديلات فوراً 🚀'}</span>
           </button>
         </div>
       </div>
@@ -179,25 +246,30 @@ export const HomePageCMS: React.FC = () => {
       {savedSuccess && (
         <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs">
           <CheckCircle2 size={18} className="text-emerald-600" />
-          <span>تم حفظ التعديلات بنجاح! تم تحديث الصفحة الرئيسية الآن مباشرة لجميع الزوار.</span>
+          <span>تم حفظ ونشر جميع البنرات والإعدادات في قاعدة البيانات بنجاح لجميع الزوار!</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl text-xs font-bold">
+          {saveError}
         </div>
       )}
 
       {/* Quick Section Tabs & Shortcuts */}
       <div className="bg-gradient-to-r from-blue-950 to-indigo-900 p-3.5 rounded-2xl shadow-sm text-white flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <span className="text-xs font-bold text-blue-200 shrink-0">أقسام الواجهة:</span>
+          <span className="text-xs font-bold text-blue-200 shrink-0">أقسام البنرات:</span>
           <button
             type="button"
-            onClick={() => setActiveSection('promos')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${
-              activeSection === 'promos'
-                ? 'bg-amber-400 text-blue-950 shadow-md font-black ring-2 ring-white'
+            onClick={() => setActiveSection('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
+              activeSection === 'all'
+                ? 'bg-white text-blue-950 shadow-md font-black'
                 : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
           >
-            <span>🖼️ البانران الترويجيان (شاشات وأجهزة كبرى)</span>
-            <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">تعديل هنا</span>
+            <span>عرض كل البانرات</span>
           </button>
 
           <button
@@ -209,7 +281,31 @@ export const HomePageCMS: React.FC = () => {
                 : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
           >
-            <span>🎠 بنرات السلايدر العلوية ({banners.length})</span>
+            <span>🎠 السلايدر الرئيسي ({banners.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('promos')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${
+              activeSection === 'promos'
+                ? 'bg-amber-400 text-blue-950 shadow-md font-black ring-2 ring-white'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+          >
+            <span>🖼️ البانران الترويجيان (الرئيسية)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('sections')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${
+              activeSection === 'sections'
+                ? 'bg-amber-400 text-blue-950 shadow-md font-black ring-2 ring-white'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+          >
+            <span>🏷️ بنرات المنزلي والكهربا والعروض (3)</span>
           </button>
 
           <button
@@ -221,28 +317,17 @@ export const HomePageCMS: React.FC = () => {
                 : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
           >
-            <span>📱 رقم واتساب الطلبات والخط الساخن</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('all')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
-              activeSection === 'all'
-                ? 'bg-white text-blue-950 shadow-md font-black'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-          >
-            <span>عرض كل الأقسام</span>
+            <span>📱 الواتساب والخط الساخن</span>
           </button>
         </div>
 
         <button
           onClick={handleSaveAll}
-          className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs px-5 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 shrink-0 mr-auto"
+          disabled={saving}
+          className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs px-5 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 shrink-0 mr-auto disabled:opacity-60"
         >
           <CheckCircle2 size={16} />
-          <span>حفظ التعديلات ونشرها 🚀</span>
+          <span>{saving ? 'جاري الحفظ...' : 'حفظ التعديلات ونشرها 🚀'}</span>
         </button>
       </div>
 
@@ -808,14 +893,168 @@ export const HomePageCMS: React.FC = () => {
       </div>
       )}
 
+      {/* Section 5: Dedicated Section Banners (Home Appliances, Electrical Appliances, Deals Page) */}
+      {(activeSection === 'all' || activeSection === 'sections') && (
+        <div
+          id="section-banners-manager"
+          className={`bg-white rounded-3xl border-2 ${
+            activeSection === 'sections'
+              ? 'border-blue-700 ring-4 ring-blue-100 shadow-lg'
+              : 'border-blue-200 shadow-xs'
+          } p-6 space-y-5`}
+        >
+          <div className="bg-blue-950 text-white p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-black text-yellow-300">
+                بنرات الأقسام المستقلة (الأجهزة المنزلية • الأجهزة الكهربية • صفحة العروض)
+              </h4>
+              <p className="text-xs text-blue-100 mt-0.5">
+                تحكم في صورة وعنوان ووصف وألوان البانر الخاص بكل قطاع عند تصفحه بشكل منفرد.
+              </p>
+            </div>
+            <span className="text-[11px] bg-white/15 px-3 py-1 rounded-full font-bold shrink-0">
+              3 بنرات مستقلة
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {(
+              [
+                {
+                  key: 'homeAppliances',
+                  heading: '🏠 بانر قسم الأجهزة المنزلية',
+                  gradientOptions: [
+                    { value: 'from-blue-950 via-blue-900 to-indigo-950', label: 'أزرق ملكي (طنطاوي)' },
+                    { value: 'from-emerald-950 via-teal-900 to-slate-900', label: 'أخضر زمردي فاخر' },
+                    { value: 'from-slate-900 via-blue-950 to-indigo-900', label: 'كحلي داكن أنيق' },
+                  ],
+                },
+                {
+                  key: 'electricalAppliances',
+                  heading: '⚡ بانر قسم الأجهزة الكهربية',
+                  gradientOptions: [
+                    { value: 'from-slate-950 via-indigo-950 to-blue-900', label: 'كحلي تقني للشاشات' },
+                    { value: 'from-blue-950 via-indigo-900 to-purple-950', label: 'بنفسجي وكحلي حديث' },
+                    { value: 'from-gray-950 via-slate-900 to-blue-950', label: 'أسود تقني فاخر' },
+                  ],
+                },
+                {
+                  key: 'deals',
+                  heading: '🔥 بانر صفحة العروض والتخفيضات',
+                  gradientOptions: [
+                    { value: 'from-blue-950 via-indigo-900 to-blue-900', label: 'أزرق وأرجواني للعروض' },
+                    { value: 'from-red-950 via-red-900 to-amber-950', label: 'أحمر ناري للعروض الحصرية' },
+                    { value: 'from-indigo-950 via-blue-950 to-red-950', label: 'كحلي ممزوج بأحمر' },
+                  ],
+                },
+              ] as const
+            ).map(({ key, heading, gradientOptions }) => {
+              const item = sectionBanners[key];
+              return (
+                <div
+                  key={key}
+                  className="bg-gray-50/80 border border-gray-200 rounded-2xl p-4 space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="font-black text-xs text-blue-950 border-b border-gray-200 pb-2">
+                      {heading}
+                    </div>
+
+                    {/* Live Mini Preview */}
+                    <div
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${item.bgGradient} text-white p-3.5 flex items-center justify-between gap-2 min-h-[100px]`}
+                    >
+                      <div className="space-y-1 max-w-[68%] relative z-10">
+                        <span className="inline-block bg-yellow-400 text-blue-950 text-[9px] font-black px-2 py-0.5 rounded-full">
+                          {item.badge}
+                        </span>
+                        <h5 className="text-xs font-black line-clamp-1">{item.title}</h5>
+                        <p className="text-[10px] text-blue-100 line-clamp-2">{item.subtitle}</p>
+                      </div>
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-white/10">
+                        <img
+                          src={normalizeImageUrl(item.image, undefined, 400)}
+                          referrerPolicy="no-referrer"
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-700">الشارة العلوية (Badge):</label>
+                      <input
+                        type="text"
+                        value={item.badge}
+                        onChange={(e) => updateSectionBanner(key, 'badge', e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-700">العنوان الرئيسي:</label>
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => updateSectionBanner(key, 'title', e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-700">الوصف المختصر:</label>
+                      <textarea
+                        rows={2}
+                        value={item.subtitle}
+                        onChange={(e) => updateSectionBanner(key, 'subtitle', e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2 text-xs bg-white outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-700">
+                        رابط صورة البنر (أو رابط Google Drive):
+                      </label>
+                      <input
+                        type="text"
+                        value={item.image}
+                        onChange={(e) => updateSectionBanner(key, 'image', e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2 text-xs font-mono text-left bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-700">لون الخلفية:</label>
+                      <select
+                        value={item.bgGradient}
+                        onChange={(e) => updateSectionBanner(key, 'bgGradient', e.target.value)}
+                        className="w-full border border-gray-300 rounded-xl p-2 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      >
+                        {gradientOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Floating Save Button at bottom of CMS */}
       <div className="sticky bottom-4 z-20 flex justify-end">
         <button
           onClick={handleSaveAll}
-          className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-sm px-8 py-3 rounded-2xl shadow-xl transition flex items-center gap-2 border-2 border-white/80"
+          disabled={saving}
+          className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black text-sm px-8 py-3 rounded-2xl shadow-xl transition flex items-center gap-2 border-2 border-white/80 disabled:opacity-60"
         >
           <CheckCircle2 size={18} />
-          <span>حفظ ونشر التعديلات والبانرات فوراً 🚀</span>
+          <span>{saving ? 'جاري الحفظ في قاعدة البيانات...' : 'حفظ ونشر التعديلات والبانرات فوراً 🚀'}</span>
         </button>
       </div>
 

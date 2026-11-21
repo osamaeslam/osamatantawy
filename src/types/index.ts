@@ -6,6 +6,8 @@ export interface Review {
   profileimage?: string;
 }
 
+export type StockStatus = 'available' | 'low_stock' | 'out_of_stock';
+
 export interface Product {
   id: string;
   name: string;
@@ -27,6 +29,7 @@ export interface Product {
   isDeal?: boolean;
   dealEndsIn?: string;
   inStock?: boolean;
+  stockStatus?: StockStatus;
   brand?: string;
   // أعمدة جوجل شيت المعتمدة
   itemNumber?: string;       // Item number
@@ -38,6 +41,28 @@ export interface Product {
   familyName?: string;       // Family Name
   imageLink?: string;        // لينك الصور
   sector?: string;           // القطاع
+}
+
+export interface ProductBundleItem {
+  productId: string;
+  nameAr: string;
+  brand?: string;
+  image?: string;
+  unifiedCode?: string;
+  quantity: number;
+}
+
+export interface ProductBundle {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  image: string;
+  bundlePrice: number;
+  originalPrice?: number;
+  items: ProductBundleItem[];
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface HeroBanner {
@@ -64,12 +89,28 @@ export interface PromoBanner {
   linkCategory: string;
 }
 
+export interface SectionBanner {
+  badge: string;
+  title: string;
+  subtitle: string;
+  buttonText?: string;
+  image: string;
+  bgGradient: string;
+}
+
+export interface SectionBannersConfig {
+  homeAppliances: SectionBanner;
+  electricalAppliances: SectionBanner;
+  deals: SectionBanner;
+}
+
 export interface HomePageConfig {
   announcementText: string;
   hotline: string;
   whatsappNumber?: string;
   heroBanners: HeroBanner[];
   promoBanners?: PromoBanner[];
+  sectionBanners?: SectionBannersConfig;
 }
 
 export interface CategoryItem {

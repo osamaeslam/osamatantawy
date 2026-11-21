@@ -6,19 +6,26 @@ import {
   ShoppingCart, 
   Heart, 
   Check, 
-  Truck, 
-  ShieldCheck, 
-  RefreshCw, 
-  Share2, 
   Minus, 
   Plus,
   MessageCircle,
   Edit3,
   MessageSquarePlus,
-  CheckCircle
+  CheckCircle,
+  Scale,
+  Image as ImageIcon
 } from 'lucide-react';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 import { getSafeImageSrc } from '../utils/imageHelper';
+import { getStockMeta } from '../utils/stockStatus';
+import { OutOfStockAssistant } from './OutOfStockAssistant';
+import {
+  STOREFRONT_TEXT,
+  getLocalizedProductName,
+  getLocalizedProductCategory,
+  getLocalizedProductSummary,
+  getLocalizedProductDescription,
+} from '../i18n/translations';
 
 export const ProductDetailModal: React.FC = () => {
   const { 
@@ -27,22 +34,41 @@ export const ProductDetailModal: React.FC = () => {
     addToCart, 
     toggleWishlist, 
     isInWishlist,
-    user,
-    addProductReview
+    addProductReview,
+    stockStatusMap,
+    toggleCompare,
+    isInCompare,
+    setIsCompareDrawerOpen,
+    setPosterProduct,
+    language,
   } = useApp();
 
-  if (!selectedProduct) return null;
-
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(selectedProduct.sizevariants?.[0] || '');
+  const [selectedVariant, setSelectedVariant] = useState(selectedProduct?.sizevariants?.[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [isAddedToast, setIsAddedToast] = useState(false);
 
-  const discountedPrice = Math.round(
-    selectedProduct.actualprice * (1 - selectedProduct.discountpercent / 100)
-  );
-  const savings = selectedProduct.actualprice - discountedPrice;
+  // Review states
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  if (!selectedProduct) return null;
+
+  const isRtl = language === 'ar';
+  const t = STOREFRONT_TEXT[language].productDetail;
+  const tq = STOREFRONT_TEXT[language].quickView;
+  const th = STOREFRONT_TEXT[language].home;
+
+  const stockMeta = getStockMeta(selectedProduct, stockStatusMap, language);
   const inWish = isInWishlist(selectedProduct.id);
+  const pName = getLocalizedProductName(selectedProduct, language);
+  const pCat = getLocalizedProductCategory(selectedProduct, language);
+  const pSummary = getLocalizedProductSummary(selectedProduct, language);
+  const pDesc = getLocalizedProductDescription(selectedProduct, language);
 
   const images = selectedProduct.previewimages?.length
     ? selectedProduct.previewimages
@@ -54,20 +80,12 @@ export const ProductDetailModal: React.FC = () => {
     setTimeout(() => setIsAddedToast(false), 2500);
   };
 
-  // Review states
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewAuthor, setReviewAuthor] = useState('');
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
-
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewComment.trim()) return;
 
     const newRev = {
-      customername: reviewAuthor.trim() || 'عميل موثق - طنطاوي جروب',
+      customername: reviewAuthor.trim() || (isRtl ? 'عميل موثق - طنطاوي جروب' : 'Verified Buyer - Tantawy Group'),
       comment: reviewComment.trim(),
       rating: reviewRating,
       revieweddate: new Date().toISOString().split('T')[0],
@@ -82,24 +100,17 @@ export const ProductDetailModal: React.FC = () => {
     }, 2500);
   };
 
-  const ratingDescriptions: { [key: number]: string } = {
-    1: 'ضعيف جداً (نجمة واحدة)',
-    2: 'مقبول (نجمتان)',
-    3: 'جيد (3 نجوم)',
-    4: 'جيد جداً (4 نجوم)',
-    5: 'ممتاز وتجربة رائعة (5 نجوم)',
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto">
       <div 
         className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-100 flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Close Button */}
         <button
           onClick={() => setSelectedProduct(null)}
-          className="absolute top-4 left-4 z-20 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition shadow-xs"
+          className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} z-20 p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition shadow-xs`}
         >
           <X size={20} />
         </button>
@@ -107,15 +118,15 @@ export const ProductDetailModal: React.FC = () => {
         {/* Modal Body */}
         <div className="p-5 md:p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            {/* Left Column: Image Gallery */}
+            {/* Image Gallery */}
             <div className="space-y-3">
               <div className="aspect-square bg-gray-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden">
-                <span className="absolute top-3 right-3 bg-blue-900 text-white text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
+                <span className={`absolute top-3 ${isRtl ? 'right-3' : 'left-3'} bg-blue-900 text-white text-xs font-black px-2.5 py-1 rounded-md shadow-xs`}>
                   {selectedProduct.brand}
                 </span>
                 <img
                   src={getSafeImageSrc(images[activeImageIndex] || selectedProduct.previewimage)}
-                  alt={selectedProduct.nameAr}
+                  alt={pName}
                   className="max-h-full max-w-full object-contain"
                 />
               </div>
@@ -140,38 +151,39 @@ export const ProductDetailModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right Column: Product Info & Actions */}
+            {/* Product Info & Actions */}
             <div className="space-y-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-0.5 rounded-md">
-                    {selectedProduct.categoryAr}
+                    {pCat}
                   </span>
                   <div className="flex items-center gap-1 text-amber-500">
                     <Star size={14} className="fill-amber-400" />
                     <span className="text-xs font-bold text-gray-800">{selectedProduct.overallrating}</span>
-                    <span className="text-xs text-gray-400">({selectedProduct.reviews.length} تقييم)</span>
+                    <span className="text-xs text-gray-400">({selectedProduct.reviews.length} {t.reviewsWord})</span>
                   </div>
                 </div>
 
                 <h2 className="text-lg md:text-xl font-black text-gray-900 leading-snug">
-                  {selectedProduct.nameAr}
+                  {pName}
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">{selectedProduct.summaryAr}</p>
+                <p className="text-xs text-gray-500 mt-1">{pSummary}</p>
 
                 {/* Availability and Direct Contact Hotline */}
                 <div className="bg-blue-50/70 border border-blue-100 p-4 rounded-2xl my-3 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 font-bold">العلامة التجارية:</span>
+                    <span className="text-gray-600 font-bold">{t.brandLabel}</span>
                     <span className="font-black text-blue-950 bg-white px-2.5 py-1 rounded-md border border-blue-100">
                       {selectedProduct.brand}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 font-bold">حالة التوفر:</span>
-                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      متوفر بجميع المعارض • متاح للمعاينة الفورية
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <span className="text-gray-600 font-bold shrink-0">{t.stockLabel}</span>
+                    <span className={`font-bold px-2.5 py-0.5 rounded border inline-flex items-center gap-1.5 ${stockMeta.badgeClass}`}>
+                      <span className={`w-2 h-2 rounded-full ${stockMeta.dotClass}`} />
+                      <span>{stockMeta.label}</span>
                     </span>
                   </div>
 
@@ -179,17 +191,26 @@ export const ProductDetailModal: React.FC = () => {
                     href="tel:15218"
                     className="flex items-center justify-between bg-white hover:bg-blue-900 hover:text-white p-2.5 rounded-xl border border-blue-200 text-xs text-blue-900 font-bold transition group"
                   >
-                    <span>للاستفسار المباشر عن التوافر والسعر الحالي:</span>
+                    <span>{t.directInquiry}</span>
                     <span className="font-mono text-sm bg-yellow-300 text-blue-950 px-2 py-0.5 rounded font-black group-hover:bg-yellow-400">
                       15218
                     </span>
                   </a>
                 </div>
 
+                {stockMeta.status === 'out_of_stock' && (
+                  <div className="my-3">
+                    <OutOfStockAssistant
+                      product={selectedProduct}
+                      onSelectAlternative={(alt) => setSelectedProduct(alt)}
+                    />
+                  </div>
+                )}
+
                 {/* Variants / Colors */}
                 {selectedProduct.sizevariants?.length > 0 && (
                   <div className="space-y-1.5 my-3">
-                    <span className="text-xs font-bold text-gray-700">الموديل أو السعة:</span>
+                    <span className="text-xs font-bold text-gray-700">{tq.variants}</span>
                     <div className="flex flex-wrap gap-2">
                       {selectedProduct.sizevariants.map((variant) => (
                         <button
@@ -210,7 +231,7 @@ export const ProductDetailModal: React.FC = () => {
 
                 {/* Quantity selector */}
                 <div className="flex items-center gap-3 my-3">
-                  <span className="text-xs font-bold text-gray-700">عدد القطع المطلوبة للمعاينة:</span>
+                  <span className="text-xs font-bold text-gray-700">{t.piecesNeeded}</span>
                   <div className="flex items-center border border-gray-300 rounded-xl bg-gray-50 overflow-hidden">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -233,37 +254,84 @@ export const ProductDetailModal: React.FC = () => {
               <div className="space-y-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <button
+                    disabled={!stockMeta.canOrder}
                     onClick={handleAddToCart}
-                    className="flex-1 bg-blue-900 hover:bg-blue-950 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${
+                      stockMeta.canOrder
+                        ? 'bg-blue-900 hover:bg-blue-950 active:scale-98 text-white shadow-md'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     <ShoppingCart size={18} />
-                    <span>إضافة إلى سلة الطلبات</span>
+                    <span>{stockMeta.canOrder ? t.addToOrdersCart : th.outOfStock}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleCompare(selectedProduct)}
+                    className={`p-3 border rounded-xl transition flex items-center gap-1 text-xs font-bold ${
+                      isInCompare(selectedProduct.id)
+                        ? 'border-blue-900 bg-blue-50 text-blue-900'
+                        : 'border-gray-200 hover:border-blue-300 text-gray-600 hover:text-blue-900'
+                    }`}
+                    title={th.compareTitle}
+                  >
+                    <Scale size={18} />
+                    <span>{isInCompare(selectedProduct.id) ? tq.inCompare : tq.compare}</span>
                   </button>
 
                   <button
                     onClick={() => toggleWishlist(selectedProduct)}
                     className="p-3 border border-gray-200 hover:border-red-300 text-gray-400 hover:text-red-500 rounded-xl transition"
-                    title="المفضلة"
+                    title={STOREFRONT_TEXT[language].header.wishlistTitle}
                   >
                     <Heart size={20} className={inWish ? 'text-red-500 fill-red-500' : ''} />
                   </button>
                 </div>
+                {isInCompare(selectedProduct.id) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setIsCompareDrawerOpen(true);
+                    }}
+                    className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-amber-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    <Scale size={14} />
+                    <span>{t.openCompareNow}</span>
+                  </button>
+                )}
 
-                {/* Direct WhatsApp Quick Order */}
-                <a
-                  href={createProductWhatsAppUrl(selectedProduct, quantity, selectedVariant)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={18} />
-                  <span>طلب مباشر واستفسار سريع عبر واتساب 💬</span>
-                </a>
+                {/* Direct WhatsApp Quick Order + Poster Generator */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <a
+                    href={createProductWhatsAppUrl(selectedProduct, quantity, selectedVariant)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="sm:col-span-2 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white py-3 px-4 rounded-xl font-bold text-sm transition shadow-md flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle size={18} />
+                    <span>{t.whatsappOrderBtn}</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = selectedProduct;
+                      setSelectedProduct(null);
+                      setPosterProduct(p);
+                    }}
+                    className="bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 py-3 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5"
+                  >
+                    <ImageIcon size={16} />
+                    <span>{tq.posterBtn}</span>
+                  </button>
+                </div>
 
                 {isAddedToast && (
                   <div className="bg-emerald-600 text-white text-xs font-bold p-2.5 rounded-xl text-center shadow-md animate-fade-in flex items-center justify-center gap-1.5">
                     <Check size={16} />
-                    <span>تمت إضافة الصنف إلى سلة الطلبات بنجاح!</span>
+                    <span>{t.addedToast}</span>
                   </div>
                 )}
               </div>
@@ -272,9 +340,9 @@ export const ProductDetailModal: React.FC = () => {
 
           {/* Full Description & Specs */}
           <div className="border-t border-gray-100 pt-5 space-y-3">
-            <h3 className="text-sm font-bold text-gray-900">تفاصيل ومواصفات المنتج:</h3>
+            <h3 className="text-sm font-bold text-gray-900">{t.specsTitle}</h3>
             <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl">
-              {selectedProduct.descriptionAr}
+              {pDesc}
             </p>
           </div>
 
@@ -283,13 +351,13 @@ export const ProductDetailModal: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
-                  <span>تقييمات وآراء العملاء</span>
+                  <span>{t.reviewsTitle}</span>
                   <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {selectedProduct.reviews.length} تقييم
+                    {selectedProduct.reviews.length} {t.reviewsWord}
                   </span>
                 </h3>
                 <p className="text-[11px] text-gray-500 mt-0.5">
-                  تجارب حقيقية لعملاء طنطاوي جروب بعد المعاينة والاستلام
+                  {t.reviewsSub}
                 </p>
               </div>
 
@@ -299,14 +367,13 @@ export const ProductDetailModal: React.FC = () => {
                 className="bg-blue-900 hover:bg-blue-950 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-xs flex items-center gap-1.5"
               >
                 <MessageSquarePlus size={14} />
-                <span>{showReviewForm ? 'إلغاء التقييم' : 'أضف تقييمك للجهاز ✍️'}</span>
+                <span>{showReviewForm ? t.cancelReview : t.addReviewBtn}</span>
               </button>
             </div>
 
             {/* Rating Overview Summary Box */}
             <div className="bg-gray-50/90 rounded-2xl p-4 border border-gray-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-              {/* Overall Score */}
-              <div className="text-center sm:border-l sm:border-gray-200 sm:pl-4 space-y-1">
+              <div className={`text-center ${isRtl ? 'sm:border-l sm:pl-4' : 'sm:border-r sm:pr-4'} sm:border-gray-200 space-y-1`}>
                 <div className="text-3xl font-black text-blue-950">
                   {selectedProduct.overallrating}
                   <span className="text-sm font-bold text-gray-400"> / 5</span>
@@ -321,11 +388,10 @@ export const ProductDetailModal: React.FC = () => {
                   ))}
                 </div>
                 <span className="text-[11px] text-gray-500 font-medium block">
-                  بناءً على {selectedProduct.reviews.length} تجربة معاينة
+                  {t.basedOn(selectedProduct.reviews.length)}
                 </span>
               </div>
 
-              {/* Star Breakdown Bars */}
               <div className="sm:col-span-2 space-y-1.5 text-xs">
                 {[5, 4, 3, 2, 1].map((starNum) => {
                   const count = selectedProduct.reviews.filter(
@@ -347,7 +413,7 @@ export const ProductDetailModal: React.FC = () => {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="w-8 text-[10px] text-gray-400 text-left font-mono">
+                      <span className={`w-8 text-[10px] text-gray-400 ${isRtl ? 'text-left' : 'text-right'} font-mono`}>
                         {count}
                       </span>
                     </div>
@@ -365,17 +431,17 @@ export const ProductDetailModal: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                   <h4 className="text-xs sm:text-sm font-black text-blue-950 flex items-center gap-1.5">
                     <Edit3 size={15} className="text-blue-900" />
-                    <span>مشاركة رأيك وتقييمك لجهاز {selectedProduct.nameAr}</span>
+                    <span>{t.shareReviewTitle(pName)}</span>
                   </h4>
-                  <span className="text-[10px] text-gray-500">تقييم موثق</span>
+                  <span className="text-[10px] text-gray-500">{t.verifiedReview}</span>
                 </div>
 
                 {/* Star Picker */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-gray-700">
-                    حدد تقييمك بالنجوم (اضغط لتحديد عدد النجوم):
+                    {t.selectStars}
                   </label>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {[1, 2, 3, 4, 5].map((starVal) => {
                       const isFilled = (hoverRating || reviewRating) >= starVal;
                       return (
@@ -386,7 +452,6 @@ export const ProductDetailModal: React.FC = () => {
                           onMouseLeave={() => setHoverRating(0)}
                           onClick={() => setReviewRating(starVal)}
                           className="p-1 transition transform hover:scale-125 focus:outline-none"
-                          title={`${starVal} نجوم`}
                         >
                           <Star
                             size={26}
@@ -399,8 +464,8 @@ export const ProductDetailModal: React.FC = () => {
                         </button>
                       );
                     })}
-                    <span className="text-xs font-black text-blue-900 mr-2 bg-white px-2.5 py-1 rounded-md border border-blue-100">
-                      {ratingDescriptions[hoverRating || reviewRating]}
+                    <span className="text-xs font-black text-blue-900 mx-2 bg-white px-2.5 py-1 rounded-md border border-blue-100">
+                      {t.starsLabel[hoverRating || reviewRating]}
                     </span>
                   </div>
                 </div>
@@ -408,30 +473,30 @@ export const ProductDetailModal: React.FC = () => {
                 {/* Name Input */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    اسمك أو اللقب:
+                    {t.nameLabel}
                   </label>
                   <input
                     type="text"
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
-                    placeholder="مثال: م/ محمود عبد الرحمن"
-                    className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none text-right font-medium"
-                    dir="rtl"
+                    placeholder={t.namePlaceholder}
+                    className={`w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none ${isRtl ? 'text-right' : 'text-left'} font-medium`}
+                    dir={isRtl ? 'rtl' : 'ltr'}
                   />
                 </div>
 
                 {/* Comment Textarea */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    رأيك وتجربتك مع الجهاز (الخامات، جودة الصورة/التبريد، وسرعة المعاينة):
+                    {t.commentLabel}
                   </label>
                   <textarea
                     rows={3}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="اكتب تقييمك ورأيك هنا لمساعدة عملاء طنطاوي جروب الآخرين..."
-                    className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none text-right font-medium resize-none"
-                    dir="rtl"
+                    placeholder={t.commentPlaceholder}
+                    className={`w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none ${isRtl ? 'text-right' : 'text-left'} font-medium resize-none`}
+                    dir={isRtl ? 'rtl' : 'ltr'}
                     required
                   />
                 </div>
@@ -442,14 +507,14 @@ export const ProductDetailModal: React.FC = () => {
                     onClick={() => setShowReviewForm(false)}
                     className="px-3 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition"
                   >
-                    إلغاء
+                    {t.cancelBtn}
                   </button>
                   <button
                     type="submit"
                     className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-5 py-2 rounded-xl transition shadow-md flex items-center gap-1.5"
                   >
                     <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                    <span>نشر التقييم فوراً</span>
+                    <span>{t.publishBtn}</span>
                   </button>
                 </div>
               </form>
@@ -459,14 +524,14 @@ export const ProductDetailModal: React.FC = () => {
             {reviewSubmitted && (
               <div className="bg-emerald-600 text-white text-xs font-bold p-3 rounded-2xl text-center shadow-md animate-fade-in flex items-center justify-center gap-2">
                 <CheckCircle size={18} />
-                <span>شكراً لمشاركتك! تم إضافة تقييمك بنجاح وسيظهر لجميع زوار طنطاوي جروب ✅</span>
+                <span>{t.reviewThanks}</span>
               </div>
             )}
 
             {/* Existing Customer Reviews List */}
             {selectedProduct.reviews.length === 0 ? (
               <div className="bg-gray-50 rounded-2xl p-6 text-center text-xs text-gray-400">
-                لا توجد تقييمات سابقة لهذا الصنف بعد. اضغط على "أضف تقييمك للجهاز" وكن أول من يقيّمه!
+                {t.noReviews}
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -476,7 +541,7 @@ export const ProductDetailModal: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-gray-900">{rev.customername}</span>
                         <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.2 rounded border border-emerald-200">
-                          معاينة مؤكدة
+                          {t.verifiedPurchase}
                         </span>
                       </div>
                       <div className="flex items-center text-amber-400">

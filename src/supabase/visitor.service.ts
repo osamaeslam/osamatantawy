@@ -14,11 +14,12 @@ export const visitorService = {
     ]);
   },
 
-  async getAll(): Promise<Visitor[]> {
+  async getAll(limit = 200): Promise<Visitor[]> {
     const { data, error } = await supabase
       .from(TABLE)
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id,page_visited,ip_address,user_agent,created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) throw error;
     return data || [];
@@ -27,7 +28,7 @@ export const visitorService = {
   async getCount(): Promise<number> {
     const { count, error } = await supabase
       .from(TABLE)
-      .select('*', { head: true, count: 'exact' });
+      .select('id', { head: true, count: 'exact' });
 
     if (error) throw error;
     return count || 0;

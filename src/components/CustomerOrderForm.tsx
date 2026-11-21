@@ -4,6 +4,7 @@ import { orderService } from '../supabase/orders.service';
 import { sendInvoiceToWhatsApp } from '../services/invoice-to-whatsapp';
 import { PhoneCall, MapPin, User, ShoppingCart, Send, Truck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { offlineStoreService, isLikelyOfflineError } from '../services/offline-store.service';
 
 interface CustomerOrderFormProps {
   product: FirebaseProduct;
@@ -31,8 +32,7 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
     try {
       const estimatedPrice = (product.discountedPrice ?? product.price) * Number(form.quantity);
       const orderId = `TG-${Date.now().toString().slice(-6)}`;
-
-      await orderService.create({
+      const orderPayload = {
         orderId,
         customerPhone: form.phone,
         customerName: form.name,
@@ -44,27 +44,63 @@ export const CustomerOrderForm: React.FC<CustomerOrderFormProps> = ({
         selectedSize: '',
         quantity: Number(form.quantity),
         totalPrice: estimatedPrice,
-        status: 'pending',
+        status: 'pending' as const,
         createdAt: new Date().toISOString(),
         whatsappMessageId: '',
-      });
+      };
 
-      const orderData: any = {
+      const isOfflineNow = typeof navigator !== 'undefined' && !navigator.onLine;
+      await offlineStoreService.saveLocalOrder({
         orderId,
         customerName: form.name,
         customerPhone: form.phone,
         customerAddress: form.address,
-        items: [
-          {
-            nameAr: product.nameAr,
-            quantity: Number(form.quantity),
-            image: product.imageUrl || (product as any).previewimage,
-          },
-        ],
+        productName: product.nameAr,
+        quantity: Number(form.quantity),
         totalPrice: estimatedPrice,
-        createdAt: new Date().toISOString(),
-      };
-      sendInvoiceToWhatsApp(orderData);
+        status: 'pending',
+        createdAt: orderPayload.createdAt,
+        pendingSync: isOfflineNow,
+      });
+
+      if (isOfflineNow) {
+        await offlineStoreService.enqueueAction('customer_order', orderPayload);
+      } else {
+        try {
+          await orderService.create(orderPayload);
+          const orderData: any = {
+            orderId,
+            customerName: form.name,
+            customerPhone: form.phone,
+            customerAddress: form.address,
+            items: [
+              {
+                nameAr: product.nameAr,
+                quantity: Number(form.quantity),
+                image: product.imageUrl || (product as any).previewimage,
+              },
+            ],
+            totalPrice: estimatedPrice,
+            createdAt: orderPayload.createdAt,
+          };
+          sendInvoiceToWhatsApp(orderData);
+        } catch (err) {
+          if (!isLikelyOfflineError(err)) throw err;
+          await offlineStoreService.saveLocalOrder({
+            orderId,
+            customerName: form.name,
+            customerPhone: form.phone,
+            customerAddress: form.address,
+            productName: product.nameAr,
+            quantity: Number(form.quantity),
+            totalPrice: estimatedPrice,
+            status: 'pending',
+            createdAt: orderPayload.createdAt,
+            pendingSync: true,
+          });
+          await offlineStoreService.enqueueAction('customer_order', orderPayload);
+        }
+      }
 
       setSuccess(true);
       onOrderComplete?.();

@@ -23,10 +23,26 @@ export interface OrderMessageContext {
   city?: string;
   address?: string;
   hotline: string;
+  trackingUrl?: string;
+  invoiceRef?: string;
 }
 
 const formatMoney = (value?: number): string | null =>
   value && Number(value) > 0 ? `${Number(value).toLocaleString('ar-EG')} ج.م` : null;
+
+const buildTrackingLink = (phone?: string, orderId?: string): string | undefined => {
+  try {
+    if (typeof window === 'undefined') return undefined;
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+    const params = new URLSearchParams();
+    if (cleanPhone) params.set('track', cleanPhone);
+    if (orderId) params.set('order', orderId);
+    const qs = params.toString();
+    return qs ? `${window.location.origin}/?${qs}` : window.location.origin;
+  } catch {
+    return undefined;
+  }
+};
 
 /** يبني سياق الرسالة من سطر الطلب في قاعدة البيانات */
 export const buildOrderMessageContext = (
@@ -45,8 +61,16 @@ export const buildOrderMessageContext = (
     : [{ nameAr: order.productNameAr, quantity: order.quantity || 1 }];
 
   const itemsText = items
-    .slice(0, 6)
-    .map((item) => `• ${item.nameAr} — عدد ${item.quantity || 1}`)
+    .slice(0, 8)
+    .map((item) => {
+      const qty = Number(item.quantity) || 1;
+      const unitPrice = Number(item.unitPrice) || 0;
+      const lineTotal = unitPrice > 0 ? unitPrice * qty : 0;
+      const code = item.unifiedCode || item.itemNumber ? ` [${item.unifiedCode || item.itemNumber}]` : '';
+      return unitPrice > 0
+        ? `• ${item.nameAr}${code} × ${qty} = ${lineTotal.toLocaleString('ar-EG')} ج.م`
+        : `• ${item.nameAr}${code} — عدد ${qty}`;
+    })
     .join('\n');
 
   const itemsCount = items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
@@ -62,6 +86,8 @@ export const buildOrderMessageContext = (
     city: payload.city || undefined,
     address: payload.deliveryAddress || (order as any).customerAddress || undefined,
     hotline,
+    trackingUrl: buildTrackingLink(order.customerPhone, order.orderId),
+    invoiceRef: `DREAM-TG-CARD-${order.orderId}`,
   };
 };
 
@@ -77,6 +103,14 @@ export interface MessageTemplate {
 const greeting = (ctx: OrderMessageContext) =>
   `السلام عليكم ورحمة الله 🌿\nأ/ة ${ctx.customerName}، مع حضرتك فريق ${STORE_NAME}.`;
 
+const trackingFooter = (ctx: OrderMessageContext) => {
+  const lines = [];
+  if (ctx.invoiceRef) lines.push(`🧾 مرجع كارت الفاتورة: *${ctx.invoiceRef}*`);
+  if (ctx.trackingUrl) lines.push(`🔗 تتبع حالة طلبك مباشرة:\n${ctx.trackingUrl}`);
+  lines.push(`📞 الخط الساخن: ${ctx.hotline}`);
+  return lines.join('\n');
+};
+
 const footer = (ctx: OrderMessageContext) =>
   `━━━━━━━━━━━━━━━━━━━\n${STORE_NAME} — ${STORE_TAGLINE}\n📞 الخط الساخن: ${ctx.hotline}`;
 
@@ -87,18 +121,18 @@ export const ORDER_MESSAGE_TEMPLATES: MessageTemplate[] = [
     emoji: '📥',
     statuses: ['pending'],
     build: (ctx) =>
-      `${greeting(ctx)}\n\nوصلنا طلبكم رقم *#${ctx.orderId}* وجاري مراجعته وتسعيره الآن.\n\n*الأصناف:*\n${ctx.itemsText}\n\nهنبعتلك السعر النهائي وموعد التوصيل في أقرب وقت. شكراً لثقتك 🙏`,
+      `${greeting(ctx)}\n\nوصلنا طلبكم رقم *#${ctx.orderId}* وجاري مراجعته وتسعيره الآن.\n\n*الأصناف:*\n${ctx.itemsText}\n\nهنبعتلك السعر النهائي وموعد التوصيل في أقرب وقت.\n${trackingFooter(ctx)}\nشكراً لثقتك 🙏`,
   },
   {
     id: 'priced',
-    label: 'إرسال السعر النهائي',
+    label: 'إرسال السعر النهائي وكارت الفاتورة',
     emoji: '💵',
     statuses: ['priced'],
     build: (ctx) => {
       const total = formatMoney(ctx.totalPrice);
       return `${greeting(ctx)}\n\nتم تسعير طلبكم رقم *#${ctx.orderId}* ✅\n\n*الأصناف:*\n${ctx.itemsText}\n${
-        total ? `\n*المبلغ الإجمالي:* ${total}\n` : ''
-      }\n*طريقة الدفع:* عند الاستلام بعد الفحص والمعاينة.\n\nمن فضلك رد بـ *موافق* لتأكيد تجهيز الطلب، أو كلمنا لو محتاج تعديل في الكميات.`;
+        total ? `\n💰 *الإجمالي النهائي:* ${total}\n` : ''
+      }\n*طريقة الدفع:* عند الاستلام بعد الفحص والمعاينة الشاملة.\n\n${trackingFooter(ctx)}\n\nمن فضلك رد بـ *موافق* لتأكيد تجهيز الطلب فوراً.`;
     },
   },
   {
@@ -109,8 +143,8 @@ export const ORDER_MESSAGE_TEMPLATES: MessageTemplate[] = [
     build: (ctx) => {
       const total = formatMoney(ctx.totalPrice);
       return `${greeting(ctx)}\n\nتم تأكيد طلبكم رقم *#${ctx.orderId}* وجاري تجهيزه 📦\n${
-        total ? `*المبلغ:* ${total}\n` : ''
-      }\nهيتواصل معاك المندوب قبل الخروج للتسليم.`;
+        ctx.itemsText ? `\n*الأصناف:*\n${ctx.itemsText}\n` : ''
+      }${total ? `*المبلغ:* ${total}\n` : ''}\n${trackingFooter(ctx)}\nهيتواصل معاك المندوب قبل الخروج للتسليم.`;
     },
   },
   {
@@ -118,14 +152,16 @@ export const ORDER_MESSAGE_TEMPLATES: MessageTemplate[] = [
     label: 'خروج الشحنة للتوصيل',
     emoji: '🚚',
     statuses: ['dispatched'],
-    build: (ctx) =>
-      `${greeting(ctx)}\n\nطلبكم رقم *#${ctx.orderId}* خرج للتوصيل النهارده 🚚\n${
-        ctx.deliveryWindow ? `*الموعد المتوقع:* ${ctx.deliveryWindow}\n` : ''
-      }${
+    build: (ctx) => {
+      const total = formatMoney(ctx.totalPrice);
+      return `${greeting(ctx)}\n\nطلبكم رقم *#${ctx.orderId}* خرج للتوصيل النهارده 🚚\n${
+        total ? `*المطلوب عند الاستلام:* ${total}\n` : ''
+      }${ctx.deliveryWindow ? `*الموعد المتوقع:* ${ctx.deliveryWindow}\n` : ''}${
         ctx.city || ctx.address
           ? `*العنوان:* ${[ctx.city, ctx.address].filter(Boolean).join(' - ')}\n`
           : ''
-      }\nبرجاء التأكد من إن رقم الموبايل مفتوح، والأوردر هيتم فحصه قبل الاستلام.`,
+      }\n${trackingFooter(ctx)}\nبرجاء التأكد من إن رقم الموبايل مفتوح، والأوردر هيتم فحصه قبل الاستلام.`;
+    },
   },
   {
     id: 'delivered',
@@ -133,22 +169,26 @@ export const ORDER_MESSAGE_TEMPLATES: MessageTemplate[] = [
     emoji: '🎉',
     statuses: ['delivered'],
     build: (ctx) =>
-      `${greeting(ctx)}\n\nسعدنا بخدمتك 🙏 وبنتمنى إن الأوردر رقم *#${ctx.orderId}* يكون عجبك.\n\nلو محتاج أي كمية تانية أو استفسار عن أصناف جديدة، احنا تحت أمرك في أي وقت.\nوممكن ترشحلنا أصناف تحب تكون موجودة عندنا — ده بيساعدنا نخدمك أحسن.`,
+      `${greeting(ctx)}\n\nسعدنا بخدمتك 🙏 وبنتمنى إن الأوردر رقم *#${ctx.orderId}* يكون عجبك.\n\nلو محتاج أي كمية تانية أو استفسار عن أصناف جديدة، احنا تحت أمرك في أي وقت.\n${footer(ctx)}`,
   },
   {
     id: 'out_of_stock',
     label: 'اعتذار: صنف غير متوفر',
     emoji: '⚠️',
     build: (ctx) =>
-      `${greeting(ctx)}\n\nبخصوص طلبكم رقم *#${ctx.orderId}*، للأسف صنف من الأصناف المطلوبة غير متوفر حالياً في المخزن.\n\nعايزين نعرف رأيك:\n1️⃣ نأجل الطلب لحد ما يتوفر ونبلغك.\n2️⃣ نستبدله بصنف بديل مناسب (نبعتهولك صور وأسعار).\n3️⃣ نلغي الطلب ونرتجع الفرق لو حصل أي دفع.\n\nمنتظر ردك عشان نكمل 🌿\n\n${footer(ctx)}`,
+      `${greeting(ctx)}\n\nبخصوص طلبكم رقم *#${ctx.orderId}*، للأسف صنف من الأصناف المطلوبة غير متوفر حالياً في المخزن.\n\nعايزين نعرف رأيك:\n1️⃣ نأجل الطلب لحد ما يتوفر ونبلغك.\n2️⃣ نستبدله بصنف بديل مناسب (نبعتهولك صور وأسعار).\n3️⃣ نلغي الطلب.\n\nمنتظر ردك عشان نكمل 🌿\n\n${footer(ctx)}`,
   },
   {
     id: 'follow_up',
     label: 'متابعة: لم يتم الرد',
     emoji: '🔔',
     statuses: ['priced', 'pending'],
-    build: (ctx) =>
-      `${greeting(ctx)}\n\nحاولنا التواصل معاك بخصوص طلبكم رقم *#${ctx.orderId}* ومقدرناش نوصلك.\n\n*الأصناف:*\n${ctx.itemsText}\n\nلو الطلب لسه مطلوب، رد علينا بكلمة *مهتم* وهنكمّل على طول.\nولو مش مناسب دلوقتي، مفيش أي مشكلة — قولنا ونشيله من قايمة المتابعة.`,
+    build: (ctx) => {
+      const total = formatMoney(ctx.totalPrice);
+      return `${greeting(ctx)}\n\nحاولنا التواصل معاك بخصوص طلبكم رقم *#${ctx.orderId}* ومقدرناش نوصلك.\n\n*الأصناف:*\n${ctx.itemsText}\n${
+        total ? `*الإجمالي:* ${total}\n` : ''
+      }\nلو الطلب لسه مطلوب، رد علينا بكلمة *مهتم* وهنكمّل على طول.\n${trackingFooter(ctx)}`;
+    },
   },
 ];
 

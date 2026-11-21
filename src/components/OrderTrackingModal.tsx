@@ -8,14 +8,15 @@ import {
   CheckCircle, 
   Clock, 
   PhoneCall, 
-  MapPin, 
-  Package, 
   MessageCircle, 
   ShieldCheck, 
   AlertCircle,
-  Sparkles
 } from 'lucide-react';
 import { TANTAWY_HOTLINE, getStoredWhatsAppNumber } from '../services/whatsapp-order';
+import { OrderTimeline } from './OrderTimeline';
+import type { FirebaseOrder, OrderStatusEvent } from '../types/firebase';
+import { offlineStoreService } from '../services/offline-store.service';
+import { STOREFRONT_TEXT, getNumberLocale } from '../i18n/translations';
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -31,13 +32,16 @@ interface TrackedOrder {
   quantity: number;
   totalPrice?: number;
   status: string;
-  statusLabelAr: string;
-  currentStep: number; // 1 to 4
+  statusLabel: string;
+  currentStep: number;
   expectedTime: string;
   representativeName?: string;
   representativePhone?: string;
   createdAt: string;
   address?: string;
+  statusHistory?: OrderStatusEvent[];
+  respondedAt?: string | null;
+  assignedTo?: string | null;
 }
 
 export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
@@ -45,7 +49,11 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   onClose,
   initialPhone = ''
 }) => {
-  const { orders: localAppOrders, user } = useApp();
+  const { orders: localAppOrders, user, language } = useApp();
+  const isRtl = language === 'ar';
+  const t = STOREFRONT_TEXT[language].tracking;
+  const numLocale = getNumberLocale(language);
+
   const [phoneNumber, setPhoneNumber] = useState(initialPhone || user.phone || '');
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -58,9 +66,49 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     } else if (user.phone) {
       setPhoneNumber(user.phone);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPhone, user.phone]);
 
   if (!isOpen) return null;
+
+  const getStatusText = (st: string): { step: number; label: string } => {
+    if (st === 'cancelled') {
+      return {
+        step: 1,
+        label: isRtl ? 'تم إلغاء هذا الطلب' : 'Order Cancelled',
+      };
+    }
+    if (st === 'delivered' || st === 'completed') {
+      return {
+        step: 4,
+        label: isRtl ? 'تم التسليم وسداد الفاتورة بنجاح' : 'Delivered & Settled Successfully',
+      };
+    }
+    if (st === 'confirmed' || st === 'dispatched' || st === 'shipped') {
+      return {
+        step: 3,
+        label: isRtl ? 'الشحنة في الطريق للتسليم والفحص' : 'Shipment Out for Delivery & Inspection',
+      };
+    }
+    if (st === 'priced') {
+      return {
+        step: 2,
+        label: isRtl ? 'تم تسعير الأصناف وإصدار كارت الفاتورة' : 'Items Quoted & Invoice Card Issued',
+      };
+    }
+    if (st === 'pending_sync') {
+      return {
+        step: 1,
+        label: isRtl
+          ? 'محفوظ محلياً (أوفلاين) — بانتظار المزامنة فور عودة الإنترنت'
+          : 'Saved Locally (Offline) — Waiting to Sync',
+      };
+    }
+    return {
+      step: 1,
+      label: isRtl ? 'تم استلام الطلب وبانتظار التسعير والتواصل' : 'Order Received — Awaiting Quote & Contact',
+    };
+  };
 
   const handleSearch = async (overridePhone?: string) => {
     const searchTarget = (overridePhone ?? phoneNumber).trim();
@@ -70,30 +118,26 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     setHasSearched(true);
 
     try {
-      // 1. Fetch from Supabase (عبر دالة track_order الآمنة)
-      const serverOrders = await orderService.trackOrderByPhone(searchTarget);
+      let serverOrders: FirebaseOrder[] = [];
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        try {
+          serverOrders = await orderService.trackOrderByPhone(searchTarget);
+        } catch {
+          serverOrders = [];
+        }
+      }
 
-      // 2. Fetch from localAppOrders or localStorage
-      const savedOrdersRaw = localStorage.getItem('tantawy_saved_orders');
-      const savedOrders = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
-
+      const localSavedOrders = await offlineStoreService.getLocalOrdersByPhone(searchTarget);
       const combined: TrackedOrder[] = [];
 
-      // Process server orders
+      const expectedDefault = isRtl
+        ? 'من يومين إلى 7 أيام عمل (وفقاً للمحافظة وتأكيد الاتصال)'
+        : '2–7 business days (based on governorate & phone confirmation)';
+      const repDefault = isRtl ? 'فريق توصيل طنطاوي جروب' : 'Tantawy Group Delivery Team';
+
       serverOrders.forEach((so) => {
-        let step = 1;
-        let label = 'تم استلام وتأكيد طلب الشراء';
         const st = String(so.status).toLowerCase();
-        if (st === 'confirmed' || st === 'dispatched' || st === 'shipped') {
-          step = 3;
-          label = 'الشحنة في الطريق للتسليم والفحص';
-        } else if (st === 'delivered' || st === 'completed') {
-          step = 4;
-          label = 'تم التسليم وسداد الفاتورة بنجاح';
-        } else {
-          step = 2;
-          label = 'جاري التجهيز وإصدار كارت الفاتورة بالمخازن';
-        }
+        const { step, label } = getStatusText(st);
 
         combined.push({
           orderId: so.orderId,
@@ -102,57 +146,63 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           productName: so.productNameAr,
           quantity: so.quantity,
           totalPrice: so.totalPrice,
-          status: so.status as any,
-          statusLabelAr: label,
+          status: so.status as string,
+          statusLabel: label,
           currentStep: step,
-          expectedTime: 'من يومين إلى 7 أيام عمل (وفقاً للمحافظة وتأكيد الاتصال)',
-          representativeName: 'ك/ محمد طارق (مسؤول التسليم والشحن)',
-          representativePhone: '01012345678',
+          expectedTime: expectedDefault,
+          representativeName: so.assignedTo || repDefault,
+          representativePhone: TANTAWY_HOTLINE,
           createdAt: so.createdAt || new Date().toISOString(),
-          address: (so as any).customerAddress || 'القاهرة / الجيزة'
+          address: (so as any).customerAddress || '',
+          statusHistory: so.statusHistory || (so.items?.statusHistory as OrderStatusEvent[] | undefined),
+          respondedAt: so.respondedAt || null,
+          assignedTo: so.assignedTo || null,
         });
       });
 
-      // Also match local app orders if applicable
+      localSavedOrders.forEach((so) => {
+        if (!combined.some((c) => c.orderId === so.orderId)) {
+          const statusKey = so.pendingSync ? 'pending_sync' : so.status || 'pending';
+          const { step, label } = getStatusText(statusKey);
+          combined.push({
+            orderId: so.orderId,
+            customerName: so.customerName || STOREFRONT_TEXT[language].brandName,
+            customerPhone: so.customerPhone || searchTarget,
+            productName: so.productName,
+            quantity: so.quantity || 1,
+            totalPrice: so.totalPrice,
+            status: statusKey,
+            statusLabel: label,
+            currentStep: step,
+            expectedTime: expectedDefault,
+            representativeName: repDefault,
+            representativePhone: TANTAWY_HOTLINE,
+            createdAt: so.createdAt || new Date().toISOString(),
+            address: so.customerAddress,
+          });
+        }
+      });
+
       localAppOrders.forEach((lo) => {
         if (!combined.some((c) => c.orderId === lo.orderid)) {
           combined.push({
             orderId: lo.orderid,
-            customerName: user.name || 'عميل طنطاوي جروب',
+            customerName: user.name || STOREFRONT_TEXT[language].brandName,
             customerPhone: searchTarget,
             productName: lo.nameAr,
             quantity: 1,
             totalPrice: lo.price,
             status: 'processing',
-            statusLabelAr: 'الشحنة في الطريق للتسليم',
-            currentStep: 3,
-            expectedTime: 'اليوم بين الساعة 2 ظهراً و 6 مساءً',
-            representativeName: 'ك/ كريم حسني (مندوب الشحن والتسليم)',
-            representativePhone: '01123456789',
+            statusLabel: isRtl ? 'قيد المراجعة والتجهيز' : 'Under Review & Preparation',
+            currentStep: 2,
+            expectedTime: expectedDefault,
+            representativeName: repDefault,
+            representativePhone: TANTAWY_HOTLINE,
             createdAt: lo.date || new Date().toISOString(),
-            address: lo.descriptionAr
+            address: lo.descriptionAr,
           });
         }
       });
-
-      // If no order matches in live database, synthesize a friendly demo match if they entered the sample phone
-      if (combined.length === 0 && (searchTarget === '01012345678' || searchTarget === '15218' || searchTarget === '01111111111')) {
-        combined.push({
-          orderId: 'TG-884920',
-          customerName: 'عميل طنطاوي جروب',
-          customerPhone: searchTarget,
-          productName: 'شاشة سامسونج 55 بوصة كريستال 4K الترا HD سمارت',
-          quantity: 1,
-          status: 'dispatched',
-          statusLabelAr: 'الشحنة في الطريق للتسليم المنزلي',
-          currentStep: 3,
-          expectedTime: 'اليوم من 3:00 م حتى 6:00 م',
-          representativeName: 'ك/ حسام حسن (مندوب طنطاوي جروب)',
-          representativePhone: '01099887766',
-          createdAt: new Date().toISOString(),
-          address: 'القاهرة والجيزة'
-        });
-      }
 
       setTrackedOrders(combined);
     } catch (err) {
@@ -162,12 +212,19 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     }
   };
 
-  const steps = [
-    { step: 1, title: 'استلام طلب الشراء', desc: 'تم استلام وتأكيد بيانات الطلب ورقمين الهاتف' },
-    { step: 2, title: 'التجهيز وكارت الفاتورة', desc: 'تجهيز الجهاز بكرتونة المصنع وإصدار كارت الفاتورة' },
-    { step: 3, title: 'الشحنة في الطريق', desc: 'سيصلك مندوب طنطاوي جروب بالعنوان والعلامة المميزة' },
-    { step: 4, title: 'الفحص والاستلام', desc: 'فحص الجهاز واستلام الفاتورة ثم سداد القيمة' }
-  ];
+  const steps = isRtl
+    ? [
+        { step: 1, title: 'استلام طلب الشراء', desc: 'تم استلام وتأكيد بيانات الطلب ورقم الهاتف' },
+        { step: 2, title: 'التجهيز وكارت الفاتورة', desc: 'تجهيز الجهاز بكرتونة المصنع وإصدار كارت الفاتورة' },
+        { step: 3, title: 'الشحنة في الطريق', desc: 'سيصلك مندوب طنطاوي جروب بالعنوان والعلامة المميزة' },
+        { step: 4, title: 'الفحص والاستلام', desc: 'فحص الجهاز واستلام الفاتورة ثم سداد القيمة' },
+      ]
+    : [
+        { step: 1, title: 'Order Received', desc: 'Order details & phone confirmed' },
+        { step: 2, title: 'Prep & Invoice Card', desc: 'Packaging & issuing official invoice' },
+        { step: 3, title: 'On the Way', desc: 'Courier en route to your address' },
+        { step: 4, title: 'Inspect & Pay', desc: 'Full inspection before payment' },
+      ];
 
   return (
     <div 
@@ -177,6 +234,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       <div 
         className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-100 p-5 sm:p-7 space-y-6"
         onClick={(e) => e.stopPropagation()}
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -185,21 +243,19 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               <Truck size={22} className="text-blue-900" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-blue-950 flex items-center gap-2">
-                <span>تتبع طلب الشحن والأوردر</span>
+              <h2 className="text-lg sm:text-xl font-black text-blue-950 flex items-center gap-2 flex-wrap">
+                <span>{t.title}</span>
                 <span className="text-[10px] bg-yellow-400 text-blue-950 px-2 py-0.5 rounded-full font-bold">
-                  طنطاوي جروب
+                  {STOREFRONT_TEXT[language].brandName}
                 </span>
               </h2>
-              <p className="text-xs text-gray-500">
-                أدخل رقم هاتفك لمتابعة موعد وصول مندوب التسليم وموقف كارت الفاتورة
-              </p>
+              <p className="text-xs text-gray-500">{t.subtitle}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition"
-            title="إغلاق"
+            title={STOREFRONT_TEXT[language].about.close}
           >
             <X size={18} />
           </button>
@@ -219,11 +275,11 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="أدخل رقم هاتفك (مثال: 01012345678)"
-                className="w-full py-3 px-4 pr-11 border border-gray-300 rounded-2xl text-sm focus:ring-2 focus:ring-blue-600 outline-none text-right font-medium"
-                dir="rtl"
+                placeholder={t.placeholder}
+                className={`w-full py-3 px-4 ${isRtl ? 'pr-11 text-right' : 'pl-11 text-left'} border border-gray-300 rounded-2xl text-sm focus:ring-2 focus:ring-blue-600 outline-none font-medium`}
+                dir={isRtl ? 'rtl' : 'ltr'}
               />
-              <PhoneCall size={18} className="absolute top-3.5 right-3.5 text-gray-400" />
+              <PhoneCall size={18} className={`absolute top-3.5 ${isRtl ? 'right-3.5' : 'left-3.5'} text-gray-400`} />
             </div>
 
             <button
@@ -234,32 +290,16 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               {isSearching ? (
                 <>
                   <Truck size={16} className="animate-spin" />
-                  <span>جاري البحث...</span>
+                  <span>{t.searching}</span>
                 </>
               ) : (
                 <>
                   <Search size={16} />
-                  <span>تتبع الآن</span>
+                  <span>{t.trackBtn}</span>
                 </>
               )}
             </button>
           </form>
-
-          {/* Quick Demo Test Pill */}
-          <div className="flex items-center justify-between text-[11px] text-gray-500 px-1">
-            <span>هل تريد تجربة نموذج تتبع فوري؟</span>
-            <button
-              type="button"
-              onClick={() => {
-                setPhoneNumber('01012345678');
-                handleSearch('01012345678');
-              }}
-              className="text-blue-700 font-bold hover:underline flex items-center gap-1"
-            >
-              <Sparkles size={12} className="text-yellow-500" />
-              <span>عرض طلب تجريبي (01012345678)</span>
-            </button>
-          </div>
         </div>
 
         {/* Results Section */}
@@ -268,26 +308,28 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             {trackedOrders.length === 0 ? (
               <div className="bg-gray-50 rounded-3xl p-8 text-center space-y-3 border border-gray-200">
                 <AlertCircle size={40} className="text-amber-500 mx-auto" />
-                <h3 className="font-bold text-gray-800 text-sm">لم يتم العثور على طلبات مرتبطة بهذا الرقم</h3>
-                <p className="text-xs text-gray-500 max-w-md mx-auto">
-                  تأكد من كتابة نفس رقم الهاتف المستخدم عند تقديم الطلب، أو يمكنك التواصل مع خدمة عملاء طنطاوي جروب فوراً:
-                </p>
+                <h3 className="font-bold text-gray-800 text-sm">{t.notFoundTitle}</h3>
+                <p className="text-xs text-gray-500 max-w-md mx-auto">{t.notFoundSub}</p>
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <a
                     href="tel:15218"
                     className="bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
                   >
                     <PhoneCall size={14} />
-                    <span>الخط الساخن: 15218</span>
+                    <span>{STOREFRONT_TEXT[language].footer.hotlineFull}</span>
                   </a>
                   <a
-                    href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن موعد تسليم طلبي لدى طنطاوي جروب برقم هاتف: ' + phoneNumber)}`}
+                    href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(
+                      isRtl
+                        ? `السلام عليكم، أود الاستفسار عن موعد تسليم طلبي لدى طنطاوي جروب برقم هاتف: ${phoneNumber}`
+                        : `Hello, I'd like to check the delivery status of my Tantawy Group order for phone: ${phoneNumber}`
+                    )}`}
                     target="_blank"
                     rel="noreferrer"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
                   >
                     <MessageCircle size={14} />
-                    <span>مراسلة المبيعات واتساب</span>
+                    <span>{t.whatsappSupportBtn}</span>
                   </a>
                 </div>
               </div>
@@ -301,18 +343,18 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
                     <div>
                       <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md inline-block">
-                        رقم الطلب: #{order.orderId}
+                        {t.orderNoPrefix} #{order.orderId}
                       </span>
                       <h3 className="text-sm sm:text-base font-black text-gray-900 mt-1">
                         {order.productName}
                       </h3>
                     </div>
-                    <div className="text-left">
+                    <div className={isRtl ? 'text-left' : 'text-right'}>
                       <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200 inline-block">
-                        {order.statusLabelAr}
+                        {order.statusLabel}
                       </span>
                       <p className="text-[10px] text-gray-400 mt-1">
-                        تاريخ الطلب: {new Date(order.createdAt).toLocaleDateString('ar-EG')}
+                        {t.orderDatePrefix} {new Date(order.createdAt).toLocaleDateString(numLocale)}
                       </p>
                     </div>
                   </div>
@@ -320,7 +362,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   {/* 4-Step Interactive Progress Tracker */}
                   <div className="py-2">
                     <div className="relative">
-                      {/* Progress Line */}
                       <div className="absolute top-5 right-6 left-6 h-1 bg-gray-200 z-0">
                         <div 
                           className="h-full bg-blue-900 transition-all duration-700"
@@ -328,7 +369,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                         />
                       </div>
 
-                      {/* Steps Icons */}
                       <div className="relative z-10 flex justify-between">
                         {steps.map((st) => {
                           const isDone = st.step <= order.currentStep;
@@ -360,34 +400,66 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
                   {/* Delivery & Inspector Details Card */}
                   <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 text-xs space-y-2.5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-gray-600 font-bold flex items-center gap-1.5">
                         <Clock size={14} className="text-blue-900" />
-                        <span>موعد وصول المندوب المتوقع:</span>
+                        <span>{t.expectedEtaLabel}</span>
                       </span>
                       <strong className="text-blue-950">{order.expectedTime}</strong>
                     </div>
 
                     {order.representativeName && (
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-gray-600 font-bold flex items-center gap-1.5">
                           <Truck size={14} className="text-blue-900" />
-                          <span>مندوب الشحن والتسليم:</span>
+                          <span>{t.repLabel}</span>
                         </span>
                         <strong className="text-gray-800">{order.representativeName}</strong>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-gray-600 font-bold flex items-center gap-1.5">
                         <ShieldCheck size={14} className="text-emerald-700" />
-                        <span>سياسة الدفع والاستلام:</span>
+                        <span>{t.codPolicyLabel}</span>
                       </span>
                       <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        فحص الجهاز واستلام كارت الفاتورة قبل دفع أي مليم
+                        {t.codPolicyVal}
                       </span>
                     </div>
+
+                    {Number(order.totalPrice) > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 font-bold">{t.invoiceTotalLabel}</span>
+                        <strong className="font-mono text-sm font-black text-blue-950 tabular-nums">
+                          {Number(order.totalPrice).toLocaleString(numLocale)} {STOREFRONT_TEXT[language].bundles.egp}
+                        </strong>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Timestamped Milestones Timeline */}
+                  <OrderTimeline
+                    compact
+                    order={
+                      {
+                        orderId: order.orderId,
+                        customerName: order.customerName,
+                        customerPhone: order.customerPhone,
+                        productId: '',
+                        productNameAr: order.productName,
+                        selectedColor: '',
+                        selectedSize: '',
+                        quantity: order.quantity,
+                        totalPrice: order.totalPrice || 0,
+                        status: (order.status as FirebaseOrder['status']) || 'pending',
+                        createdAt: order.createdAt,
+                        respondedAt: order.respondedAt || null,
+                        assignedTo: order.assignedTo || null,
+                        statusHistory: order.statusHistory,
+                      } as FirebaseOrder
+                    }
+                  />
 
                   {/* Direct Contact Buttons */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
@@ -396,17 +468,21 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       className="bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-xs"
                     >
                       <PhoneCall size={15} className="text-yellow-400" />
-                      <span>اتصال فوري بالخط الساخن: 15218</span>
+                      <span>{t.callHotlineBtn}</span>
                     </a>
 
                     <a
-                      href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(`السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد خروج الشحنة`)}`}
+                      href={`https://wa.me/${getStoredWhatsAppNumber()}?text=${encodeURIComponent(
+                        isRtl
+                          ? `السلام عليكم، أود متابعة طلبي رقم #${order.orderId} (${order.productName}) - موعد خروج الشحنة`
+                          : `Hello, I want to follow up on Order #${order.orderId} (${order.productName}) delivery status`
+                      )}`}
                       target="_blank"
                       rel="noreferrer"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-xs"
                     >
                       <MessageCircle size={15} />
-                      <span>تحدث مع خدمة عملاء طنطاوي واتساب</span>
+                      <span>{t.whatsappSupportBtn}</span>
                     </a>
                   </div>
                 </div>
@@ -418,7 +494,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         {/* Footer Guarantee */}
         <div className="bg-gray-50 rounded-2xl p-3 text-center border border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-600 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
-          <span>خدمة توصيل وفحص معتمدة تحت إشراف طنطاوي جروب للأجهزة الكهربائية والتوزيع</span>
+          <span>{t.footerGuarantee}</span>
         </div>
       </div>
     </div>

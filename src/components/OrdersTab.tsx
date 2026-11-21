@@ -7,6 +7,9 @@ import { OrderInvoiceData } from '../services/invoice-to-whatsapp';
 import { buildCustomerWhatsAppUrl } from '../services/customer-messages';
 import { CustomerMessageMenu } from './CustomerMessageMenu';
 import { staffService } from '../services/staff.service';
+import { OrderTimeline } from './OrderTimeline';
+import { QuickPhoneOrderModal } from './QuickPhoneOrderModal';
+import { DriverManifestButton } from './DriverManifestButton';
 import { 
   FileText, 
   PhoneCall, 
@@ -29,11 +32,25 @@ import {
 interface OrdersTabProps {
   orders: FirebaseOrder[];
   onRefresh?: () => void;
+  currentStaffName?: string;
+  initialOrderToOpen?: FirebaseOrder | null;
+  onClearInitialOrder?: () => void;
+  staffScopeName?: string;
+  isRestrictedStaff?: boolean;
 }
 
-export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onRefresh }) => {
+export const OrdersTab: React.FC<OrdersTabProps> = ({
+  orders: initialOrders,
+  onRefresh,
+  currentStaffName,
+  initialOrderToOpen,
+  onClearInitialOrder,
+  staffScopeName,
+  isRestrictedStaff = false,
+}) => {
   const [ordersList, setOrdersList] = useState<FirebaseOrder[]>(initialOrders);
   const [staffNames, setStaffNames] = useState<string[]>([]);
+  const [staffScopeFilter, setStaffScopeFilter] = useState<'mine' | 'unassigned' | 'all'>('mine');
 
   // قائمة أسماء الفريق (لتعيين مسؤول متابعة) — بتفشل بهدوء لو المستخدم مش مدير
   useEffect(() => {
@@ -49,10 +66,18 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
   const [selectedOrderForPricing, setSelectedOrderForPricing] = useState<FirebaseOrder | null>(null);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState<string>('');
+  const [isQuickPhoneModalOpen, setIsQuickPhoneModalOpen] = useState(false);
 
   useEffect(() => {
     setOrdersList(initialOrders);
   }, [initialOrders]);
+
+  useEffect(() => {
+    if (initialOrderToOpen) {
+      setSelectedOrderForPricing(initialOrderToOpen);
+      if (onClearInitialOrder) onClearInitialOrder();
+    }
+  }, [initialOrderToOpen, onClearInitialOrder]);
 
   const fetchLatestOrders = async () => {
     setLoading(true);
@@ -69,9 +94,26 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
 
   const handleUpdateStatus = async (orderId: string, newStatus: FirebaseOrder['status']) => {
     try {
-      await orderService.updateStatus(orderId, newStatus);
+      await orderService.updateStatus(orderId, newStatus, undefined, currentStaffName || 'موظف الإدارة');
+      const nowIso = new Date().toISOString();
       setOrdersList((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+        prev.map((o) => {
+          if (o.id !== orderId) return o;
+          const prevHist = Array.isArray(o.statusHistory)
+            ? o.statusHistory
+            : Array.isArray(o.items?.statusHistory)
+            ? o.items.statusHistory
+            : [];
+          return {
+            ...o,
+            status: newStatus,
+            respondedAt: o.respondedAt || (newStatus !== 'pending' ? nowIso : o.respondedAt),
+            statusHistory: [
+              ...prevHist,
+              { status: newStatus, timestamp: nowIso, actor: currentStaffName || 'موظف الإدارة' },
+            ],
+          };
+        })
       );
     } catch (e: any) {
       alert('تعذر تحديث حالة الطلب: ' + e.message);
@@ -142,6 +184,11 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
     setSelectedInvoice(invoice);
   };
 
+  const myAssignedCount = staffScopeName
+    ? ordersList.filter((o) => (o.assignedTo || '').trim() === staffScopeName.trim()).length
+    : 0;
+  const unassignedCount = ordersList.filter((o) => !(o.assignedTo || '').trim()).length;
+
   const filteredOrders = ordersList.filter((o) => {
     const matchesSearch =
       o.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,7 +196,18 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
       o.customerPhone.includes(searchQuery);
 
     const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    let matchesStaffScope = true;
+    if (isRestrictedStaff && staffScopeName) {
+      const assigned = (o.assignedTo || '').trim();
+      if (staffScopeFilter === 'mine') {
+        matchesStaffScope = assigned === staffScopeName.trim();
+      } else if (staffScopeFilter === 'unassigned') {
+        matchesStaffScope = !assigned;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesStaffScope;
   });
 
   return (
@@ -166,16 +224,27 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsQuickPhoneModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-blue-950 rounded-xl text-xs font-black transition shadow-xs"
+          >
+            <PhoneCall size={14} />
+            <span>تسجيل طلب تليفوني (15218 / واتساب)</span>
+          </button>
+
+          <DriverManifestButton orders={filteredOrders} />
+
           <button
             onClick={fetchLatestOrders}
             disabled={loading}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition shadow-2xs"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>تحديث الطلبات من الخادم 🔄</span>
+            <span>تحديث الطلبات</span>
           </button>
-          <span className="bg-blue-900 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-xs">
+          <span className="bg-blue-900 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-xs tabular-nums">
             {ordersList.length} طلب إجمالي
           </span>
         </div>
@@ -218,6 +287,50 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
         </div>
       </div>
 
+      {/* Staff Portal Scope Selector */}
+      {isRestrictedStaff && staffScopeName && (
+        <div className="bg-blue-50/70 border border-blue-200 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-black text-blue-950">
+            عرض الطلبات حسب نطاق عملك ({staffScopeName}):
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setStaffScopeFilter('mine')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition tabular-nums ${
+                staffScopeFilter === 'mine'
+                  ? 'bg-blue-900 text-white shadow-2xs'
+                  : 'bg-white text-blue-900 border border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              طلباتي المعيّنة لي ({myAssignedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStaffScopeFilter('unassigned')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition tabular-nums ${
+                staffScopeFilter === 'unassigned'
+                  ? 'bg-amber-500 text-slate-950 shadow-2xs'
+                  : 'bg-white text-slate-700 border border-gray-200 hover:bg-amber-50'
+              }`}
+            >
+              طلبات جديدة غير مستلمة ({unassignedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStaffScopeFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition tabular-nums ${
+                staffScopeFilter === 'all'
+                  ? 'bg-slate-800 text-white shadow-2xs'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              كل الطلبات ({ordersList.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Cards List */}
       {filteredOrders.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center space-y-3">
@@ -250,7 +363,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                       #{o.orderId}
                     </span>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="text-sm font-black text-gray-900">{o.customerName}</h4>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           contactPref === 'whatsapp' 
@@ -259,8 +372,18 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                             ? 'bg-amber-100 text-amber-800' 
                             : 'bg-blue-100 text-blue-800'
                         }`}>
-                          {contactPref === 'whatsapp' ? '🟢 واتساب' : contactPref === 'call' ? '📞 اتصال هاتف' : '📱 واتساب أو اتصال'}
+                          {contactPref === 'whatsapp' ? 'واتساب' : contactPref === 'call' ? 'اتصال هاتف' : 'واتساب أو اتصال'}
                         </span>
+                        {(o.orderSource === 'phone_15218' || itemsPayload.orderSource === 'phone_15218') && (
+                          <span className="text-[10px] font-black text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                            خط ساخن 15218
+                          </span>
+                        )}
+                        {(o.orderSource === 'whatsapp_direct' || itemsPayload.orderSource === 'whatsapp_direct') && (
+                          <span className="text-[10px] font-black text-emerald-900 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                            واتساب مباشر
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-[11px] text-gray-500 font-medium">
                         <Calendar size={12} />
@@ -282,27 +405,38 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                         </span>
                       )}
 
-                    {/* تعيين مسؤول متابعة */}
-                    <select
-                      value={o.assignedTo || ''}
-                      onChange={(e) => handleAssign(o, e.target.value)}
-                      className={`text-[11px] font-bold px-2 py-1.5 rounded-xl border outline-none cursor-pointer ${
-                        o.assignedTo
-                          ? 'bg-indigo-50 text-indigo-900 border-indigo-300'
-                          : 'bg-gray-50 text-gray-500 border-gray-300'
-                      }`}
-                      title="تعيين الطلب لموظف/مندوب للمتابعة"
-                    >
-                      <option value="">👤 غير معيّن</option>
-                      {staffNames.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                      {o.assignedTo && !staffNames.includes(o.assignedTo) && (
-                        <option value={o.assignedTo}>{o.assignedTo}</option>
-                      )}
-                    </select>
+                    {/* تعيين مسؤول متابعة أو استلام سريع للموظف */}
+                    {isRestrictedStaff && currentStaffName && !(o.assignedTo || '').trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAssign(o, currentStaffName)}
+                        className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl text-[11px] font-black transition"
+                      >
+                        استلام الطلب باسمي
+                      </button>
+                    ) : (
+                      <select
+                        value={o.assignedTo || ''}
+                        disabled={isRestrictedStaff && Boolean(o.assignedTo && o.assignedTo !== currentStaffName)}
+                        onChange={(e) => handleAssign(o, e.target.value)}
+                        className={`text-[11px] font-bold px-2 py-1.5 rounded-xl border outline-none cursor-pointer ${
+                          o.assignedTo
+                            ? 'bg-indigo-50 text-indigo-900 border-indigo-300'
+                            : 'bg-gray-50 text-gray-500 border-gray-300'
+                        }`}
+                        title="تعيين الطلب لموظف/مندوب للمتابعة"
+                      >
+                        <option value="">👤 غير معيّن</option>
+                        {staffNames.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                        {o.assignedTo && !staffNames.includes(o.assignedTo) && (
+                          <option value={o.assignedTo}>{o.assignedTo}</option>
+                        )}
+                      </select>
+                    )}
 
                     <select
                       value={o.status}
@@ -487,10 +621,13 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
                     <span className="font-bold">بيان الأصناف:</span>
                     <span>{o.productNameAr}</span>
                   </div>
-                  <span className="font-bold text-blue-900 bg-white px-2 py-0.5 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900 bg-white px-2 py-0.5 rounded border border-blue-200 tabular-nums">
                     العدد: {o.quantity}
                   </span>
                 </div>
+
+                {/* Timestamped Order Status Timeline */}
+                <OrderTimeline order={o} compact />
               </div>
             );
           })}
@@ -521,6 +658,21 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({ orders: initialOrders, onR
           }}
         />
       )}
+
+      {/* Quick Phone Order Modal (Hotline 15218 / Direct WhatsApp) */}
+      <QuickPhoneOrderModal
+        isOpen={isQuickPhoneModalOpen}
+        onClose={() => setIsQuickPhoneModalOpen(false)}
+        staffNames={staffNames}
+        currentStaffName={currentStaffName}
+        onOrderCreated={(newOrder, openPdf) => {
+          setOrdersList((prev) => [newOrder, ...prev]);
+          if (onRefresh) onRefresh();
+          if (openPdf) {
+            setSelectedOrderForPricing(newOrder);
+          }
+        }}
+      />
     </div>
   );
 };

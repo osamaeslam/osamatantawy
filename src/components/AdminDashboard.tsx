@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ExcelUpload } from './ExcelUpload';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { visitorService } from '../supabase/visitor.service';
 import { whatsappClickService } from '../supabase/whatsapp-click.service';
-import { orderService } from '../supabase/orders.service';
+import { orderService, mapRowToOrder } from '../supabase/orders.service';
 import { productService } from '../supabase/products.service';
+import { supabase } from '../supabase/config';
 import type { FirebaseProduct } from '../types/firebase';
 import type { FirebaseOrder } from '../types/firebase';
-import { Package, Building2, BookOpen, Users, ArrowRight, ShieldCheck, UserCheck, MessageCircle, Truck } from 'lucide-react';
+import { Package, Building2, BookOpen, Users, ArrowRight, ShieldCheck, UserCheck, MessageCircle, Truck, BellRing, Volume2, VolumeX, X, Eye } from 'lucide-react';
+import { bindAudioUnlockListeners, playNewOrderChime } from '../utils/orderAlertAudio';
 import { useApp } from '../context/AppContext';
 import { StatCard } from './StatCard';
 import { OverviewTab } from './OverviewTab';
@@ -21,8 +23,13 @@ import { StaffManagementTab } from './StaffManagementTab';
 import { ItemRequestsTab } from './ItemRequestsTab';
 import { CustomersTab } from './CustomersTab';
 import { OrderIssuesTab } from './OrderIssuesTab';
+import { SalesKPIsAndAccountingTab } from './SalesKPIsAndAccountingTab';
+import { CatalogHealthCheck } from './CatalogHealthCheck';
+import { BundlesCMSTab } from './BundlesCMSTab';
 import { staffService } from '../services/staff.service';
 import type { StaffUser, StaffRole } from '../services/staff.service';
+import { DeveloperBadge } from './DeveloperBadge';
+import { SocialPosterModal } from './SocialPosterModal';
 
 interface AdminDashboardProps {
   onExit?: () => void;
@@ -43,10 +50,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     setHideDemoProducts,
     fetchProductsFromDatabase,
     isSyncingWithDatabase,
-    products: appProducts 
+    products: appProducts,
+    posterProduct,
+    setPosterProduct,
+    homePageConfig,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'visitors' | 'clicks' | 'excel' | 'cms' | 'categories' | 'staff' | 'requests' | 'customers' | 'issues'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'kpis' | 'cms' | 'bundles' | 'orders' | 'requests' | 'customers' | 'issues' | 'staff' | 'categories' | 'excel' | 'products' | 'health' | 'visitors' | 'clicks'>(() => {
     try {
       const h = window.location.hash.toLowerCase();
       if (h.includes('cms') || h.includes('banner')) return 'cms';
@@ -75,6 +85,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const [quickPhoneInput, setQuickPhoneInput] = useState(whatsappNumber);
   const [phoneSavedMessage, setPhoneSavedMessage] = useState(false);
 
+  // التنبيه الصوتي واللحظي للطلبات الجديدة
+  const [soundAlertsEnabled, setSoundAlertsEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tantawy_admin_sound_enabled') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const soundEnabledRef = useRef(soundAlertsEnabled);
+  useEffect(() => {
+    soundEnabledRef.current = soundAlertsEnabled;
+    try {
+      localStorage.setItem('tantawy_admin_sound_enabled', String(soundAlertsEnabled));
+    } catch {}
+  }, [soundAlertsEnabled]);
+
+  const [liveOrderAlerts, setLiveOrderAlerts] = useState<FirebaseOrder[]>([]);
+  const [orderToOpenFromAlert, setOrderToOpenFromAlert] = useState<FirebaseOrder | null>(null);
+  const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const initialOrdersLoadedRef = useRef<boolean>(false);
+
+  const handleIncomingNewOrder = useCallback((incomingOrder: FirebaseOrder) => {
+    const key = String(incomingOrder.id || incomingOrder.orderId || '');
+    if (!key) return;
+    if (knownOrderIdsRef.current.has(key)) return;
+    knownOrderIdsRef.current.add(key);
+
+    setOrders((prev) => {
+      if (prev.some((o) => String(o.id || o.orderId) === key)) return prev;
+      return [incomingOrder, ...prev];
+    });
+
+    if (!initialOrdersLoadedRef.current) return;
+
+    setLiveOrderAlerts((prev) => {
+      if (prev.some((o) => String(o.id || o.orderId) === key)) return prev;
+      return [incomingOrder, ...prev].slice(0, 5);
+    });
+
+    if (soundEnabledRef.current) {
+      void playNewOrderChime();
+    }
+
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification(`طلب جديد #${incomingOrder.orderId}`, {
+          body: `${incomingOrder.customerName || 'عميل'} — ${incomingOrder.customerPhone}`,
+          icon: '/logo.png',
+        });
+      }
+    } catch {
+      // ignore Notification API restrictions
+    }
+  }, []);
+
   const loadData = async () => {
     try {
       const [p, o, v, c] = await Promise.all([
@@ -85,6 +150,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       ]);
       setProducts(p);
       setOrders(o);
+      for (const ord of o) {
+        const key = String(ord.id || ord.orderId || '');
+        if (key) knownOrderIdsRef.current.add(key);
+      }
+      initialOrdersLoadedRef.current = true;
       setRecentVisitors(v.slice(0, 10));
       setRecentClicks(c.slice(0, 10));
     } catch (err) {
@@ -94,6 +164,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
   // استرجاع جلسة Supabase Auth عند فتح لوحة التحكم (تأكيد إن الحساب لسه نشط)
   useEffect(() => {
+    bindAudioUnlockListeners();
     let cancelled = false;
     staffService
       .restoreSession()
@@ -122,6 +193,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       loadData();
     }
   }, [isAuthenticated]);
+
+  // اشتراك Supabase Realtime + فحص احتياطي خفيف كل 20 ثانية لاكتشاف الطلبات الجديدة فورياً
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const channel = supabase
+      .channel('admin-live-orders-alerts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          if (payload?.new) {
+            handleIncomingNewOrder(mapRowToOrder(payload.new));
+          }
+        }
+      )
+      .subscribe();
+
+    const pollInterval = setInterval(async () => {
+      if (!initialOrdersLoadedRef.current) return;
+      try {
+        const recent = await orderService.getRecent(5);
+        for (let i = recent.length - 1; i >= 0; i--) {
+          handleIncomingNewOrder(recent[i]);
+        }
+      } catch {
+        // ignore transient poll failures
+      }
+    }, 20000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [isAuthenticated, handleIncomingNewOrder]);
 
   const enterWithStaff = (staff: StaffUser) => {
     setCurrentStaff(staff);
@@ -175,6 +281,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   };
 
   const isSuperAdmin = staffService.isAdmin(currentStaff);
+
+  // مؤشر أداء وسرعة الموظف الشخصي (لبوابة الموظف المستقلة بدون كشف إجمالي مبيعات الإدارة)
+  const personalStaffMetrics = useMemo(() => {
+    const myName = (currentStaff?.fullName || '').trim();
+    if (!myName) {
+      return { assigned: 0, completedToday: 0, pricedOrClosed: 0, avgResponseMin: 0 };
+    }
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const mine = orders.filter((o) => (o.assignedTo || '').trim() === myName);
+    const pricedOrClosed = mine.filter((o) =>
+      ['priced', 'confirmed', 'dispatched', 'delivered'].includes(String(o.status))
+    ).length;
+    const completedToday = mine.filter((o) =>
+      String(o.createdAt || '').slice(0, 10) === todayKey
+    ).length;
+
+    const responseTimesMin: number[] = [];
+    for (const o of mine) {
+      if (o.respondedAt && o.createdAt) {
+        const diffMs = new Date(o.respondedAt).getTime() - new Date(o.createdAt as any).getTime();
+        if (diffMs > 0 && diffMs < 7 * 24 * 3600 * 1000) {
+          responseTimesMin.push(diffMs / 60000);
+        }
+      }
+    }
+    const avgResponseMin = responseTimesMin.length
+      ? Math.round(responseTimesMin.reduce((a, b) => a + b, 0) / responseTimesMin.length)
+      : 0;
+
+    return {
+      assigned: mine.length,
+      completedToday,
+      pricedOrClosed,
+      avgResponseMin,
+    };
+  }, [orders, currentStaff]);
+
+  const healthIssuesCount = useMemo(() => {
+    let count = 0;
+    for (const p of products) {
+      const rawImg = (p.imageUrl || '').trim();
+      const missingImg = !rawImg || rawImg === '/logo.png' || rawImg === 'logo.png' || rawImg.length < 8;
+      const missingPrice = !p.price || Number(p.price) <= 0;
+      const missingCode = !String(p.itemNumber || '').trim() && !String(p.importKey || '').trim();
+      if (missingImg || missingPrice || missingCode) count += 1;
+    }
+    return count;
+  }, [products]);
 
   if (!isAuthenticated) {
     return (
@@ -287,7 +441,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               <BookOpen size={13} />
               <span>دليل الاستخدام 📖</span>
             </button>
-            <span>طنطاوي جروب للتجارة والتوزيع</span>
+            <span>كتالوج دريم • طنطاوي جروب</span>
+          </div>
+
+          <div className="flex justify-center pt-1">
+            <DeveloperBadge variant="light" compact />
           </div>
         </div>
       </div>
@@ -331,6 +489,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
           {/* Quick Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Live Order Sound Alert Control */}
+            <div className="flex items-center border border-gray-200 rounded-xl bg-slate-50 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !soundAlertsEnabled;
+                  setSoundAlertsEnabled(next);
+                  if (next) {
+                    void playNewOrderChime();
+                    if (
+                      typeof Notification !== 'undefined' &&
+                      Notification.permission === 'default'
+                    ) {
+                      Notification.requestPermission().catch(() => {});
+                    }
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap ${
+                  soundAlertsEnabled
+                    ? 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title="تفعيل أو كتم التنبيه الصوتي الفوري للطلبات الجديدة"
+              >
+                {soundAlertsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                <span className="hidden sm:inline">
+                  {soundAlertsEnabled ? 'صوت الطلبات: مفعّل' : 'صوت الطلبات: مكتوم'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void playNewOrderChime()}
+                className="px-2.5 py-1.5 text-[11px] font-bold text-blue-900 hover:bg-blue-100 border-r border-gray-200 transition whitespace-nowrap"
+                title="اختبار نغمة التنبيه الصوتي"
+              >
+                تجربة
+              </button>
+            </div>
+
             {/* WhatsApp Quick Editor */}
             {isSuperAdmin && (
               <button
@@ -441,23 +638,127 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Employee Welcome Banner for Sales/Shipping Reps */}
+        {/* Live Incoming Order Notification Stack */}
+        {liveOrderAlerts.length > 0 && (
+          <div className="space-y-2">
+            {liveOrderAlerts.map((alertOrder) => {
+              const itemsCount = Array.isArray(alertOrder.items?.list)
+                ? alertOrder.items.list.length
+                : alertOrder.quantity || 1;
+              return (
+                <div
+                  key={String(alertOrder.id || alertOrder.orderId)}
+                  className="bg-emerald-900 text-white rounded-xl p-4 border border-emerald-700 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-800 rounded-lg shrink-0">
+                      <BellRing size={18} className="text-amber-300" />
+                    </div>
+                    <div className="space-y-0.5 text-xs">
+                      <div className="font-black text-sm flex flex-wrap items-center gap-2">
+                        <span>طلب عميل جديد وصل الآن</span>
+                        <span className="font-mono tabular-nums text-amber-300">
+                          #{alertOrder.orderId}
+                        </span>
+                      </div>
+                      <div className="text-emerald-100 flex flex-wrap items-center gap-2">
+                        <span>العميل: {alertOrder.customerName || 'عميل جديد'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono tabular-nums" dir="ltr">
+                          {alertOrder.customerPhone}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono tabular-nums">{itemsCount} أصناف</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('orders');
+                        setOrderToOpenFromAlert(alertOrder);
+                        setLiveOrderAlerts((prev) =>
+                          prev.filter(
+                            (o) =>
+                              String(o.id || o.orderId) !==
+                              String(alertOrder.id || alertOrder.orderId)
+                          )
+                        );
+                      }}
+                      className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-lg text-xs font-black flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <Eye size={14} />
+                      <span>فتح ومراجعة الطلب فوراً</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLiveOrderAlerts((prev) =>
+                          prev.filter(
+                            (o) =>
+                              String(o.id || o.orderId) !==
+                              String(alertOrder.id || alertOrder.orderId)
+                          )
+                        )
+                      }
+                      className="p-2 text-emerald-200 hover:text-white rounded-lg"
+                      aria-label="إغلاق التنبيه"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Dedicated Personal Staff Portal Banner (Hides company financial telemetry & settings) */}
         {!isSuperAdmin && (
-          <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-5 rounded-2xl shadow-md border border-blue-800/40 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <h3 className="text-base font-black">
-                  واجهة موظف طنطاوي جروب: {currentStaff?.fullName}
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-5 rounded-2xl shadow-md border border-blue-800/40 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-black">
+                  بوابة الموظف المستقلة: {currentStaff?.fullName}
                 </h3>
+                <p className="text-xs text-blue-200">
+                  تركّز هذه البوابة على طلباتك المعيّنة لك والطلبات الجديدة المتاحة للاستلام ومؤشر سرعة استجابتك اليومي.
+                </p>
               </div>
-              <p className="text-xs text-blue-200">
-                يمكنك الآن فحص جميع كروت الفواتير الواردة، التواصل مع العملاء عبر واتساب والاتصال الهاتفي، تأكيد الأسعار النهائية وتحديث حالة الأوردر.
-              </p>
+              <span className="text-[11px] font-bold bg-white/10 border border-white/20 px-3 py-1.5 rounded-xl shrink-0">
+                دور الحساب: {roleLabelAr(currentStaff?.role || 'sales_rep')}
+              </span>
             </div>
-            <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-bold border border-white/20">
-              <span>الطلبات المسجلة: </span>
-              <strong className="text-yellow-300 font-mono text-sm">{orders.length}</strong>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3">
+                <span className="text-[11px] text-blue-200 block font-bold">طلباتي المعيّنة</span>
+                <strong className="text-xl font-black font-mono tabular-nums text-white">
+                  {personalStaffMetrics.assigned}
+                </strong>
+              </div>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3">
+                <span className="text-[11px] text-blue-200 block font-bold">مسعّرة ومؤكدة</span>
+                <strong className="text-xl font-black font-mono tabular-nums text-emerald-300">
+                  {personalStaffMetrics.pricedOrClosed}
+                </strong>
+              </div>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3">
+                <span className="text-[11px] text-blue-200 block font-bold">طلبات اليوم</span>
+                <strong className="text-xl font-black font-mono tabular-nums text-amber-300">
+                  {personalStaffMetrics.completedToday}
+                </strong>
+              </div>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3">
+                <span className="text-[11px] text-blue-200 block font-bold">متوسط سرعة الرد</span>
+                <strong className="text-xl font-black font-mono tabular-nums text-white">
+                  {personalStaffMetrics.avgResponseMin > 0
+                    ? `${personalStaffMetrics.avgResponseMin} د`
+                    : '—'}
+                </strong>
+              </div>
             </div>
           </div>
         )}
@@ -493,23 +794,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 <span>{isSyncingWithDatabase ? 'جاري المزامنة...' : 'مزامنة من قاعدة البيانات الآن 🔄'}</span>
               </button>
 
-              <button
-                onClick={() => {
-                  const nextState = !hideDemoProducts;
-                  setHideDemoProducts(nextState);
-                  alert(nextState 
-                    ? 'تم إخفاء البيانات التجريبية نهائياً! المتجر يعرض الآن منتجات قاعدة البيانات / الشيت فقط.' 
-                    : 'تمت استعادة البيانات التجريبية للعرض التجريبي.'
-                  );
-                }}
-                className={`flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs border ${
-                  hideDemoProducts 
-                    ? 'bg-amber-500 hover:bg-amber-600 text-blue-950 border-amber-400 font-black' 
-                    : 'bg-red-600/90 hover:bg-red-600 text-white border-red-500'
-                }`}
-              >
-                <span>{hideDemoProducts ? 'إظهار البيانات التجريبية للاختبار 👁️' : 'حذف وإخفاء البيانات التجريبية نهائياً 🗑️'}</span>
-              </button>
+              <span className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                <span>وضع الإنتاج الفعلي (بدون بيانات تجريبية) ✓</span>
+              </span>
             </div>
           </div>
         )}
@@ -529,21 +816,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           {(isSuperAdmin
             ? [
                 { id: 'overview', label: 'نظرة عامة 📊' },
-                { id: 'cms', label: '🖼️ تعديل البانرات والواجهة (CMS) 🎨' },
+                { id: 'kpis', label: 'أداء المبيعات والمحاسبة 📈' },
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
+                { id: 'bundles', label: 'عروض الباقات والعرايس 🎁' },
+                { id: 'cms', label: 'تعديل البانرات والواجهة 🎨' },
+                { id: 'products', label: 'المنتجات والمخزون 📦' },
+                {
+                  id: 'health',
+                  label:
+                    healthIssuesCount > 0
+                      ? `فحص جودة الكتالوج (${healthIssuesCount}) 🩺`
+                      : 'فحص جودة الكتالوج 🩺',
+                },
                 { id: 'requests', label: 'طلبات أصناف غير موجودة 🧾' },
                 { id: 'customers', label: 'العملاء (CRM) 🤝' },
                 { id: 'issues', label: 'المرتجعات والشكاوى ♻️' },
-                { id: 'staff', label: 'فريق العمل وحسابات الموظفين 👥' },
+                { id: 'staff', label: 'فريق العمل 👥' },
                 { id: 'categories', label: 'أسماء الأقسام 🗂️' },
-                { id: 'excel', label: 'شيت جوجل ورفع إكسل 📊' },
-                { id: 'products', label: 'المنتجات 📦' },
+                { id: 'excel', label: 'رفع الكتالوج والتصنيف الآلي 📊' },
                 { id: 'visitors', label: 'الزوار 👥' },
                 { id: 'clicks', label: 'نقرات الواتساب 📱' },
               ]
             : [
                 { id: 'orders', label: `طلبات وفواتير العملاء (${orders.length}) 🛒` },
-                { id: 'products', label: 'كتالوج المنتجات والأكواد 📦' },
+                { id: 'products', label: 'كتالوج المنتجات والمخزون 📦' },
               ]
           ).map((tab) => (
             <button
@@ -562,7 +858,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
         {/* Tab Contents */}
         {activeTab === 'overview' && isSuperAdmin && <OverviewTab orders={orders} recentVisitors={recentVisitors} />}
-        {activeTab === 'orders' && <OrdersTab orders={orders} onRefresh={loadData} />}
+        {activeTab === 'kpis' && isSuperAdmin && <SalesKPIsAndAccountingTab orders={orders} />}
+        {activeTab === 'orders' && (
+          <OrdersTab
+            orders={orders}
+            onRefresh={loadData}
+            currentStaffName={currentStaff?.fullName}
+            initialOrderToOpen={orderToOpenFromAlert}
+            onClearInitialOrder={() => setOrderToOpenFromAlert(null)}
+            staffScopeName={currentStaff?.fullName}
+            isRestrictedStaff={!isSuperAdmin}
+          />
+        )}
+        {activeTab === 'bundles' && isSuperAdmin && <BundlesCMSTab />}
         {activeTab === 'requests' && isSuperAdmin && <ItemRequestsTab />}
         {activeTab === 'customers' && isSuperAdmin && <CustomersTab orders={orders} />}
         {activeTab === 'issues' && isSuperAdmin && (
@@ -571,19 +879,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {activeTab === 'staff' && isSuperAdmin && <StaffManagementTab currentStaff={currentStaff} />}
         {activeTab === 'cms' && isSuperAdmin && <HomePageCMS />}
         {activeTab === 'categories' && isSuperAdmin && <CategoriesTab />}
-        {activeTab === 'excel' && isSuperAdmin && <ExcelUpload />}
+        {activeTab === 'excel' && isSuperAdmin && (
+          <ExcelUpload
+            currentUserName={currentStaff?.fullName}
+            onCatalogUpdated={async () => {
+              await loadData();
+              await fetchProductsFromDatabase(true);
+            }}
+          />
+        )}
         {activeTab === 'products' && (
           <ProductsTab
             products={products}
+            isSuperAdmin={isSuperAdmin}
             onRefresh={async () => {
               await loadData();
               await fetchProductsFromDatabase();
             }}
           />
         )}
+        {activeTab === 'health' && isSuperAdmin && (
+          <CatalogHealthCheck
+            products={products}
+            onRefresh={async () => {
+              await loadData();
+              await fetchProductsFromDatabase(true);
+            }}
+          />
+        )}
         {activeTab === 'visitors' && isSuperAdmin && <VisitorsTab stats={stats} recentVisitors={recentVisitors} />}
         {activeTab === 'clicks' && isSuperAdmin && <ClicksTab stats={stats} recentClicks={recentClicks} />}
       </div>
+
+      <SocialPosterModal
+        product={posterProduct}
+        onClose={() => setPosterProduct(null)}
+        hotline={homePageConfig?.hotline}
+      />
     </div>
   );
 };

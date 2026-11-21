@@ -1,61 +1,120 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProductPagination } from '../hooks/useProductPagination';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/mockData';
-import { 
-  SlidersHorizontal, 
-  ArrowUpDown, 
-  Grid3X3, 
-  List, 
-  Star, 
-  ShoppingCart, 
+import {
+  ArrowUpDown,
+  Grid3X3,
+  List,
+  Star,
+  ShoppingCart,
   Heart,
   ChevronRight,
   ChevronLeft,
   Filter,
-  Check,
-  MessageCircle
+  MessageCircle,
+  Edit3,
+  Scale,
 } from 'lucide-react';
 import { Product } from '../types';
 import { createProductWhatsAppUrl } from '../services/whatsapp-order';
 import { getSafeImageSrc } from '../utils/imageHelper';
+import { normalizeImageUrl } from '../services/image-url';
+import { INITIAL_HOMEPAGE_CONFIG } from '../data/mockData';
+import { getStockMeta } from '../utils/stockStatus';
+import {
+  STOREFRONT_TEXT,
+  getNumberLocale,
+  getLocalizedProductName,
+  getLocalizedProductCategory,
+  getLocalizedProductSummary,
+  translateSectorLabel,
+  translateSubcategoryLabel,
+} from '../i18n/translations';
 
 export const CategoriesPage: React.FC = () => {
-  const { 
-    products, 
-    selectedCategory, 
-    setSelectedCategory, 
-    selectedSubcategory, 
+  const {
+    products,
+    categories,
+    homePageConfig,
+    selectedCategory,
+    setSelectedCategory,
+    selectedSubcategory,
     setSelectedSubcategory,
     addToCart,
     toggleWishlist,
     isInWishlist,
-    setSelectedProduct
+    setQuickViewProduct,
+    stockStatusMap,
+    supabaseProductCount,
+    searchCatalogServer,
+    mergeProductsIntoState,
+    loadMoreProductsFromDatabase,
+    isLoadingMoreProducts,
+    toggleCompare,
+    isInCompare,
+    language,
   } = useApp();
+
+  const t = STOREFRONT_TEXT[language];
+  const tc = t.categories;
+  const th = t.home;
+  const numLocale = getNumberLocale(language);
+  const isRtl = language === 'ar';
 
   const [sortBy, setSortBy] = useState<'default' | 'rating' | 'name'>('default');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
   const [itemGroupSearch, setItemGroupSearch] = useState('');
 
-  // Identify active sector
-  const isHomeSector = selectedCategory === 'أجهزة منزلية' || selectedCategory === 'Home Appliances';
-  const isElectricSector = selectedCategory === 'أجهزة كهربيه' || selectedCategory === 'Electrical Appliances';
+  const isHomeSector =
+    selectedCategory === 'أجهزة منزلية' || selectedCategory === 'Home Appliances';
+  const isElectricSector =
+    selectedCategory === 'أجهزة كهربيه' || selectedCategory === 'Electrical Appliances';
 
-  // Products belonging to the active sector
+  useEffect(() => {
+    if (supabaseProductCount <= products.length) return;
+    if (!selectedCategory && !selectedSubcategory) return;
+    const catParam = isHomeSector
+      ? 'أجهزة منزلية'
+      : isElectricSector
+      ? 'أجهزة كهربيه'
+      : selectedCategory;
+
+    searchCatalogServer({
+      category: catParam,
+      query: selectedSubcategory || undefined,
+      page: 1,
+      pageSize: 24,
+    })
+      .then((res) => mergeProductsIntoState(res.products))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, selectedSubcategory, isHomeSector, isElectricSector, supabaseProductCount]);
+
   const sectorProducts = products.filter((p) => {
     if (isHomeSector) {
-      return p.sector === 'أجهزة منزلية' || p.categoryAr === 'أجهزة منزلية' || p.category === 'Home Appliances';
+      return (
+        p.sector === 'أجهزة منزلية' ||
+        p.categoryAr === 'أجهزة منزلية' ||
+        p.category === 'Home Appliances'
+      );
     }
     if (isElectricSector) {
-      return p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه' || p.category === 'Electrical Appliances';
+      return (
+        p.sector === 'أجهزة كهربيه' ||
+        p.categoryAr === 'أجهزة كهربيه' ||
+        p.category === 'Electrical Appliances'
+      );
     }
     if (selectedCategory) {
-      return p.category === selectedCategory || p.categoryAr === selectedCategory || p.sector === selectedCategory;
+      return (
+        p.category === selectedCategory ||
+        p.categoryAr === selectedCategory ||
+        p.sector === selectedCategory
+      );
     }
     return true;
   });
 
-  // Standard predefined Item Groups
   const HOME_ITEM_GROUPS = [
     'أطقم حلل وأواني طهي',
     'مقالي وصواني طهي',
@@ -77,7 +136,7 @@ export const CategoriesPage: React.FC = () => {
     'غسالات ملابس وأطباق',
     'بوتاجازات ومسطحات بلت إن',
     'سخانات مياه',
-    'مبردات مياه'
+    'مبردات مياه',
   ];
 
   const ELECTRIC_ITEM_GROUPS = [
@@ -99,10 +158,9 @@ export const CategoriesPage: React.FC = () => {
     'شاشات وتلفزيونات',
     'تكييفات هواء',
     'مكانس كهربائية',
-    'أجهزة عناية شخصية واستشوار'
+    'أجهزة عناية شخصية واستشوار',
   ];
 
-  // Dynamically extract all unique item groups and family names from actual products
   const productItemGroups = Array.from(
     new Set(
       sectorProducts
@@ -111,19 +169,28 @@ export const CategoriesPage: React.FC = () => {
     )
   );
 
-  // Combine standard list according to sector + any custom groups found in product data
-  const baseGroups = isHomeSector 
-    ? HOME_ITEM_GROUPS 
-    : isElectricSector 
-    ? ELECTRIC_ITEM_GROUPS 
-    : [...HOME_ITEM_GROUPS, ...ELECTRIC_ITEM_GROUPS];
-
-  // Merge unique groups ensuring product data groups are present
-  const allAvailableGroups = Array.from(
-    new Set([...baseGroups, ...productItemGroups])
+  const liveHomeCat = categories.find(
+    (c) => c.nameAr === 'أجهزة منزلية' || c.name === 'Home Appliances'
+  );
+  const liveElectricCat = categories.find(
+    (c) => c.nameAr === 'أجهزة كهربيه' || c.name === 'Electrical Appliances'
   );
 
-  // Helper function to check if a product matches a given subcategory / item group
+  const dynamicHomeGroups = liveHomeCat?.subcategoriesAr?.length
+    ? Array.from(new Set([...liveHomeCat.subcategoriesAr, ...HOME_ITEM_GROUPS]))
+    : HOME_ITEM_GROUPS;
+  const dynamicElectricGroups = liveElectricCat?.subcategoriesAr?.length
+    ? Array.from(new Set([...liveElectricCat.subcategoriesAr, ...ELECTRIC_ITEM_GROUPS]))
+    : ELECTRIC_ITEM_GROUPS;
+
+  const baseGroups = isHomeSector
+    ? dynamicHomeGroups
+    : isElectricSector
+    ? dynamicElectricGroups
+    : [...dynamicHomeGroups, ...dynamicElectricGroups];
+
+  const allAvailableGroups = Array.from(new Set([...baseGroups, ...productItemGroups]));
+
   const matchesSubcategory = (p: Product, sub: string): boolean => {
     if (!sub || sub === 'الكل') return true;
     const target = sub.trim().toLowerCase();
@@ -132,15 +199,11 @@ export const CategoriesPage: React.FC = () => {
     const nameAr = (p.nameAr || '').toLowerCase();
     const nameEn = (p.name || '').toLowerCase();
 
-    // 1. Exact or direct containment on itemGroup / familyName
     if (itemGroup === target || familyName === target) return true;
     if (itemGroup && (itemGroup.includes(target) || target.includes(itemGroup))) return true;
     if (familyName && (familyName.includes(target) || target.includes(familyName))) return true;
-
-    // 2. Exact match in product title
     if (nameAr.includes(target) || nameEn.includes(target)) return true;
 
-    // 3. Meaningful keywords matching (ignoring generic stop words like "أجهزة" which caused 736 false matches)
     const stopWords = ['أجهزة', 'جهاز', 'اجهزة', 'في', 'من', 'و', 'كافة', 'جميع', 'قسم'];
     const meaningfulWords = target
       .split(/\s+/)
@@ -153,69 +216,158 @@ export const CategoriesPage: React.FC = () => {
     return false;
   };
 
-  // Calculate count for each group in the current sector
   const groupCounts: Record<string, number> = {};
   allAvailableGroups.forEach((group) => {
     groupCounts[group] = sectorProducts.filter((p) => matchesSubcategory(p, group)).length;
   });
 
-  // Only retain groups that actually contain products (> 0) or the currently selected group
   const activeAvailableGroups = allAvailableGroups
     .filter((group) => (groupCounts[group] || 0) > 0 || group === selectedSubcategory)
     .sort((a, b) => (groupCounts[b] || 0) - (groupCounts[a] || 0));
 
-  // Filter products by selected category and subcategory (Item Group)
   let filtered = sectorProducts;
   if (selectedSubcategory) {
     filtered = filtered.filter((p) => matchesSubcategory(p, selectedSubcategory));
   }
 
-  // Filter groups list if user types in search
-  const visibleGroups = activeAvailableGroups.filter((group) =>
-    itemGroupSearch ? group.toLowerCase().includes(itemGroupSearch.trim().toLowerCase()) : true
-  );
+  const visibleGroups = activeAvailableGroups.filter((group) => {
+    if (!itemGroupSearch.trim()) return true;
+    const q = itemGroupSearch.trim().toLowerCase();
+    return (
+      group.toLowerCase().includes(q) ||
+      translateSubcategoryLabel(group, 'en').toLowerCase().includes(q)
+    );
+  });
 
-  // Pagination setup - show 10 products per page (applied to the fully filtered list)
-  const { paginatedProducts, currentPage, totalPages, next, prev, pageNumbers, goTo, hasPreviousPage, hasNextPage, startIndex, endIndex } = useProductPagination({
+  const {
+    paginatedProducts,
+    currentPage,
+    totalPages,
+    pageNumbers,
+    goTo,
+    hasPreviousPage,
+    hasNextPage,
+  } = useProductPagination({
     products: filtered,
     pageSize: 10,
     initialPage: 1,
   });
 
-  // Sorting without prices
   const sorted = [...paginatedProducts()].sort((a, b) => {
     if (sortBy === 'rating') return b.overallrating - a.overallrating;
-    if (sortBy === 'name') return a.nameAr.localeCompare(b.nameAr, 'ar');
+    if (sortBy === 'name') {
+      return getLocalizedProductName(a, language).localeCompare(
+        getLocalizedProductName(b, language),
+        language === 'en' ? 'en' : 'ar'
+      );
+    }
     return 0;
   });
 
-  const homeCount = products.filter(p => p.sector === 'أجهزة منزلية' || p.categoryAr === 'أجهزة منزلية').length;
-  const electricCount = products.filter(p => p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه').length;
+  const homeCount = products.filter(
+    (p) => p.sector === 'أجهزة منزلية' || p.categoryAr === 'أجهزة منزلية'
+  ).length;
+  const electricCount = products.filter(
+    (p) => p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه'
+  ).length;
+
+  const activeSectorBanner = isHomeSector
+    ? homePageConfig.sectionBanners?.homeAppliances ||
+      INITIAL_HOMEPAGE_CONFIG.sectionBanners!.homeAppliances
+    : isElectricSector
+    ? homePageConfig.sectionBanners?.electricalAppliances ||
+      INITIAL_HOMEPAGE_CONFIG.sectionBanners!.electricalAppliances
+    : null;
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Category Pills Header & Sector Selector */}
+      {activeSectorBanner && (
+        <div
+          className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${activeSectorBanner.bgGradient} text-white p-5 sm:p-7 shadow-md flex flex-col sm:flex-row items-center justify-between gap-5`}
+        >
+          <div className="relative z-10 space-y-2 max-w-xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-yellow-400 text-blue-950 text-[11px] font-black px-3 py-0.5 rounded-full">
+                {isRtl ? activeSectorBanner.badge : t.header.homeAppliances}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = '#admin-cms-sections';
+                  window.dispatchEvent(new HashChangeEvent('hashchange'));
+                }}
+                className="text-[11px] font-bold bg-white/15 hover:bg-white/25 text-white px-2.5 py-0.5 rounded-full border border-white/20 transition inline-flex items-center gap-1"
+                title={tc.editSectorBanner}
+              >
+                <Edit3 size={11} />
+                <span>{tc.editSectorBanner}</span>
+              </button>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black leading-snug">
+              {isRtl ? activeSectorBanner.title : isHomeSector ? tc.homeTitle : tc.electricTitle}
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
+              {isRtl
+                ? activeSectorBanner.subtitle
+                : isHomeSector
+                ? tc.homeDesc(dynamicHomeGroups.length)
+                : tc.electricDesc(dynamicElectricGroups.length)}
+            </p>
+          </div>
+          {activeSectorBanner.image && (
+            <div className="w-full sm:w-44 h-36 sm:h-32 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0 bg-white/10">
+              <img
+                src={normalizeImageUrl(activeSectorBanner.image, undefined, 700)}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                decoding="async"
+                alt={activeSectorBanner.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Category Header & Sector Selector */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base md:text-lg font-black text-gray-900 flex items-center gap-2">
+            <h2 className="text-base md:text-lg font-black text-gray-900 flex flex-wrap items-center gap-2">
               <span>
                 {isHomeSector
-                  ? 'أجهزة منزلية كبرى'
+                  ? tc.homeTitle
                   : isElectricSector
-                  ? 'أجهزة كهربيه وشاشات وتكييفات'
-                  : selectedCategory || 'جميع منتجات وأقسام طنطاوي جروب'}
+                  ? tc.electricTitle
+                  : selectedCategory
+                  ? translateSectorLabel(selectedCategory, language)
+                  : tc.allTitle}
               </span>
-              <span className="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
-                {filtered.length} صنف معروض
+              <span className="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-0.5 rounded-full border border-blue-200 tabular-nums">
+                {tc.shownCount(filtered.length.toLocaleString(numLocale))}
               </span>
+              {supabaseProductCount > products.length && (
+                <button
+                  type="button"
+                  disabled={isLoadingMoreProducts}
+                  onClick={() => loadMoreProductsFromDatabase(120)}
+                  className="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold px-2.5 py-0.5 rounded-full tabular-nums transition"
+                >
+                  {isLoadingMoreProducts
+                    ? tc.loadingText
+                    : tc.shownOfTotal(
+                        products.length.toLocaleString(numLocale),
+                        supabaseProductCount.toLocaleString(numLocale)
+                      )}
+                </button>
+              )}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {isHomeSector
-                ? 'تضم 21 قسماً داخلياً (ثلاجات، غسالات، بوتاجازات، ديب فريزر، ميكروويف...)'
+                ? tc.homeDesc(dynamicHomeGroups.length)
                 : isElectricSector
-                ? 'تضم 15 قسماً داخلياً (شاشات 4K، تكييفات، مكانس، مراوح، دفايات...)'
-                : 'تصفح كافة القطاعات والأقسام الداخلية المعتمدة مع إمكانية الفحص الكامل وكارت الفاتورة'}
+                ? tc.electricDesc(dynamicElectricGroups.length)
+                : tc.defaultDesc}
             </p>
           </div>
 
@@ -227,7 +379,7 @@ export const CategoriesPage: React.FC = () => {
               }}
               className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-3 py-1.5 rounded-lg transition"
             >
-              إلغاء التصفية وعرض الكل
+              {tc.clearFilter}
             </button>
           )}
         </div>
@@ -245,8 +397,12 @@ export const CategoriesPage: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <span>جميع المنتجات</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${selectedCategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+            <span>{t.header.allProductsNav}</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                selectedCategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'
+              }`}
+            >
               {products.length}
             </span>
           </button>
@@ -262,8 +418,14 @@ export const CategoriesPage: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <span>أجهزة منزلية (21 قسم)</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${isHomeSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+            <span>
+              {t.header.homeAppliances} {tc.deptCountSuffix(dynamicHomeGroups.length)}
+            </span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                isHomeSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'
+              }`}
+            >
               {homeCount}
             </span>
           </button>
@@ -279,43 +441,52 @@ export const CategoriesPage: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <span>أجهزة كهربيه (15 قسم)</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${isElectricSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'}`}>
+            <span>
+              {t.header.electricalAppliances} {tc.deptCountSuffix(dynamicElectricGroups.length)}
+            </span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                isElectricSector ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'
+              }`}
+            >
               {electricCount}
             </span>
           </button>
         </div>
 
-        {/* Inner Subcategories (Item Groups) Section */}
+        {/* Inner Subcategories */}
         <div className="pt-3 border-t border-gray-100 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-black text-gray-900">
-                {isHomeSector 
-                  ? 'الأقسام الداخلية للأجهزة المنزلية (21 صنف):' 
-                  : isElectricSector 
-                  ? 'الأقسام الداخلية للأجهزة الكهربية (15 صنف):' 
-                  : 'الأقسام الداخلية والأصناف (Item Group):'}
+                {isHomeSector
+                  ? tc.homeGroupsTitle(dynamicHomeGroups.length)
+                  : isElectricSector
+                  ? tc.electricGroupsTitle(dynamicElectricGroups.length)
+                  : tc.defaultGroupsTitle}
               </span>
               {selectedSubcategory && (
                 <span className="text-[11px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                  محدد: {selectedSubcategory}
-                  <button onClick={() => setSelectedSubcategory(null)} className="text-amber-800 hover:text-black font-black">✕</button>
+                  {tc.selectedPrefix} {translateSubcategoryLabel(selectedSubcategory, language)}
+                  <button
+                    onClick={() => setSelectedSubcategory(null)}
+                    className="text-amber-800 hover:text-black font-black"
+                  >
+                    ✕
+                  </button>
                 </span>
               )}
             </div>
 
-            {/* Quick search inside item groups */}
             <input
               type="text"
-              placeholder="بحث في الأقسام..."
+              placeholder={tc.searchGroupsPlaceholder}
               value={itemGroupSearch}
               onChange={(e) => setItemGroupSearch(e.target.value)}
               className="text-[11px] bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 w-28 sm:w-40 outline-none focus:border-blue-900 focus:bg-white transition"
             />
           </div>
 
-          {/* Subcategories pills */}
           <div className="flex flex-wrap items-center gap-1.5 max-h-36 overflow-y-auto pr-1">
             <button
               onClick={() => setSelectedSubcategory(null)}
@@ -325,8 +496,12 @@ export const CategoriesPage: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <span>الكل</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedSubcategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              <span>{th.allTab}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  selectedSubcategory === null ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-600'
+                }`}
+              >
                 {sectorProducts.length}
               </span>
             </button>
@@ -347,7 +522,7 @@ export const CategoriesPage: React.FC = () => {
                       : 'bg-gray-50/60 text-gray-400 hover:bg-gray-100 border border-gray-100'
                   }`}
                 >
-                  <span>{group}</span>
+                  <span>{translateSubcategoryLabel(group, language)}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                       isSelected
@@ -366,19 +541,19 @@ export const CategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Control Bar: Sort and View Style */}
+      {/* Control Bar */}
       <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-100 text-xs">
         <div className="flex items-center gap-2">
           <ArrowUpDown size={15} className="text-gray-400" />
-          <span className="text-gray-500 font-medium hidden sm:inline">ترتيب حسب:</span>
+          <span className="text-gray-500 font-medium hidden sm:inline">{tc.sortBy}</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
             className="bg-gray-50 border border-gray-200 text-gray-800 text-xs rounded-lg px-2.5 py-1.5 font-bold outline-none cursor-pointer"
           >
-            <option value="default">الترتيب الافتراضي</option>
-            <option value="rating">الأعلى تقييماً</option>
-            <option value="name">الاسم أبجدياً</option>
+            <option value="default">{tc.sortDefault}</option>
+            <option value="rating">{tc.sortRating}</option>
+            <option value="name">{tc.sortName}</option>
           </select>
         </div>
 
@@ -386,28 +561,28 @@ export const CategoriesPage: React.FC = () => {
           <button
             onClick={() => setViewStyle('grid')}
             className={`p-1 rounded ${viewStyle === 'grid' ? 'bg-white text-blue-900 shadow-xs' : 'text-gray-500'}`}
-            title="شبكة"
+            title={tc.gridTitle}
           >
             <Grid3X3 size={16} />
           </button>
           <button
             onClick={() => setViewStyle('list')}
             className={`p-1 rounded ${viewStyle === 'list' ? 'bg-white text-blue-900 shadow-xs' : 'text-gray-500'}`}
-            title="قائمة"
+            title={tc.listTitle}
           >
             <List size={16} />
           </button>
         </div>
       </div>
 
-      {/* Products Display (Grid vs List) */}
+      {/* Products Display */}
       {sorted.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 p-8 space-y-3">
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
             <Filter size={28} />
           </div>
-          <h3 className="text-base font-bold text-gray-800">لا توجد منتجات في هذا القسم حالياً</h3>
-          <p className="text-xs text-gray-500">جرب اختيار قسم آخر أو إلغاء فلتر البحث</p>
+          <h3 className="text-base font-bold text-gray-800">{tc.emptyCatTitle}</h3>
+          <p className="text-xs text-gray-500">{tc.emptyCatSub}</p>
           <button
             onClick={() => {
               setSelectedCategory(null);
@@ -415,20 +590,22 @@ export const CategoriesPage: React.FC = () => {
             }}
             className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg"
           >
-            العودة لجميع المنتجات
+            {tc.backToAll}
           </button>
         </div>
       ) : viewStyle === 'grid' ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {sorted.map((product) => {
             const inWish = isInWishlist(product.id);
+            const stockMeta = getStockMeta(product, stockStatusMap, language);
+            const displayTitle = getLocalizedProductName(product, language);
 
             return (
               <div
                 key={product.id}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between group relative"
               >
-                <div className="absolute top-2 right-2 z-10 bg-blue-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
+                <div className="absolute top-2 start-2 z-10 bg-blue-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
                   {product.brand}
                 </div>
                 <button
@@ -436,53 +613,83 @@ export const CategoriesPage: React.FC = () => {
                     e.stopPropagation();
                     toggleWishlist(product);
                   }}
-                  className="absolute top-2 left-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full text-gray-400 hover:text-red-500 shadow-xs transition"
+                  className="absolute top-2 end-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full text-gray-400 hover:text-red-500 shadow-xs transition"
                 >
                   <Heart size={16} className={inWish ? 'text-red-500 fill-red-500' : ''} />
                 </button>
 
                 <div
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => setQuickViewProduct(product)}
                   className="aspect-square w-full overflow-hidden bg-gray-50 cursor-pointer p-4 flex items-center justify-center"
                 >
                   <img
-                    src={getSafeImageSrc(product.previewimage)}
+                    src={getSafeImageSrc(normalizeImageUrl(product.previewimage, undefined, 500))}
                     referrerPolicy="no-referrer"
-                    alt={product.nameAr}
+                    loading="lazy"
+                    decoding="async"
+                    alt={displayTitle}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
 
                 <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-1 text-amber-500 mb-1">
-                      <Star size={12} className="fill-amber-400" />
-                      <span className="text-[11px] font-bold text-gray-700">{product.overallrating}</span>
-                      <span className="text-[10px] text-gray-400">({product.reviews.length})</span>
+                    <div className="flex items-center justify-between gap-1 text-amber-500 mb-1">
+                      <div className="flex items-center gap-1">
+                        <Star size={12} className="fill-amber-400" />
+                        <span className="text-[11px] font-bold text-gray-700">{product.overallrating}</span>
+                        <span className="text-[10px] text-gray-400">({product.reviews.length})</span>
+                      </div>
+                      {stockMeta.status !== 'available' && (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${stockMeta.badgeClass}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${stockMeta.dotClass}`} />
+                          <span>{stockMeta.shortLabel}</span>
+                        </span>
+                      )}
                     </div>
                     <h3
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => setQuickViewProduct(product)}
                       className="text-xs md:text-sm font-bold text-gray-800 hover:text-blue-900 transition cursor-pointer line-clamp-2"
                     >
-                      {product.nameAr}
+                      {displayTitle}
                     </h3>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-1.5">
                     <button
+                      disabled={!stockMeta.canOrder}
                       onClick={() => addToCart(product, 1)}
-                      className="flex-1 py-1.5 px-2.5 bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white rounded-lg transition text-[11px] font-bold flex items-center justify-center gap-1"
-                      title="إضافة الصنف لسلة الطلبات"
+                      className={`flex-1 py-1.5 px-2.5 rounded-lg transition text-[11px] font-bold flex items-center justify-center gap-1 ${
+                        stockMeta.canOrder
+                          ? 'bg-blue-50 hover:bg-blue-900 text-blue-900 hover:text-white'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                      title={stockMeta.canOrder ? th.addToOrder : th.outOfStock}
                     >
                       <ShoppingCart size={14} />
-                      <span>إضافة للطلب</span>
+                      <span>{stockMeta.canOrder ? th.addToOrder : th.outOfStock}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleCompare(product)}
+                      className={`p-1.5 rounded-lg border transition flex items-center justify-center ${
+                        isInCompare(product.id)
+                          ? 'bg-blue-900 border-blue-900 text-white'
+                          : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-900'
+                      }`}
+                      title={isInCompare(product.id) ? th.inCompareTitle : th.compareTitle}
+                      aria-label={th.compareTitle}
+                    >
+                      <Scale size={14} />
                     </button>
                     <a
                       href={createProductWhatsAppUrl(product)}
                       target="_blank"
                       rel="noreferrer"
                       className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs flex items-center justify-center"
-                      title="طلب فوري واستفسار عبر واتساب"
+                      title={th.whatsappInquiry}
                     >
                       <MessageCircle size={14} />
                     </a>
@@ -493,10 +700,13 @@ export const CategoriesPage: React.FC = () => {
           })}
         </div>
       ) : (
-        /* List View */
         <div className="space-y-3">
           {sorted.map((product) => {
             const inWish = isInWishlist(product.id);
+            const stockMeta = getStockMeta(product, stockStatusMap, language);
+            const displayTitle = getLocalizedProductName(product, language);
+            const displayCat = getLocalizedProductCategory(product, language);
+            const displaySummary = getLocalizedProductSummary(product, language);
 
             return (
               <div
@@ -504,13 +714,15 @@ export const CategoriesPage: React.FC = () => {
                 className="bg-white rounded-xl border border-gray-200 p-3 md:p-4 flex items-center gap-4 hover:shadow-md transition"
               >
                 <div
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => setQuickViewProduct(product)}
                   className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-lg shrink-0 cursor-pointer p-2 flex items-center justify-center"
                 >
                   <img
-                    src={getSafeImageSrc(product.previewimage)}
+                    src={getSafeImageSrc(normalizeImageUrl(product.previewimage, undefined, 500))}
                     referrerPolicy="no-referrer"
-                    alt={product.nameAr}
+                    loading="lazy"
+                    decoding="async"
+                    alt={displayTitle}
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -518,48 +730,71 @@ export const CategoriesPage: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] text-blue-900 bg-blue-50 font-bold px-2 py-0.5 rounded">
-                      {product.categoryAr}
+                      {displayCat}
                     </span>
-                    <span className="text-[10px] text-gray-500 font-bold">
-                      {product.brand}
-                    </span>
-                    <div className="flex items-center gap-1 text-amber-500 mr-2">
+                    <span className="text-[10px] text-gray-500 font-bold">{product.brand}</span>
+                    <div className="flex items-center gap-1 text-amber-500 ms-2">
                       <Star size={12} className="fill-amber-400" />
                       <span className="text-[11px] font-bold text-gray-700">{product.overallrating}</span>
                     </div>
                   </div>
 
                   <h3
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => setQuickViewProduct(product)}
                     className="text-xs md:text-base font-bold text-gray-800 hover:text-blue-900 transition cursor-pointer line-clamp-1"
                   >
-                    {product.nameAr}
+                    {displayTitle}
                   </h3>
                   <p className="text-xs text-gray-500 line-clamp-2 mt-1 hidden sm:block">
-                    {product.summaryAr}
+                    {displaySummary}
                   </p>
 
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                      متوفر للطلب الفوري واستخراج كارت الفاتورة
+                    <span
+                      className={`text-xs font-bold px-2.5 py-1 rounded-md border inline-flex items-center gap-1.5 ${stockMeta.badgeClass}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${stockMeta.dotClass}`} />
+                      <span>{stockMeta.label}</span>
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 shrink-0">
                   <button
+                    disabled={!stockMeta.canOrder}
                     onClick={() => addToCart(product, 1)}
-                    className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-xs"
+                    className={`text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-xs ${
+                      stockMeta.canOrder
+                        ? 'bg-blue-900 hover:bg-blue-950 text-white'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     <ShoppingCart size={14} />
-                    <span className="hidden sm:inline">إضافة للطلب</span>
+                    <span className="hidden sm:inline">
+                      {stockMeta.canOrder ? th.addToOrder : th.outOfStock}
+                    </span>
                   </button>
-                  <button
-                    onClick={() => toggleWishlist(product)}
-                    className="p-2 border border-gray-200 hover:border-red-300 rounded-lg text-gray-400 hover:text-red-500 transition flex items-center justify-center"
-                  >
-                    <Heart size={16} className={inWish ? 'text-red-500 fill-red-500' : ''} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleCompare(product)}
+                      className={`p-2 border rounded-lg transition flex items-center justify-center ${
+                        isInCompare(product.id)
+                          ? 'bg-blue-900 border-blue-900 text-white'
+                          : 'border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-900'
+                      }`}
+                      title={isInCompare(product.id) ? th.inCompareTitle : th.compareTitle}
+                      aria-label={th.compareTitle}
+                    >
+                      <Scale size={16} />
+                    </button>
+                    <button
+                      onClick={() => toggleWishlist(product)}
+                      className="p-2 border border-gray-200 hover:border-red-300 rounded-lg text-gray-400 hover:text-red-500 transition flex items-center justify-center"
+                    >
+                      <Heart size={16} className={inWish ? 'text-red-500 fill-red-500' : ''} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -574,9 +809,9 @@ export const CategoriesPage: React.FC = () => {
             <button
               onClick={() => goTo(currentPage - 1)}
               className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
-              title="الصفحة السابقة"
+              title={th.prevPage}
             >
-              <ChevronRight size={18} />
+              {isRtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
           )}
           {pageNumbers().map((page) => (
@@ -584,8 +819,8 @@ export const CategoriesPage: React.FC = () => {
               key={page}
               onClick={() => goTo(page)}
               className={`font-bold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition shadow-xs ${
-                currentPage === page 
-                  ? 'bg-blue-900 text-white shadow-sm' 
+                currentPage === page
+                  ? 'bg-blue-900 text-white shadow-sm'
                   : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
@@ -594,13 +829,37 @@ export const CategoriesPage: React.FC = () => {
           ))}
           {hasNextPage && (
             <button
-              onClick={() => goTo(currentPage + 1)}
+              onClick={() => {
+                const nextP = currentPage + 1;
+                goTo(nextP);
+                if (nextP >= totalPages && supabaseProductCount > products.length && !isLoadingMoreProducts) {
+                  void loadMoreProductsFromDatabase(24);
+                }
+              }}
               className="bg-white hover:bg-gray-100 text-gray-900 font-bold p-2 sm:px-3 sm:py-2 rounded-lg border border-gray-200 transition shadow-xs"
-              title="الصفحة التالية"
+              title={th.nextPage}
             >
-              <ChevronLeft size={18} />
+              {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </button>
           )}
+        </div>
+      )}
+
+      {supabaseProductCount > products.length && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            disabled={isLoadingMoreProducts}
+            onClick={() => loadMoreProductsFromDatabase(24)}
+            className="bg-white hover:bg-blue-50 text-blue-900 border border-blue-200 font-bold text-xs px-4 py-2 rounded-xl transition shadow-2xs disabled:opacity-60 tabular-nums"
+          >
+            {isLoadingMoreProducts
+              ? th.loadingNextBatch
+              : th.loadMore24(
+                  products.length.toLocaleString(numLocale),
+                  supabaseProductCount.toLocaleString(numLocale)
+                )}
+          </button>
         </div>
       )}
     </div>

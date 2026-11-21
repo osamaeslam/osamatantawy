@@ -1,3 +1,5 @@
+export type ProductStockStatus = 'available' | 'low_stock' | 'out_of_stock';
+
 export interface FirebaseProduct {
   id?: string;
   nameAr: string;
@@ -12,8 +14,16 @@ export interface FirebaseProduct {
   colors: string[];
   sizes: string[];
   inStock: boolean;
+  stockStatus?: ProductStockStatus;
   brand: string;
   createdAt: any;
+}
+
+export interface OrderStatusEvent {
+  status: 'pending' | 'priced' | 'confirmed' | 'dispatched' | 'delivered' | 'cancelled';
+  timestamp: string;
+  note?: string;
+  actor?: string;
 }
 
 export interface FirebaseOrder {
@@ -40,6 +50,8 @@ export interface FirebaseOrder {
   imageUrl?: string;
   whatsappSent?: boolean;
   items?: any;
+  statusHistory?: OrderStatusEvent[];
+  orderSource?: 'web' | 'phone_15218' | 'whatsapp_direct';
 }
 
 export type BotState =

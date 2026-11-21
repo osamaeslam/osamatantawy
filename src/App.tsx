@@ -10,6 +10,7 @@ import { DealsPage } from './components/DealsPage';
 import { CartPage } from './components/CartPage';
 import { Footer } from './components/Footer';
 import { ProductDetailModal } from './components/ProductDetailModal';
+import { QuickViewModal } from './components/QuickViewModal';
 import { AboutCompanyModal } from './components/AboutCompanyModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { OrderTrackingModal } from './components/OrderTrackingModal';
@@ -17,8 +18,13 @@ import { UserGuideModal } from './components/UserGuideModal';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BrandPage } from './components/BrandPage';
+import { CompareDrawer } from './components/CompareDrawer';
+import { SocialPosterModal } from './components/SocialPosterModal';
+import { ItemRequestModal } from './components/ItemRequestModal';
+import { OfflineSyncBanner } from './components/OfflineSyncBanner';
 import { ArrowLeft } from 'lucide-react';
 import { visitorService } from './supabase/visitor.service';
+import { STOREFRONT_TEXT } from './i18n/translations';
 
 const MainLayout: React.FC = () => {
   const { 
@@ -27,21 +33,40 @@ const MainLayout: React.FC = () => {
     setIsOrderTrackingOpen, 
     isUserGuideOpen, 
     setIsUserGuideOpen, 
-    trackingPhone 
+    trackingPhone,
+    setTrackingPhone,
+    posterProduct,
+    setPosterProduct,
+    homePageConfig,
+    isItemRequestOpen,
+    itemRequestPrefill,
+    closeItemRequestModal,
+    whatsappNumber,
+    language,
   } = useApp();
+  const isRtl = language === 'ar';
+  const tCommon = STOREFRONT_TEXT[language];
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
-  // تتبع الزائر واكتشاف مسار لوحة الإدارة تلقائياً
+  // تتبع الزائر واكتشاف مسار لوحة الإدارة أو رابط تتبع طلب من واتساب
   React.useEffect(() => {
     visitorService.trackVisit(window.location.pathname, undefined, navigator.userAgent);
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const trackParam = params.get('track');
+      if (trackParam && trackParam.trim().length >= 6) {
+        setTrackingPhone(trackParam.trim());
+        setIsOrderTrackingOpen(true);
+      }
+    } catch {}
 
     const checkAdminRouting = () => {
       const h = window.location.hash.toLowerCase();
       if (
         window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/admin' ||
-        h === '#admin' ||
-        h === '#admin-cms' ||
+        h.startsWith('#admin') ||
         h === '#cms'
       ) {
         setShowAdmin(true);
@@ -73,20 +98,30 @@ const MainLayout: React.FC = () => {
   // إذا تم اختيار ماركة، عرض صفحة الماركة مباشرة
   if (selectedBrand) {
     return (
-      <div className="min-h-screen bg-gray-50 font-['Cairo',sans-serif]">
+      <div
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className="min-h-screen bg-gray-50 font-['Cairo','Montserrat',sans-serif]"
+      >
         <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <button
               onClick={() => setSelectedBrand(null)}
-              className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+              className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-bold"
             >
-              <ArrowLeft size={18} /> العودة
+              <ArrowLeft size={18} className={isRtl ? 'rotate-180' : ''} />
+              <span>{tCommon.back}</span>
             </button>
             <h1 className="text-xl font-black text-blue-900">{selectedBrand}</h1>
           </div>
         </header>
 
         <BrandPage brandName={selectedBrand} />
+        <CompareDrawer />
+        <SocialPosterModal
+          product={posterProduct}
+          onClose={() => setPosterProduct(null)}
+          hotline={homePageConfig?.hotline}
+        />
       </div>
     );
   }
@@ -108,7 +143,10 @@ const MainLayout: React.FC = () => {
 
   // Render pristine edge-to-edge responsive layout with native mobile elegance
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-['Cairo',sans-serif] selection:bg-blue-600 selection:text-white">
+    <div
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="min-h-screen flex flex-col bg-gray-50 font-['Cairo','Montserrat',sans-serif] selection:bg-blue-600 selection:text-white"
+    >
       {/* Mobile PWA Installation Banner */}
       <MobilePWAInstallBanner />
 
@@ -128,6 +166,7 @@ const MainLayout: React.FC = () => {
 
 
       {/* Global Modals */}
+      <QuickViewModal />
       <ProductDetailModal />
       <AboutCompanyModal />
       <CheckoutModal />
@@ -140,6 +179,19 @@ const MainLayout: React.FC = () => {
         isOpen={isUserGuideOpen}
         onClose={() => setIsUserGuideOpen(false)}
       />
+      <CompareDrawer />
+      <SocialPosterModal
+        product={posterProduct}
+        onClose={() => setPosterProduct(null)}
+        hotline={homePageConfig?.hotline}
+      />
+      <ItemRequestModal
+        isOpen={isItemRequestOpen}
+        onClose={closeItemRequestModal}
+        initialItemName={itemRequestPrefill}
+        whatsappNumber={whatsappNumber}
+      />
+      <OfflineSyncBanner />
     </div>
   );
 };

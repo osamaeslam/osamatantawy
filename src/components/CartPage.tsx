@@ -1,57 +1,45 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { 
-  Trash2, 
-  Plus, 
-  Minus, 
-  ShoppingBag, 
-  Tag, 
-  ArrowLeft, 
-  ShieldCheck, 
-  Truck, 
+import {
+  Trash2,
+  Plus,
+  Minus,
+  ShoppingBag,
+  ArrowLeft,
+  ShieldCheck,
+  Truck,
   Heart,
   ShoppingCart,
-  X,
-  MessageCircle
+  MessageCircle,
 } from 'lucide-react';
 import { createCartWhatsAppUrl } from '../services/whatsapp-order';
 import { getSafeImageSrc } from '../utils/imageHelper';
+import {
+  STOREFRONT_TEXT,
+  getLocalizedProductName,
+  getLocalizedProductCategory,
+} from '../i18n/translations';
 
 export const CartPage: React.FC = () => {
-  const { 
-    cart, 
+  const {
+    cart,
     wishlist,
     user,
-    removeFromCart, 
-    updateQuantity, 
+    removeFromCart,
+    updateQuantity,
     clearCart,
-    cartSubtotal, 
-    cartDiscount, 
-    cartTotal,
-    discountCode,
-    discountPercent,
-    applyPromoCode,
-    removePromoCode,
     setIsCheckoutModalOpen,
     setActiveTab,
     toggleWishlist,
     addToCart,
-    setSelectedProduct
+    setSelectedProduct,
+    language,
   } = useApp();
 
+  const t = STOREFRONT_TEXT[language].cart;
+  const isRtl = language === 'ar';
+
   const [activeTabSub, setActiveTabSub] = useState<'cart' | 'wishlist'>('cart');
-  const [promoInput, setPromoInput] = useState('');
-  const [promoStatus, setPromoStatus] = useState<{ message: string; isError?: boolean } | null>(null);
-
-  const shippingCost = cartTotal > 500 || cartTotal === 0 ? 0 : 50;
-  const finalTotal = cartTotal + shippingCost;
-
-  const handleApplyPromo = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promoInput) return;
-    const res = applyPromoCode(promoInput);
-    setPromoStatus({ message: res.message, isError: !res.success });
-  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -66,7 +54,7 @@ export const CartPage: React.FC = () => {
           }`}
         >
           <ShoppingCart size={18} />
-          <span>سلة طلبات الشراء</span>
+          <span>{t.cartTab}</span>
           <span className="bg-blue-100 text-blue-900 text-xs px-2 py-0.5 rounded-full font-bold">
             {cart.length}
           </span>
@@ -81,7 +69,7 @@ export const CartPage: React.FC = () => {
           }`}
         >
           <Heart size={18} />
-          <span>المفضلة</span>
+          <span>{t.wishlistTab}</span>
           <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
             {wishlist.length}
           </span>
@@ -90,22 +78,19 @@ export const CartPage: React.FC = () => {
 
       {activeTabSub === 'cart' ? (
         cart.length === 0 ? (
-          /* Empty Cart State */
           <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-lg mx-auto space-y-5 my-8">
             <div className="w-24 h-24 mx-auto bg-blue-50 text-blue-900 rounded-full flex items-center justify-center p-6">
               <ShoppingBag size={48} className="text-blue-900 animate-pulse" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-black text-gray-900">سلة طلباتك فارغة حالياً</h3>
-              <p className="text-xs md:text-sm text-gray-500 max-w-sm mx-auto">
-                لم تقم بإضافة أي أجهزة إلى سلة طلباتك بعد. تصفح أقسام طنطاوي جروب وأضف أجهزتك المفضلة لاستخراج كارت الفاتورة والطلب!
-              </p>
+              <h3 className="text-xl font-black text-gray-900">{t.emptyCartTitle}</h3>
+              <p className="text-xs md:text-sm text-gray-500 max-w-sm mx-auto">{t.emptyCartSub}</p>
             </div>
             <button
               onClick={() => setActiveTab('categories')}
               className="bg-blue-900 hover:bg-blue-950 text-white font-bold text-sm py-3 px-8 rounded-xl shadow-md transition"
             >
-              تصفح أصناف المعرض
+              {t.browseCatalogBtn}
             </button>
           </div>
         ) : (
@@ -113,100 +98,98 @@ export const CartPage: React.FC = () => {
             {/* Cart Items List */}
             <div className="lg:col-span-2 space-y-3">
               <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 text-xs">
-                <span className="font-bold text-gray-700">الأصناف في الطلب الحالي ({cart.length})</span>
+                <span className="font-bold text-gray-700">{t.itemsInOrder(cart.length)}</span>
                 <button
                   onClick={clearCart}
                   className="text-gray-400 hover:text-red-600 transition flex items-center gap-1 font-semibold"
                 >
                   <Trash2 size={14} />
-                  <span>تفريغ السلة</span>
+                  <span>{t.clearCart}</span>
                 </button>
               </div>
 
-              {cart.map((item) => (
-                <div
-                  key={item.product.id}
-                  className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row items-center gap-4 hover:shadow-xs transition"
-                >
+              {cart.map((item) => {
+                const displayName = getLocalizedProductName(item.product, language);
+                const displayCat = getLocalizedProductCategory(item.product, language);
+                return (
                   <div
-                    onClick={() => setSelectedProduct(item.product)}
-                    className="w-24 h-24 bg-gray-50 rounded-xl p-2 shrink-0 cursor-pointer flex items-center justify-center"
+                    key={item.product.id}
+                    className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row items-center gap-4 hover:shadow-xs transition"
                   >
-                    <img
-                      src={getSafeImageSrc(item.product.previewimage)}
-                      alt={item.product.nameAr}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0 text-center sm:text-right">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                      <span className="text-[10px] text-blue-900 bg-blue-50 font-bold px-2 py-0.5 rounded">
-                        {item.product.categoryAr}
-                      </span>
-                      <span className="text-[10px] text-gray-500 font-bold">
-                        {item.product.brand}
-                      </span>
-                    </div>
-
-                    <h4
+                    <div
                       onClick={() => setSelectedProduct(item.product)}
-                      className="text-sm font-bold text-gray-800 hover:text-blue-900 transition cursor-pointer line-clamp-1"
+                      className="w-24 h-24 bg-gray-50 rounded-xl p-2 shrink-0 cursor-pointer flex items-center justify-center"
                     >
-                      {item.product.nameAr}
-                    </h4>
-
-                    {item.selectedSize && (
-                      <span className="inline-block text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded mt-1">
-                        الموديل / السعة: {item.selectedSize}
-                      </span>
-                    )}
-
-                    <div className="mt-2 flex items-center justify-center sm:justify-start gap-2">
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                        جاهز للمعاينة الفورية
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Quantity Selector and Actions */}
-                  <div className="flex items-center gap-4 sm:flex-col sm:items-end justify-between w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="p-1.5 text-gray-600 hover:bg-gray-200 transition"
-                        title="تقليل الكمية"
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="px-3 text-xs font-bold font-mono">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="p-1.5 text-gray-600 hover:bg-gray-200 transition"
-                        title="زيادة الكمية"
-                      >
-                        <Plus size={14} />
-                      </button>
+                      <img
+                        src={getSafeImageSrc(item.product.previewimage)}
+                        alt={displayName}
+                        className="w-full h-full object-contain"
+                      />
                     </div>
 
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="text-[11px] text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1 mt-1"
-                    >
-                      <Trash2 size={12} />
-                      <span>حذف</span>
-                    </button>
+                    <div className={`flex-1 min-w-0 text-center ${isRtl ? 'sm:text-right' : 'sm:text-left'}`}>
+                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                        <span className="text-[10px] text-blue-900 bg-blue-50 font-bold px-2 py-0.5 rounded">
+                          {displayCat}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-bold">{item.product.brand}</span>
+                      </div>
+
+                      <h4
+                        onClick={() => setSelectedProduct(item.product)}
+                        className="text-sm font-bold text-gray-800 hover:text-blue-900 transition cursor-pointer line-clamp-1"
+                      >
+                        {displayName}
+                      </h4>
+
+                      {item.selectedSize && (
+                        <span className="inline-block text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded mt-1">
+                          {t.modelSize} {item.selectedSize}
+                        </span>
+                      )}
+
+                      <div className="mt-2 flex items-center justify-center sm:justify-start gap-2">
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          {t.readyInspection}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 sm:flex-col sm:items-end justify-between w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="p-1.5 text-gray-600 hover:bg-gray-200 transition"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="px-3 text-xs font-bold font-mono">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="p-1.5 text-gray-600 hover:bg-gray-200 transition"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => removeFromCart(item.product.id)}
+                        className="text-[11px] text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1 mt-1"
+                      >
+                        <Trash2 size={12} />
+                        <span>{t.remove}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Order Summary & Consultation Request */}
+            {/* Order Summary */}
             <div className="space-y-4">
-              {/* Tantawy Hotline Direct Box */}
               <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 text-white p-4 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-blue-200">الخط الساخن لخدمة العملاء:</span>
+                  <span className="text-xs font-bold text-blue-200">{t.hotlineSalesLabel}</span>
                   <a
                     href="tel:15218"
                     className="font-mono text-base font-black bg-yellow-300 text-blue-950 px-2.5 py-0.5 rounded-lg hover:bg-yellow-400 transition"
@@ -214,44 +197,43 @@ export const CartPage: React.FC = () => {
                     15218
                   </a>
                 </div>
-                <p className="text-[11px] text-blue-100 leading-relaxed">
-                  فريق مبيعات طنطاوي جروب متاح على مدار الساعة للإجابة عن توافر الموديلات وحجز مواعيد المعاينة بالمنزل أو المعارض.
-                </p>
+                <p className="text-[11px] text-blue-100 leading-relaxed">{t.hotlineSalesDesc}</p>
               </div>
 
-              {/* Inspection Request Summary */}
               <div className="bg-white p-5 rounded-2xl border border-gray-200 space-y-4">
                 <h3 className="text-sm font-black text-gray-900 border-b border-gray-100 pb-3">
-                  ملخص طلب المعاينة
+                  {t.orderSummary}
                 </h3>
 
                 <div className="space-y-2.5 text-xs">
                   <div className="flex justify-between text-gray-600">
-                    <span>عدد الأصناف المختارة:</span>
-                    <span className="font-bold text-gray-900">{cart.length} أصناف</span>
-                  </div>
-
-                  <div className="flex justify-between text-gray-600">
-                    <span>إجمالي عدد القطع:</span>
+                    <span>{t.selectedItemsCount}</span>
                     <span className="font-bold text-gray-900">
-                      {cart.reduce((sum, item) => sum + item.quantity, 0)} قطعة
+                      {cart.length} {STOREFRONT_TEXT[language].header.itemsUnit}
                     </span>
                   </div>
 
                   <div className="flex justify-between text-gray-600">
-                    <span>نظام تسعير الفاتورة:</span>
-                    <span className="font-bold text-blue-950">تحديد الأسعار بواسطة المبيعات</span>
+                    <span>{t.totalPiecesCount}</span>
+                    <span className="font-bold text-gray-900">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)} {t.pieceUnit}
+                    </span>
                   </div>
 
                   <div className="flex justify-between text-gray-600">
-                    <span>طريقة الدفع:</span>
-                    <span className="font-bold text-emerald-800">عند الاستلام بعد الفحص التام</span>
+                    <span>{t.pricingPolicy}</span>
+                    <span className="font-bold text-blue-950">{t.pricingBySales}</span>
+                  </div>
+
+                  <div className="flex justify-between text-gray-600">
+                    <span>{t.paymentMethod}</span>
+                    <span className="font-bold text-emerald-800">{t.paymentCod}</span>
                   </div>
 
                   <div className="pt-3 border-t border-gray-100 flex justify-between items-baseline">
-                    <span className="text-sm font-black text-gray-900">حالة الأوردر:</span>
+                    <span className="text-sm font-black text-gray-900">{t.orderStatusLabel}</span>
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                      جاهز لاستخراج كارت الفاتورة
+                      {t.orderReadyInvoice}
                     </span>
                   </div>
                 </div>
@@ -260,49 +242,51 @@ export const CartPage: React.FC = () => {
                   onClick={() => setIsCheckoutModalOpen(true)}
                   className="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white py-3.5 px-4 rounded-xl font-black text-sm transition shadow-md flex items-center justify-center gap-2"
                 >
-                  <span>تأكيد طلب الأوردر واستخراج كارت الفاتورة 📄</span>
-                  <ArrowLeft size={16} />
+                  <span>{t.confirmOrderBtn}</span>
+                  <ArrowLeft size={16} className={!isRtl ? 'rotate-180' : ''} />
                 </button>
 
                 <a
-                  href={createCartWhatsAppUrl(cart, user ? { name: user.name, phone: user.phone, address: user.address } : undefined)}
+                  href={createCartWhatsAppUrl(
+                    cart,
+                    user ? { name: user.name, phone: user.phone, address: user.address } : undefined
+                  )}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-2.5 px-4 rounded-xl font-bold text-xs transition shadow-xs flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={16} />
-                  <span>إرسال قائمة الطلب لواتساب المبيعات 💬</span>
+                  <span>{t.sendWhatsAppBtn}</span>
                 </a>
 
                 <div className="space-y-2 pt-2 border-t border-gray-100 text-[11px] text-gray-500">
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-green-600 shrink-0" />
-                    <span>فحص ومعاينة الجهاز بالكامل واستلام كارت الفاتورة والضمان</span>
+                    <span>{t.fullCheckNote}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Truck size={16} className="text-blue-600 shrink-0" />
-                    <span>شحن سريع لجميع محافظات جمهورية مصر العربية</span>
+                    <span>{t.fastShipNote}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         )
-      ) : (
-        /* Wishlist Tab Content */
-        wishlist.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-lg mx-auto space-y-4 my-8">
-            <div className="w-20 h-20 mx-auto bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
-              <Heart size={40} />
-            </div>
-            <h3 className="text-lg font-black text-gray-900">قائمة المفضلة فارغة</h3>
-            <p className="text-xs text-gray-500">
-              قم بحفظ الأجهزة التي تعجبك بالضغط على علامة القلب لتصل إليها بسهولة للمعاينة لاحقاً.
-            </p>
+      ) : wishlist.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-gray-200 p-8 md:p-12 text-center max-w-lg mx-auto space-y-4 my-8">
+          <div className="w-20 h-20 mx-auto bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
+            <Heart size={40} />
           </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {wishlist.map((product) => (
+          <h3 className="text-lg font-black text-gray-900">{t.emptyWishTitle}</h3>
+          <p className="text-xs text-gray-500">{t.emptyWishSub}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {wishlist.map((product) => {
+            const displayName = getLocalizedProductName(product, language);
+            const displayCat = getLocalizedProductCategory(product, language);
+            return (
               <div
                 key={product.id}
                 className="bg-white rounded-2xl border border-gray-200 p-3 flex flex-col justify-between group"
@@ -314,7 +298,7 @@ export const CartPage: React.FC = () => {
                   <img
                     src={getSafeImageSrc(product.previewimage)}
                     referrerPolicy="no-referrer"
-                    alt={product.nameAr}
+                    alt={displayName}
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -322,20 +306,18 @@ export const CartPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className="text-[10px] text-blue-900 bg-blue-50 font-bold px-2 py-0.5 rounded">
-                      {product.categoryAr}
+                      {displayCat}
                     </span>
-                    <span className="text-[10px] text-gray-500 font-bold">
-                      {product.brand}
-                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold">{product.brand}</span>
                   </div>
                   <h4
                     onClick={() => setSelectedProduct(product)}
                     className="text-xs font-bold text-gray-800 hover:text-blue-900 transition cursor-pointer line-clamp-1"
                   >
-                    {product.nameAr}
+                    {displayName}
                   </h4>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded mt-1.5 inline-block">
-                    متاح للمعاينة
+                    {t.availableInspect}
                   </span>
                 </div>
 
@@ -348,20 +330,20 @@ export const CartPage: React.FC = () => {
                     className="flex-1 bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold py-1.5 rounded-lg transition flex items-center justify-center gap-1"
                   >
                     <ShoppingCart size={13} />
-                    <span>طلب معاينة</span>
+                    <span>{t.requestInspection}</span>
                   </button>
                   <button
                     onClick={() => toggleWishlist(product)}
                     className="p-1.5 text-gray-400 hover:text-red-600 border border-gray-200 rounded-lg"
-                    title="إزالة من المفضلة"
+                    title={t.removeWishTitle}
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )
+            );
+          })}
+        </div>
       )}
     </div>
   );

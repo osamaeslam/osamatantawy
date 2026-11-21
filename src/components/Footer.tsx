@@ -1,20 +1,21 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { 
-  PhoneCall, 
-  Mail, 
-  MapPin, 
-  ShieldCheck, 
-  Truck, 
-  Heart,
-  Users,
-  Clock,
-  Sparkles
-} from 'lucide-react';
+import { PhoneCall, Clock } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
+import { DeveloperBadge } from './DeveloperBadge';
+import { STOREFRONT_TEXT } from '../i18n/translations';
 
 export const Footer: React.FC = () => {
-  const { setActiveTab, setSelectedCategory, setIsAboutModalOpen, setIsUserGuideOpen, setIsOrderTrackingOpen } = useApp();
+  const {
+    setActiveTab,
+    setSelectedCategory,
+    setIsAboutModalOpen,
+    setIsUserGuideOpen,
+    setIsOrderTrackingOpen,
+    language,
+  } = useApp();
+  const t = STOREFRONT_TEXT[language].footer;
+  const th = STOREFRONT_TEXT[language].header;
 
   return (
     <footer className="bg-slate-950 text-gray-300 pt-12 pb-24 md:pb-12 border-t border-slate-800">
@@ -27,30 +28,28 @@ export const Footer: React.FC = () => {
                 <img src="/logo.png" alt="Tantawy Group Logo" className="h-full w-auto object-contain" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-white">طنطاوي جروب</span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                  TANTAWY GROUP
+                <span className="text-xl font-black text-white">{t.title}</span>
+                <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">
+                  {t.subtitle}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              مجموعة طنطاوي التجارية - الصرح الرائد في تجارة وتوزيع الأجهزة المنزلية الكبرى، الشاشات والتلفزيونات، والأجهزة المنزلية الخفيفة بأعلى ضمانات الجودة في مصر.
-            </p>
+            <p className="text-xs text-gray-400 leading-relaxed">{t.description}</p>
             <div className="space-y-1.5 text-xs">
               <a href="tel:15218" className="flex items-center gap-2 text-yellow-400 font-bold hover:underline">
                 <PhoneCall size={14} />
-                <span>الخط الساخن الموحد: 15218</span>
+                <span>{t.hotlineFull}</span>
               </a>
               <div className="flex items-center gap-2 text-gray-400">
                 <Clock size={14} />
-                <span>خدمة العملاء: يومياً من 9 صباحاً حتى 11 مساءً</span>
+                <span>{t.hours}</span>
               </div>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">روابط سريعة</h4>
+            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">{t.quickLinks}</h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <button
@@ -58,41 +57,29 @@ export const Footer: React.FC = () => {
                     setActiveTab('home');
                     setSelectedCategory(null);
                   }}
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-blue-400 transition text-start"
                 >
-                  الصفحة الرئيسية
+                  {t.homePage}
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveTab('deals')}
-                  className="hover:text-blue-400 transition"
-                >
-                  عروض وخصومات طنطاوي جروب
+                <button onClick={() => setActiveTab('deals')} className="hover:text-blue-400 transition text-start">
+                  {t.dealsLink}
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveTab('categories')}
-                  className="hover:text-blue-400 transition"
-                >
-                  جميع الأقسام والتصنيفات
+                <button onClick={() => setActiveTab('categories')} className="hover:text-blue-400 transition text-start">
+                  {t.allCatsLink}
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveTab('cart')}
-                  className="hover:text-blue-400 transition"
-                >
-                  سلة طلبات الشراء والمفضلة
+                <button onClick={() => setActiveTab('cart')} className="hover:text-blue-400 transition text-start">
+                  {t.cartWishLink}
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => setIsOrderTrackingOpen(true)}
-                  className="hover:text-blue-400 transition"
-                >
-                  تتبع الشحنات والطلبات
+                <button onClick={() => setIsOrderTrackingOpen(true)} className="hover:text-blue-400 transition text-start">
+                  {t.trackLink}
                 </button>
               </li>
             </ul>
@@ -100,39 +87,39 @@ export const Footer: React.FC = () => {
 
           {/* Popular Categories */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">أقسام طنطاوي جروب</h4>
+            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">{t.popularSectors}</h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Major Appliances');
+                    setSelectedCategory('أجهزة منزلية');
                     setActiveTab('categories');
                   }}
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-blue-400 transition text-start"
                 >
-                  أجهزة منزلية كبرى (ثلاجات، غسالات، بوتاجازات)
+                  {t.majorDesc}
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Smart TVs');
+                    setSelectedCategory('أجهزة كهربيه');
                     setActiveTab('categories');
                   }}
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-blue-400 transition text-start"
                 >
-                  شاشات وتلفزيونات ذكية 4K
+                  {t.tvDesc}
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Small Appliances');
+                    setSelectedCategory('أجهزة كهربيه');
                     setActiveTab('categories');
                   }}
-                  className="hover:text-blue-400 transition"
+                  className="hover:text-blue-400 transition text-start"
                 >
-                  أجهزة منزلية خفيفة (قلايات، محضرات طعام، ميكروويف)
+                  {t.smallDesc}
                 </button>
               </li>
             </ul>
@@ -140,10 +127,8 @@ export const Footer: React.FC = () => {
 
           {/* Mobile & Web App Features */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">تطبيق الهاتف والويب</h4>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              تطبيق طنطاوي جروب يعمل مباشرة على الموبايل والكمبيوتر (Progressive Web App) مع إمكانية تثبيته بنقرة واحدة بدون متجر تطبيقات.
-            </p>
+            <h4 className="text-sm font-bold text-white border-b border-slate-800 pb-2">{t.mobileAppTitle}</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">{t.mobileAppDesc}</p>
             <div className="pt-1">
               <PWAInstallButton />
             </div>
@@ -152,28 +137,28 @@ export const Footer: React.FC = () => {
                 onClick={() => setIsUserGuideOpen(true)}
                 className="bg-blue-900/80 hover:bg-blue-800 text-yellow-300 font-bold px-3 py-1.5 rounded-xl text-xs transition border border-blue-700/50 flex items-center justify-center gap-1.5"
               >
-                <span>📖 دليل الاستخدام</span>
+                <span>{th.guide}</span>
               </button>
               <button
                 onClick={() => setIsAboutModalOpen(true)}
-                className="text-xs text-blue-400 hover:text-blue-300 font-bold underline text-right"
+                className="text-xs text-blue-400 hover:text-blue-300 font-bold underline text-start"
               >
-                عن مجموعة طنطاوي وضماناتنا
+                {t.aboutLink}
               </button>
             </div>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <div className="flex items-center gap-3">
-            <p>© {new Date().getFullYear()} مجموعة طنطاوي (TANTAWY GROUP) - جميع الحقوق محفوظة</p>
+        <div className="pt-6 border-t border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-5 text-xs text-gray-400">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+            <p>{t.copyright(new Date().getFullYear())}</p>
             <button
               onClick={() => setIsUserGuideOpen(true)}
               className="text-yellow-400 hover:text-yellow-300 text-[11px] font-bold transition cursor-pointer"
-              title="دليل الاستخدام"
+              title={th.guideTitle}
             >
-              📖 دليل الاستخدام
+              {th.guide}
             </button>
             <span>•</span>
             <button
@@ -182,17 +167,20 @@ export const Footer: React.FC = () => {
                 window.dispatchEvent(new HashChangeEvent('hashchange'));
               }}
               className="text-gray-400 hover:text-yellow-300 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
-              title="لوحة الإدارة وتعديل البانرات والواجهة"
+              title={t.adminLink}
             >
-              <span>لوحة الإدارة والبانرات 🔐</span>
+              <span>{t.adminLink}</span>
             </button>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-emerald-400 font-bold">دفع عند الاستلام بعد الفحص</span>
+
+          <DeveloperBadge variant="dark" />
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <span className="text-emerald-400 font-bold">{t.codInspect}</span>
             <span>•</span>
-            <span>شحن لجميع المحافظات</span>
+            <span>{t.nationwide}</span>
             <span>•</span>
-            <span>ضمان استبدال خلال 14 يوم</span>
+            <span>{t.warranty14}</span>
           </div>
         </div>
       </div>

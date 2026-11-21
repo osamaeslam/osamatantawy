@@ -3,17 +3,22 @@ import { useApp } from '../context/AppContext';
 import { Product } from '../types';
 import { 
   Sparkles, 
-  ChevronLeft, 
+  ChevronLeft,
+  ChevronRight,
   ChevronDown, 
   Search, 
   Layers, 
   Tv, 
   Refrigerator, 
-  ExternalLink,
-  Tag,
-  ArrowRight
 } from 'lucide-react';
 import { getSafeImageSrc } from '../utils/imageHelper';
+import { normalizeImageUrl } from '../services/image-url';
+import {
+  STOREFRONT_TEXT,
+  translateSectorLabel,
+  translateSubcategoryLabel,
+  getLocalizedProductName,
+} from '../i18n/translations';
 
 // Standard 21 Home item groups
 const HOME_ITEM_GROUPS_BASELINE = [
@@ -77,8 +82,13 @@ export const NestedCategoriesSection: React.FC = () => {
     setSelectedCategory, 
     setSelectedSubcategory, 
     setActiveTab, 
-    setSelectedProduct 
+    setQuickViewProduct,
+    language,
   } = useApp();
+
+  const isRtl = language === 'ar';
+  const t = STOREFRONT_TEXT[language].nestedCats;
+  const h = STOREFRONT_TEXT[language].header;
 
   const [activeSector, setActiveSector] = useState<'all' | 'home' | 'electric'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,14 +126,12 @@ export const NestedCategoriesSection: React.FC = () => {
       (p) => p.sector === 'أجهزة كهربيه' || p.categoryAr === 'أجهزة كهربيه' || p.category === 'Electrical Appliances'
     );
 
-    // Helper to dynamically extract groups from a given product list
     const extractGroupsForProducts = (
       productList: Product[],
       sectorKey: 'home' | 'electric',
       sectorLabel: string,
       baselineFallback: string[]
     ): SubCategoryGroup[] => {
-      // 1. Gather all item groups and family names present in products
       const uniqueNames = new Set<string>();
       productList.forEach((p) => {
         if (p.itemGroup && p.itemGroup.trim()) {
@@ -134,7 +142,6 @@ export const NestedCategoriesSection: React.FC = () => {
         }
       });
 
-      // 2. If products don't specify itemGroup/familyName yet, check which baseline categories have actual matching products
       if (uniqueNames.size === 0) {
         baselineFallback.forEach((catName) => {
           if (productList.some((p) => matchesGroup(p, catName))) {
@@ -143,7 +150,6 @@ export const NestedCategoriesSection: React.FC = () => {
         });
       }
 
-      // 3. Build group objects and ONLY retain groups with count > 0 (Never display 0 منتج)
       const groups: SubCategoryGroup[] = [];
       uniqueNames.forEach((name) => {
         const matching = productList.filter((p) => matchesGroup(p, name));
@@ -158,7 +164,6 @@ export const NestedCategoriesSection: React.FC = () => {
         }
       });
 
-      // 4. Sort descending by product count so the most populated categories appear first
       groups.sort((a, b) => b.count - a.count);
       return groups;
     };
@@ -186,7 +191,6 @@ export const NestedCategoriesSection: React.FC = () => {
     };
   }, [products]);
 
-  // Filter groups according to active sector and search
   const displayedGroups = useMemo(() => {
     let list: SubCategoryGroup[] = [];
     if (activeSector === 'home') {
@@ -200,19 +204,24 @@ export const NestedCategoriesSection: React.FC = () => {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       list = list.filter(
-        (g) => g.name.toLowerCase().includes(q) || g.sectorNameAr.toLowerCase().includes(q)
+        (g) =>
+          g.name.toLowerCase().includes(q) ||
+          g.sectorNameAr.toLowerCase().includes(q) ||
+          translateSubcategoryLabel(g.name, 'en').toLowerCase().includes(q) ||
+          translateSectorLabel(g.sectorNameAr, 'en').toLowerCase().includes(q)
       );
     }
 
     return list;
   }, [activeSector, searchQuery, subCategoriesData]);
 
-  // Navigate to category page with selected subcategory
   const handleOpenSubcategory = (sectorNameAr: string, subcategoryName: string) => {
     setSelectedCategory(sectorNameAr);
     setSelectedSubcategory(subcategoryName);
     setActiveTab('categories');
   };
+
+  const DirArrow = isRtl ? ChevronLeft : ChevronRight;
 
   return (
     <section className="bg-white rounded-3xl border border-gray-200 p-5 md:p-7 shadow-xs space-y-5">
@@ -224,25 +233,29 @@ export const NestedCategoriesSection: React.FC = () => {
               <Layers size={18} />
             </div>
             <h2 className="text-base sm:text-lg md:text-xl font-black text-gray-900">
-              دليل الأقسام والتصنيفات الفرعية (Item Groups)
+              {t.title}
             </h2>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            أقسام وتصنيفات فرعية مرتبطة بجدول منتجات طنطاوي جروب ({subCategoriesData.allGroups.length} قسماً فرعياً مفعلاً بالأصناف)
+            {t.subtitle(subCategoriesData.allGroups.length)}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Quick search inside subcategories */}
           <div className="relative flex-1 md:w-56">
             <input
               type="text"
-              placeholder="ابحث عن قسم فرعي..."
+              placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl pr-8 pl-3 py-2 outline-none focus:border-blue-900 focus:bg-white transition"
+              className={`w-full text-xs bg-gray-50 border border-gray-200 rounded-xl ${
+                isRtl ? 'pr-8 pl-3' : 'pl-8 pr-3'
+              } py-2 outline-none focus:border-blue-900 focus:bg-white transition`}
             />
-            <Search size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={14}
+              className={`absolute ${isRtl ? 'right-2.5' : 'left-2.5'} top-1/2 -translate-y-1/2 text-gray-400`}
+            />
           </div>
 
           <button
@@ -253,8 +266,8 @@ export const NestedCategoriesSection: React.FC = () => {
             }}
             className="text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition shrink-0 flex items-center gap-1"
           >
-            <span>كل المنتجات</span>
-            <ChevronLeft size={14} />
+            <span>{t.allProductsBtn}</span>
+            <DirArrow size={14} />
           </button>
         </div>
       </div>
@@ -270,7 +283,7 @@ export const NestedCategoriesSection: React.FC = () => {
           }`}
         >
           <Sparkles size={14} className="text-yellow-400" />
-          <span>كافة الأقسام والتصنيفات ({subCategoriesData.allGroups.length})</span>
+          <span>{t.allGroupsTab(subCategoriesData.allGroups.length)}</span>
         </button>
 
         <button
@@ -282,9 +295,11 @@ export const NestedCategoriesSection: React.FC = () => {
           }`}
         >
           <Refrigerator size={14} />
-          <span>أجهزة منزلية ({subCategoriesData.homeGroups.length} قسم)</span>
+          <span>
+            {h.homeAppliances} ({subCategoriesData.homeGroups.length})
+          </span>
           <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
-            {subCategoriesData.homeTotal} منتج
+            {subCategoriesData.homeTotal} {t.productUnit}
           </span>
         </button>
 
@@ -297,9 +312,11 @@ export const NestedCategoriesSection: React.FC = () => {
           }`}
         >
           <Tv size={14} />
-          <span>أجهزة كهربيه ({subCategoriesData.electricGroups.length} قسم)</span>
+          <span>
+            {h.electricalAppliances} ({subCategoriesData.electricGroups.length})
+          </span>
           <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
-            {subCategoriesData.electricTotal} منتج
+            {subCategoriesData.electricTotal} {t.productUnit}
           </span>
         </button>
       </div>
@@ -308,7 +325,7 @@ export const NestedCategoriesSection: React.FC = () => {
       <div className="space-y-3">
         {displayedGroups.length === 0 ? (
           <div className="text-center py-10 bg-gray-50 rounded-2xl p-4 text-xs text-gray-500 font-bold">
-            لا توجد أقسام فرعية مطابقة لبحثك "{searchQuery}"
+            {t.noMatches(searchQuery)}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -316,6 +333,8 @@ export const NestedCategoriesSection: React.FC = () => {
               const isExpanded = expandedGroup === group.name;
               const hasProducts = group.count > 0;
               const sampleProducts = group.products.slice(0, 3);
+              const groupLabel = translateSubcategoryLabel(group.name, language);
+              const sectorLabel = translateSectorLabel(group.sectorNameAr, language);
 
               return (
                 <div
@@ -342,18 +361,18 @@ export const NestedCategoriesSection: React.FC = () => {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="text-xs sm:text-sm font-black text-gray-900 truncate">
-                            {group.name}
+                            {groupLabel}
                           </h4>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             hasProducts 
                               ? 'bg-blue-900 text-white' 
                               : 'bg-gray-100 text-gray-500'
                           }`}>
-                            {group.count} منتج
+                            {group.count} {t.productUnit}
                           </span>
                         </div>
                         <span className="text-[10px] text-gray-400 font-bold block truncate">
-                          القطاع: {group.sectorNameAr}
+                          {t.sectorPrefix} {sectorLabel}
                         </span>
                       </div>
                     </div>
@@ -366,9 +385,9 @@ export const NestedCategoriesSection: React.FC = () => {
                           handleOpenSubcategory(group.sectorNameAr, group.name);
                         }}
                         className="text-[11px] font-bold text-blue-900 hover:text-white bg-blue-50 hover:bg-blue-900 px-2.5 py-1 rounded-lg transition"
-                        title="فتح القسم بالكامل"
+                        title={t.viewBtn}
                       >
-                        عرض
+                        {t.viewBtn}
                       </button>
                       <div className={`p-1 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-900' : ''}`}>
                         <ChevronDown size={16} />
@@ -379,57 +398,57 @@ export const NestedCategoriesSection: React.FC = () => {
                   {/* Nested Sub-tray Content (When Expanded) */}
                   {isExpanded && (
                     <div className="px-3.5 pb-3.5 pt-1 border-t border-blue-900/10 space-y-2.5 bg-white/70">
-                      {hasProducts ? (
+                      {hasProducts && (
                         <>
                           <div className="flex items-center justify-between text-[11px] text-gray-500 font-bold">
-                            <span>منتجات معروضة داخل هذا القسم ({group.count}):</span>
-                            <span className="text-blue-900">مشمولة بالضمان وكارت الفاتورة</span>
+                            <span>{t.productsInside(group.count)}</span>
+                            <span className="text-blue-900">{t.warrantyBadge}</span>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            {sampleProducts.map((p) => (
-                              <div
-                                key={p.id}
-                                onClick={() => setSelectedProduct(p)}
-                                className="bg-white p-2 rounded-xl border border-gray-200 hover:border-blue-400 cursor-pointer transition flex items-center gap-2 group shadow-2xs"
-                              >
-                                <div className="w-11 h-11 bg-gray-50 rounded-lg p-1 shrink-0 overflow-hidden flex items-center justify-center">
-                                  <img
-                                    src={getSafeImageSrc(p.previewimage)}
-                                    referrerPolicy="no-referrer"
-                                    alt={p.nameAr}
-                                    className="w-full h-full object-contain group-hover:scale-105 transition"
-                                  />
+                            {sampleProducts.map((p) => {
+                              const pName = getLocalizedProductName(p, language);
+                              return (
+                                <div
+                                  key={p.id}
+                                  onClick={() => setQuickViewProduct(p)}
+                                  className="bg-white p-2 rounded-xl border border-gray-200 hover:border-blue-400 cursor-pointer transition flex items-center gap-2 group shadow-2xs"
+                                >
+                                  <div className="w-11 h-11 bg-gray-50 rounded-lg p-1 shrink-0 overflow-hidden flex items-center justify-center">
+                                    <img
+                                      src={getSafeImageSrc(normalizeImageUrl(p.previewimage, undefined, 300))}
+                                      referrerPolicy="no-referrer"
+                                      loading="lazy"
+                                      decoding="async"
+                                      alt={pName}
+                                      className="w-full h-full object-contain group-hover:scale-105 transition"
+                                    />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[10px] text-blue-900 font-bold block truncate">
+                                      {p.brand}
+                                    </span>
+                                    <h5 className="text-[11px] font-bold text-gray-800 truncate">
+                                      {pName}
+                                    </h5>
+                                    <span className="text-[9px] text-gray-500 font-mono block">
+                                      {p.unifiedCode || p.size || (isRtl ? 'متوفر' : 'Available')}
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-[10px] text-blue-900 font-bold block truncate">
-                                    {p.brand}
-                                  </span>
-                                  <h5 className="text-[11px] font-bold text-gray-800 truncate">
-                                    {p.nameAr}
-                                  </h5>
-                                  <span className="text-[9px] text-gray-500 font-mono block">
-                                    {p.unifiedCode || p.size || 'متوفر'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </>
-                      ) : (
-                        <div className="p-3 bg-gray-50 rounded-xl text-center text-xs text-gray-400 font-bold">
-                          هذا القسم متاح في كتالوج طنطاوي، وسيتم إضافة أحدث أصنافه فوراً من شيت البيانات.
-                        </div>
                       )}
 
-                      {/* Explore Entire Subcategory Button */}
                       <button
                         type="button"
                         onClick={() => handleOpenSubcategory(group.sectorNameAr, group.name)}
                         className="w-full py-2 bg-gradient-to-r from-blue-950 to-blue-900 hover:from-blue-900 hover:to-indigo-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                       >
-                        <span>تصفح كافة منتجات {group.name} في صفحة الأقسام ({group.count})</span>
-                        <ChevronLeft size={15} />
+                        <span>{t.exploreBtn(groupLabel, group.count)}</span>
+                        <DirArrow size={15} />
                       </button>
                     </div>
                   )}

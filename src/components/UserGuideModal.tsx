@@ -13,6 +13,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { TANTAWY_HOTLINE, TANTAWY_SALES_PHONE } from '../services/whatsapp-order';
+import { STOREFRONT_TEXT } from '../i18n/translations';
 
 interface UserGuideModalProps {
   isOpen: boolean;
@@ -23,26 +24,59 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { setIsOrderTrackingOpen } = useApp();
+  const { setIsOrderTrackingOpen, language } = useApp();
+  const isRtl = language === 'ar';
+  const t = STOREFRONT_TEXT[language].userGuide;
   const [activeTab, setActiveTab] = useState<'pwa' | 'customer' | 'faq'>('pwa');
 
   if (!isOpen) return null;
 
+  const orderSteps = isRtl
+    ? [
+        'تصفّح الأقسام أو استخدم البحث الذكي للوصول للمنتج بسرعة.',
+        'اضغط على المنتج لمشاهدة المواصفات والألوان والمقاسات المتاحة.',
+        'أضف المنتج إلى السلة وحدد الكمية.',
+        'أكمل بياناتك (الاسم، الهاتف، العنوان) وأكد الطلب.',
+        'ستتلقى تأكيد طلبك، والدفع عند الاستلام بعد معاينة الشحنة.'
+      ]
+    : [
+        'Browse categories or use smart search to find your appliance quickly.',
+        'Tap any item to inspect its specifications, colors, and available models.',
+        'Add the item to your order cart and choose quantity.',
+        'Fill in your contact & delivery details and confirm to issue your invoice card.',
+        'Our sales team will confirm pricing & ETA—pay Cash on Delivery after full inspection.'
+      ];
+
+  const guideFaqs = isRtl
+    ? [
+        { q: 'هل الدفع متاح عند الاستلام؟', a: 'نعم، يمكنك معاينة الشحنة بالكامل قبل الدفع عند الاستلام.' },
+        { q: 'هل الشحن متاح لجميع المحافظات؟', a: 'نعم، نقوم بالشحن والتوصيل لجميع المحافظات.' },
+        { q: 'هل المنتجات أصلية وبضمان؟', a: 'جميع منتجاتنا أصلية وبضمان الوكيل المعتمد.' },
+        { q: 'ما مدة الاستبدال؟', a: 'يمكنك الاستبدال خلال 14 يوماً وفق شروط الضمان.' }
+      ]
+    : [
+        { q: 'Is Cash on Delivery supported?', a: 'Yes, inspect the entire shipment thoroughly before paying upon delivery.' },
+        { q: 'Do you ship to all governorates?', a: 'Yes, we ship and deliver across all Egyptian governorates.' },
+        { q: 'Are appliances authentic and covered by warranty?', a: 'All items are 100% original and backed by official agent warranties.' },
+        { q: 'What is the exchange window?', a: 'You may request an exchange within 14 days per official warranty terms.' }
+      ];
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto font-['Cairo',sans-serif]"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
       onClick={onClose}
     >
       <div
         className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-hidden shadow-2xl border border-gray-100 flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 text-white p-5 sm:p-6 relative shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition"
-            title="إغلاق"
+            className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition`}
+            title={STOREFRONT_TEXT[language].about.close}
           >
             <X size={18} />
           </button>
@@ -54,10 +88,10 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 bg-yellow-400/20 text-yellow-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-yellow-400/30 mb-1">
                 <Sparkles size={12} />
-                <span>دليل الاستخدام</span>
+                <span>{t.badge}</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black">دليل استخدام تطبيق طنطاوي جروب</h2>
-              <p className="text-xs text-blue-200">كل ما تحتاجه للتسوق والطلب بسهولة</p>
+              <h2 className="text-lg sm:text-xl font-black">{t.title}</h2>
+              <p className="text-xs text-blue-200">{t.subtitle}</p>
             </div>
           </div>
         </div>
@@ -71,7 +105,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
             }`}
           >
             <Smartphone size={15} />
-            <span>تثبيت التطبيق على الموبايل</span>
+            <span>{t.tabPwa}</span>
           </button>
           <button
             onClick={() => setActiveTab('customer')}
@@ -80,7 +114,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
             }`}
           >
             <ShoppingBag size={15} />
-            <span>دليل الطلب</span>
+            <span>{t.tabOrder}</span>
           </button>
           <button
             onClick={() => setActiveTab('faq')}
@@ -89,66 +123,86 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
             }`}
           >
             <HelpCircle size={15} />
-            <span>أسئلة شائعة</span>
+            <span>{t.tabFaq}</span>
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 text-right">
+        <div className={`flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 ${isRtl ? 'text-right' : 'text-left'}`}>
 
-          {/* PWA Install */}
           {activeTab === 'pwa' && (
             <div className="space-y-5">
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 sm:p-5">
                 <h3 className="text-sm sm:text-base font-black text-blue-950 flex items-center gap-2">
                   <Download size={18} className="text-blue-800" />
-                  <span>ثبّت التطبيق على شاشتك الرئيسية</span>
+                  <span>{isRtl ? 'ثبّت التطبيق على شاشتك الرئيسية' : 'Install App on Your Home Screen'}</span>
                 </h3>
                 <p className="text-xs text-gray-600 leading-relaxed mt-1">
-                  يعمل تطبيق طنطاوي جروب مباشرة من المتصفح، ويمكن تثبيته على هاتفك بنقرة واحدة بدون متجر تطبيقات.
+                  {isRtl
+                    ? 'يعمل تطبيق طنطاوي جروب مباشرة من المتصفح، ويمكن تثبيته على هاتفك بنقرة واحدة بدون متجر تطبيقات.'
+                    : 'Tantawy Group runs right from your browser and can be installed on your device in one tap—no app store required.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                  <h4 className="font-black text-gray-900">أندرويد (Chrome)</h4>
-                  <ol className="list-decimal pr-4 space-y-1 text-gray-600">
-                    <li>افتح الموقع من متصفح Chrome.</li>
-                    <li>اضغط على زر القائمة (×) أعلى اليمين.</li>
-                    <li>اختر «إضافة إلى الشاشة الرئيسية».</li>
-                    <li>أكّد التثبيت، وسيظهر التطبيق كأيقونة.</li>
+                  <h4 className="font-black text-gray-900">
+                    {isRtl ? 'أندرويد (Chrome)' : 'Android (Chrome)'}
+                  </h4>
+                  <ol className={`list-decimal ${isRtl ? 'pr-4' : 'pl-4'} space-y-1 text-gray-600`}>
+                    {isRtl ? (
+                      <>
+                        <li>افتح الموقع من متصفح Chrome.</li>
+                        <li>اضغط على زر القائمة (⋮) أعلى الشاشة.</li>
+                        <li>اختر «إضافة إلى الشاشة الرئيسية».</li>
+                        <li>أكّد التثبيت، وسيظهر التطبيق كأيقونة.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>Open the catalog in Google Chrome.</li>
+                        <li>Tap the browser menu icon (⋮) at top right.</li>
+                        <li>Choose “Add to Home screen” / “Install app”.</li>
+                        <li>Confirm installation to add the app icon.</li>
+                      </>
+                    )}
                   </ol>
                 </div>
                 <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                  <h4 className="font-black text-gray-900">آيفون (Safari)</h4>
-                  <ol className="list-decimal pr-4 space-y-1 text-gray-600">
-                    <li>افتح الموقع من متصفح Safari.</li>
-                    <li>اضغط على زر المشاركة (مربع بسهم).</li>
-                    <li>اختر «إضافة إلى الشاشة الرئيسية».</li>
-                    <li>أكّد، وسيظهر التطبيق كأيقونة.</li>
+                  <h4 className="font-black text-gray-900">
+                    {isRtl ? 'آيفون (Safari)' : 'iPhone / iPad (Safari)'}
+                  </h4>
+                  <ol className={`list-decimal ${isRtl ? 'pr-4' : 'pl-4'} space-y-1 text-gray-600`}>
+                    {isRtl ? (
+                      <>
+                        <li>افتح الموقع من متصفح Safari.</li>
+                        <li>اضغط على زر المشاركة (مربع بسهم).</li>
+                        <li>اختر «إضافة إلى الشاشة الرئيسية».</li>
+                        <li>أكّد، وسيظهر التطبيق كأيقونة.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>Open the catalog in Safari.</li>
+                        <li>Tap the Share button at the bottom bar.</li>
+                        <li>Scroll down and tap “Add to Home Screen”.</li>
+                        <li>Tap Add to place the icon on your screen.</li>
+                      </>
+                    )}
                   </ol>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Customer Guide */}
           {activeTab === 'customer' && (
             <div className="space-y-5">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5">
                 <h3 className="text-sm sm:text-base font-black text-emerald-950 flex items-center gap-2">
                   <ShoppingBag size={18} className="text-emerald-700" />
-                  <span>اطلب في خطوات بسيطة</span>
+                  <span>{isRtl ? 'اطلب في خطوات بسيطة' : 'Order in 5 Easy Steps'}</span>
                 </h3>
               </div>
               <div className="space-y-3 text-xs">
-                {[
-                  'تصفّح الأقسام أو استخدم البحث الذكي للوصول للمنتج بسرعة.',
-                  'اضغط على المنتج لمشاهدة المواصفات والألوان والمقاسات المتاحة.',
-                  'أضف المنتج إلى السلة وحدد الكمية.',
-                  'أكمل بياناتك (الاسم، الهاتف، العنوان) وأكد الطلب.',
-                  'ستتلقى تأكيد طلبك، والدفع عند الاستلام بعد معاينة الشحنة.'
-                ].map((step, i) => (
+                {orderSteps.map((step, i) => (
                   <div key={i} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
                     <span className="w-6 h-6 shrink-0 rounded-full bg-blue-900 text-white text-[11px] font-black flex items-center justify-center">{i + 1}</span>
                     <span className="text-gray-700 leading-relaxed">{step}</span>
@@ -159,20 +213,14 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
                 onClick={() => { onClose(); setIsOrderTrackingOpen(true); }}
                 className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl text-xs transition"
               >
-                تتبّع طلبك الآن
+                {t.trackNow}
               </button>
             </div>
           )}
 
-          {/* FAQ */}
           {activeTab === 'faq' && (
             <div className="space-y-4 text-xs">
-              {[
-                { q: 'هل الدفع متاح عند الاستلام؟', a: 'نعم، يمكنك معاينة الشحنة بالكامل قبل الدفع عند الاستلام.' },
-                { q: 'هل الشحن متاح لجميع المحافظات؟', a: 'نعم، نقوم بالشحن والتوصيل لجميع المحافظات.' },
-                { q: 'هل المنتجات أصلية وبضمان؟', a: 'جميع منتجاتنا أصلية وبضمان الوكيل المعتمد.' },
-                { q: 'ما مدة الاستبدال؟', a: 'يمكنك الاستبدال خلال 14 يوماً وفق شروط الضمان.' }
-              ].map((item, i) => (
+              {guideFaqs.map((item, i) => (
                 <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-1.5">
                   <strong className="text-blue-950 font-black flex items-center gap-1.5">
                     <HelpCircle size={14} className="text-blue-700" /> {item.q}
@@ -184,12 +232,12 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
               <div className="bg-gradient-to-r from-blue-950 to-indigo-950 text-white rounded-2xl p-5 space-y-3 mt-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={18} className="text-yellow-400" />
-                  <h4 className="font-black text-sm">خدمة عملاء طنطاوي جروب</h4>
+                  <h4 className="font-black text-sm">{STOREFRONT_TEXT[language].whatsappWidget.headerTitle}</h4>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <a href={`tel:${TANTAWY_HOTLINE}`} className="bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5">
                     <PhoneCall size={14} />
-                    <span>الخط الساخن: {TANTAWY_HOTLINE}</span>
+                    <span>{STOREFRONT_TEXT[language].footer.hotlineFull}</span>
                   </a>
                   <a
                     href={`https://wa.me/${TANTAWY_SALES_PHONE}`}
@@ -198,7 +246,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
                   >
                     <MessageCircle size={14} />
-                    <span>تواصل واتساب</span>
+                    <span>{STOREFRONT_TEXT[language].quickView.whatsappBtn}</span>
                   </a>
                 </div>
               </div>
@@ -211,13 +259,13 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
         <div className="bg-gray-50 border-t border-gray-200 p-4 px-6 flex items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 text-gray-500 font-medium">
             <CheckCircle2 size={16} className="text-emerald-600" />
-            <span>طنطاوي جروب — تسوّق بثقة</span>
+            <span>{t.footerTag}</span>
           </div>
           <button
             onClick={onClose}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-5 py-2 rounded-xl transition text-xs"
           >
-            إغلاق الدليل
+            {t.close}
           </button>
         </div>
 

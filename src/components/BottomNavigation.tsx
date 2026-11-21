@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Home, Grid, Zap, ShoppingBag, Truck } from 'lucide-react';
+import { STOREFRONT_TEXT } from '../i18n/translations';
 
 interface NavItem {
   id: 'home' | 'categories' | 'deals' | 'cart' | 'tracking';
@@ -11,14 +12,15 @@ interface NavItem {
 }
 
 export const BottomNavigation: React.FC = () => {
-  const { activeTab, setActiveTab, cartCount, setIsOrderTrackingOpen } = useApp();
+  const { activeTab, setActiveTab, cartCount, setIsOrderTrackingOpen, language } = useApp();
+  const t = STOREFRONT_TEXT[language].nav;
 
   const navItems: NavItem[] = [
-    { id: 'home', label: 'الرئيسية', icon: Home },
-    { id: 'categories', label: 'الأقسام', icon: Grid },
-    { id: 'deals', label: 'العروض', icon: Zap, isDeal: true },
-    { id: 'cart', label: 'السلة والطلب', icon: ShoppingBag, badge: cartCount },
-    { id: 'tracking', label: 'تتبع الطلب', icon: Truck },
+    { id: 'home', label: t.home, icon: Home },
+    { id: 'categories', label: t.categories, icon: Grid },
+    { id: 'deals', label: t.deals, icon: Zap, isDeal: true },
+    { id: 'cart', label: t.cart, icon: ShoppingBag, badge: cartCount },
+    { id: 'tracking', label: t.tracking, icon: Truck },
   ];
 
   return (
@@ -55,7 +57,7 @@ export const BottomNavigation: React.FC = () => {
                   </span>
                 ) : null}
               </div>
-              <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
+              <span className="text-[10px] mt-0.5 tracking-tight whitespace-nowrap">{item.label}</span>
             </button>
           );
         })}

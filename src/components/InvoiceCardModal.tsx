@@ -17,11 +17,11 @@ import {
   Building2,
   Package,
   FileDown,
-  Loader2
+  Loader2,
+  QrCode
 } from 'lucide-react';
 import { OrderInvoiceData, sendInvoiceToWhatsApp, generateInvoiceMessage } from '../services/invoice-to-whatsapp';
 import { useApp } from '../context/AppContext';
-import { getSafeImageSrc } from '../utils/imageHelper';
 
 interface InvoiceCardModalProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
       const canvas = await html2canvas(element, {
         scale: 2.2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
       });
@@ -80,9 +80,23 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
       const printableWidth = pdfWidth - margin * 2;
       const printableHeight = (canvas.height * printableWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', margin, margin, printableWidth, Math.min(printableHeight, pdfHeight - margin * 2));
+      if (printableHeight <= pdfHeight - margin * 2) {
+        pdf.addImage(imgData, 'PNG', margin, margin, printableWidth, printableHeight);
+      } else {
+        let heightLeft = printableHeight;
+        let position = margin;
+        pdf.addImage(imgData, 'PNG', margin, position, printableWidth, printableHeight);
+        heightLeft -= pdfHeight - margin * 2;
+
+        while (heightLeft > 0) {
+          position = heightLeft - printableHeight + margin;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', margin, position, printableWidth, printableHeight);
+          heightLeft -= pdfHeight - margin * 2;
+        }
+      }
       const orderNumber = order.orderId || 'فاتورة';
-      pdf.save(`كارت_فاتورة_طنطاوي_جروب_${orderNumber}.pdf`);
+      pdf.save(`كارت_فاتورة_دريم_طنطاوي_جروب_${orderNumber}.pdf`);
     } catch (err) {
       console.error('PDF Export Error:', err);
       window.print();
@@ -108,7 +122,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
             <FileText className="text-yellow-400" size={20} />
-            <span className="font-black text-sm md:text-base">كارت فاتورة طلب الشراء - طنطاوي جروب</span>
+            <span className="font-black text-sm md:text-base">كارت الفاتورة الرسمي - شركة دريم طنطاوي جروب</span>
           </div>
           <button
             onClick={onClose}
@@ -125,27 +139,28 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
           {/* Card Frame Header */}
           <div 
             ref={cardRef}
-            className="border-4 border-double border-blue-900/40 rounded-2xl p-5 bg-gradient-to-b from-blue-50/40 to-white relative overflow-hidden shadow-xs"
+            className="border-4 border-double border-blue-950/35 rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-slate-50 via-white to-blue-50/30 relative overflow-hidden shadow-xs"
           >
+            <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-l from-blue-950 via-indigo-900 to-amber-500" />
             
             {/* Watermark Logo */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-5 pointer-events-none select-none">
-              <Building2 size={240} className="text-blue-900" />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none select-none">
+              <Building2 size={240} className="text-blue-950" />
             </div>
 
             {/* Header info */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-blue-900/20 pb-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-blue-900/20 pb-4 pt-1">
               <div className="flex items-center gap-3">
-                <div className="h-14 w-auto bg-white p-1 rounded-xl shadow-xs border border-gray-200 flex items-center justify-center">
-                  <img src="/logo.png" alt="Tantawy Group Logo" className="h-full w-auto object-contain" />
+                <div className="h-14 w-auto bg-white p-1.5 rounded-xl shadow-xs border border-gray-200 flex items-center justify-center">
+                  <img src="/logo.png" alt="Dream Tantawy Group Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-black text-blue-950 flex items-center gap-1.5">
-                    <span>طنطاوي جروب</span>
-                    <span className="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-sm">مصر</span>
+                    <span>شركة دريم طنطاوي جروب</span>
+                    <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-md">معتمدة ✓</span>
                   </h2>
                   <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                    TANTAWY GROUP - الأجهزة المنزلية والكهربية
+                    DREAM TANTAWY GROUP - الأجهزة المنزلية والكهربية
                   </p>
                 </div>
               </div>
@@ -283,7 +298,7 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
               <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
                 <Sparkles size={18} className="text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-950 space-y-1">
-                  <p className="font-black">نظام تسعير الفاتورة الرسمي لدى طنطاوي جروب:</p>
+                  <p className="font-black">نظام تسعير الفاتورة الرسمي لدى شركة دريم طنطاوي جروب:</p>
                   <p className="text-[11px] text-amber-900 leading-relaxed">
                     يتم إرسال هذا الكارت لمسؤول المبيعات عبر واتساب للرد الفوري بأسعار كل صنف وحساب إجمالي قيمة الفاتورة حسب كمية الطلب (سعر جملة أو قطاعي) مع تأكيد التوصيل السريع.
                   </p>
@@ -292,10 +307,13 @@ export const InvoiceCardModal: React.FC<InvoiceCardModalProps> = ({
             )}
 
             {/* Footer of Card */}
-            <div className="mt-4 pt-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500 font-bold">
+            <div className="mt-4 pt-3 border-t-2 border-dashed border-blue-900/20 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-[11px] text-gray-600 font-bold bg-blue-50/50 p-3 rounded-xl">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={14} className="text-emerald-600" />
-                <span>ضمان طنطاوي جروب الرسمي المعتمد لجميع محافظات مصر</span>
+                <QrCode size={22} className="text-blue-950 shrink-0" />
+                <div>
+                  <span className="font-black text-blue-950 block">ضمان شركة دريم طنطاوي جروب الرسمي المعتمد</span>
+                  <span className="text-[10px] font-mono text-gray-500">DREAM-TG-{order.orderId}</span>
+                </div>
               </div>
               <div className="text-blue-950 font-black">
                 الخط الساخن المباشر: 15218

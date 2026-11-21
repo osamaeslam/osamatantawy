@@ -9,6 +9,12 @@ import {
   sendFinalInvoiceToCustomerWhatsApp,
   generateFinalCustomerInvoiceMessage 
 } from '../services/invoice-to-whatsapp';
+import {
+  ORDER_MESSAGE_TEMPLATES,
+  buildOrderMessageContext,
+  suggestTemplateForStatus,
+  buildCustomerWhatsAppUrl,
+} from '../services/customer-messages';
 import { 
   X, 
   Save, 
@@ -37,6 +43,8 @@ import {
 } from 'lucide-react';
 import { normalizeWhatsAppNumber } from '../services/whatsapp-order';
 import { useApp } from '../context/AppContext';
+import { OrderTimeline } from './OrderTimeline';
+import { getStockMeta } from '../utils/stockStatus';
 
 interface Props {
   isOpen: boolean;
@@ -51,30 +59,15 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
   order,
   onOrderUpdated,
 }) => {
-  const { products: storeProducts } = useApp();
-  if (!isOpen || !order) return null;
+  const { products: storeProducts, stockStatusMap } = useApp();
 
-  // Extract nested items and metadata
-  const rawItemsData = (order as any).items || {};
-  const initialOrderedItems: OrderItemInvoice[] = Array.isArray(rawItemsData.orderedItems)
-    ? rawItemsData.orderedItems
-    : Array.isArray(rawItemsData)
-    ? rawItemsData
-    : [
-        {
-          nameAr: order.productNameAr || 'جهاز منزلي',
-          quantity: order.quantity || 1,
-          brand: 'طنطاوي جروب',
-          size: order.selectedSize,
-          color: order.selectedColor,
-          unitPrice: order.totalPrice ? Math.round(order.totalPrice / (order.quantity || 1)) : 0,
-        },
-      ];
+  // Extract nested items and metadata safely before conditional return
+  const rawItemsData = ((order as any)?.items) || {};
 
   const [items, setItems] = useState<OrderItemInvoice[]>([]);
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
-  const [status, setStatus] = useState<FirebaseOrder['status']>(order.status || 'pending');
+  const [status, setStatus] = useState<FirebaseOrder['status']>(order?.status || 'pending');
   const [notes, setNotes] = useState<string>(rawItemsData.notes || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -85,6 +78,12 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [pdfExportSuccess, setPdfExportSuccess] = useState(false);
 
+  // Smart WhatsApp Templates Composer State
+  const [showTemplatesPanel, setShowTemplatesPanel] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('priced');
+  const [customTemplateText, setCustomTemplateText] = useState<string>('');
+  const [templateCopied, setTemplateCopied] = useState(false);
+
   // New item draft row
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState('');
@@ -93,7 +92,23 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
   const [newItemPrice, setNewItemPrice] = useState(0);
 
   useEffect(() => {
-    // Initialize items with unitPrice and quantity
+    if (!order) return;
+    const orderRawItems = (order as any).items || {};
+    const initialOrderedItems: OrderItemInvoice[] = Array.isArray(orderRawItems.orderedItems)
+      ? orderRawItems.orderedItems
+      : Array.isArray(orderRawItems)
+      ? orderRawItems
+      : [
+          {
+            nameAr: order.productNameAr || 'جهاز منزلي',
+            quantity: order.quantity || 1,
+            brand: 'دريم طنطاوي جروب',
+            size: order.selectedSize,
+            color: order.selectedColor,
+            unitPrice: order.totalPrice ? Math.round(order.totalPrice / (order.quantity || 1)) : 0,
+          },
+        ];
+
     const prepared = initialOrderedItems.map((item) => ({
       ...item,
       quantity: Number(item.quantity) || 1,
@@ -101,11 +116,16 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
       totalItemPrice: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0),
     }));
     setItems(prepared);
-    setDeliveryFee(Number(rawItemsData.deliveryFee) || 0);
-    setDiscount(Number(rawItemsData.discount) || 0);
+    setDeliveryFee(Number(orderRawItems.deliveryFee) || 0);
+    setDiscount(Number(orderRawItems.discount) || 0);
     setStatus(order.status || 'pending');
-    setNotes(rawItemsData.notes || '');
+    setNotes(orderRawItems.notes || '');
+    const suggested = suggestTemplateForStatus(order.status || 'pending');
+    setSelectedTemplateId(suggested.id);
+    setCustomTemplateText(suggested.build(buildOrderMessageContext(order)));
   }, [order]);
+
+  if (!isOpen || !order) return null;
 
   // Calculations
   const itemsSubtotal = items.reduce(
@@ -213,13 +233,26 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
         });
       }
 
+      const nowIso = new Date().toISOString();
+      const prevHistory = Array.isArray(rawItemsData.statusHistory)
+        ? [...rawItemsData.statusHistory]
+        : Array.isArray(order.statusHistory)
+        ? [...order.statusHistory]
+        : [{ status: order.status || 'pending', timestamp: order.createdAt || nowIso }];
+      const lastEvent = prevHistory[prevHistory.length - 1];
+      const nextHistory =
+        !lastEvent || lastEvent.status !== finalStatus
+          ? [...prevHistory, { status: finalStatus, timestamp: nowIso }]
+          : prevHistory;
+
       const updatedOrderObj: FirebaseOrder = {
         ...order,
         status: finalStatus,
         totalPrice: grandTotal,
         quantity: totalItemCount,
         productNameAr: summaryAr || order.productNameAr,
-        items: updatedPayload as any,
+        items: { ...updatedPayload, statusHistory: nextHistory } as any,
+        statusHistory: nextHistory,
       };
 
       onOrderUpdated(updatedOrderObj);
@@ -297,7 +330,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
       const canvas = await html2canvas(element, {
         scale: 2.2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
       });
@@ -332,7 +365,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
       }
 
       const orderIdentifier = order.orderId || (order as any).unifiedCode || order.id || 'طلب';
-      pdf.save(`كارت_فاتورة_طنطاوي_جروب_${orderIdentifier}.pdf`);
+      pdf.save(`كارت_فاتورة_دريم_طنطاوي_جروب_${orderIdentifier}.pdf`);
       setPdfExportSuccess(true);
       setTimeout(() => setPdfExportSuccess(false), 4000);
     } catch (err) {
@@ -383,20 +416,21 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
           {/* Printable Official Tantawy Header (Shown on print & screen & PDF) */}
           <div 
             ref={invoiceCardRef}
-            className="border-2 border-blue-900/30 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-blue-50/30 to-white relative shadow-xs"
+            className="border-4 border-double border-blue-950/30 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-slate-50 via-white to-blue-50/30 relative shadow-xs overflow-hidden"
           >
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-blue-900/20 pb-3">
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-l from-blue-950 via-indigo-900 to-amber-500" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-blue-900/20 pb-3 pt-1">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-auto bg-white p-1 rounded-xl shadow-xs border border-gray-200 flex items-center justify-center">
-                  <img src="/logo.png" alt="Tantawy Logo" className="h-full w-auto object-contain" />
+                  <img src="/logo.png" alt="Dream Tantawy Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
                   <h4 className="text-base font-black text-blue-950 flex items-center gap-1.5">
-                    <span>طنطاوي جروب للأجهزة المنزلية والكهربية</span>
-                    <span className="text-[10px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded-sm">مصر</span>
+                    <span>شركة دريم طنطاوي جروب للأجهزة المنزلية والكهربية</span>
+                    <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-sm">معتمدة ✓</span>
                   </h4>
                   <p className="text-[10px] text-gray-500 font-bold">
-                    TANTAWY GROUP - كارت فاتورة معتمد ودفع عند الاستلام
+                    DREAM TANTAWY GROUP - كارت فاتورة معتمد ودفع عند الاستلام
                   </p>
                 </div>
               </div>
@@ -441,22 +475,26 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                     <span className="text-gray-500 text-[11px]">الموبايل الأساسي:</span>
                     <div className="flex items-center gap-2">
                       <strong className="font-mono text-blue-900 font-bold" dir="ltr">{order.customerPhone}</strong>
-                      <a
-                        href={`tel:${order.customerPhone}`}
-                        className="p-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition"
-                        title="اتصال هاتفي بالعميل"
-                      >
-                        <PhoneCall size={13} />
-                      </a>
-                      <a
-                        href={`https://wa.me/${normalizeWhatsAppNumber(order.customerPhone)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition"
-                        title="محادثة واتساب مباشرة مع العميل"
-                      >
-                        <MessageCircle size={13} />
-                      </a>
+                      {!isExportingPDF && (
+                        <>
+                          <a
+                            href={`tel:${order.customerPhone}`}
+                            className="p-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition print:hidden"
+                            title="اتصال هاتفي بالعميل"
+                          >
+                            <PhoneCall size={13} />
+                          </a>
+                          <a
+                            href={`https://wa.me/${normalizeWhatsAppNumber(order.customerPhone)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition print:hidden"
+                            title="محادثة واتساب مباشرة مع العميل"
+                          >
+                            <MessageCircle size={13} />
+                          </a>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -536,10 +574,10 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
                       <Sparkles size={14} className="text-yellow-600" />
-                      <span>إضافة جهاز أو صنف جديد لطلب العميل (من كتالوج طنطاوي جروب أو صنف مخصص):</span>
+                      <span>إضافة جهاز أو صنف جديد لطلب العميل (من كتالوج دريم طنطاوي جروب أو صنف مخصص):</span>
                     </span>
                     <span className="text-[10px] text-gray-500 font-bold">
-                      ابحث بالاسم لتظهر اقتراحات من المنتجات الـ 3,824
+                      ابحث بالاسم لتظهر اقتراحات من الكتالوج ({storeProducts.length} صنف)
                     </span>
                   </div>
 
@@ -603,23 +641,30 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                         {storeProducts
                           .filter((p) => p.nameAr.toLowerCase().includes(newItemName.trim().toLowerCase()))
                           .slice(0, 5)
-                          .map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => {
-                                setNewItemName(p.nameAr);
-                                setNewItemCode(p.unifiedCode || p.itemNumber || '');
-                                if (p.actualprice && p.actualprice > 0) {
-                                  setNewItemPrice(p.actualprice);
-                                }
-                              }}
-                              className="text-[11px] bg-white hover:bg-blue-100 text-blue-950 border border-blue-200 px-2 py-1 rounded-lg text-right font-medium transition flex items-center gap-1.5 shadow-2xs"
-                            >
-                              <span className="font-bold truncate max-w-[200px]">{p.nameAr}</span>
-                              <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1 rounded">{p.unifiedCode || p.brand}</span>
-                            </button>
-                          ))}
+                          .map((p) => {
+                            const sMeta = getStockMeta(p, stockStatusMap);
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  setNewItemName(p.nameAr);
+                                  setNewItemCode(p.unifiedCode || p.itemNumber || '');
+                                  if (p.actualprice && p.actualprice > 0) {
+                                    setNewItemPrice(p.actualprice);
+                                  }
+                                }}
+                                className="text-[11px] bg-white hover:bg-blue-100 text-blue-950 border border-blue-200 px-2 py-1 rounded-lg text-right font-medium transition flex items-center gap-1.5 shadow-2xs"
+                              >
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${sMeta.dotClass}`} title={sMeta.labelAr} />
+                                <span className="font-bold truncate max-w-[180px]">{p.nameAr}</span>
+                                <span className={`text-[9px] font-bold px-1 rounded border ${sMeta.badgeClass}`}>
+                                  {sMeta.shortLabelAr}
+                                </span>
+                                <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1 rounded">{p.unifiedCode || p.brand}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     </div>
                   )}
@@ -846,8 +891,8 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                     <span className="font-black text-blue-950 text-xs">كارت فاتورة إلكتروني ذكي معتمد</span>
                     <span className="text-[9px] bg-emerald-100 text-emerald-900 font-bold px-1.5 py-0.2 rounded">موثق ✓</span>
                   </div>
-                  <p className="text-[10px] text-gray-500 font-mono font-bold mt-0.5">
-                    TG-CARD-{order.orderId || (order as any).unifiedCode || 'VERIFIED'}
+                    <p className="text-[10px] text-gray-500 font-mono font-bold mt-0.5">
+                    DREAM-TG-CARD-{order.orderId || (order as any).unifiedCode || 'VERIFIED'}
                   </p>
                 </div>
               </div>
@@ -858,7 +903,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                   <span>معاينة وفحص الجهاز بالكامل قبل دفع أي مبالغ للمندوب</span>
                 </div>
                 <div className="text-[10px] text-gray-500 font-medium">
-                  الخط الساخن لخدمة عملاء طنطاوي جروب: <strong className="text-blue-950">15218</strong>
+                  الخط الساخن لخدمة عملاء شركة دريم طنطاوي جروب: <strong className="text-blue-950">15218</strong>
                 </div>
               </div>
             </div>
@@ -867,7 +912,7 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
             <div className="mt-3 pt-2 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500 font-bold">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={14} className="text-emerald-600" />
-                <span>ضمان طنطاوي جروب الرسمي وضمان الوكيل المعتمد لجميع المحافظات</span>
+                <span>ضمان شركة دريم طنطاوي جروب الرسمي وضمان الوكيل المعتمد لجميع المحافظات</span>
               </div>
               <div className="text-blue-950 font-black">
                 الخط الساخن الموحد: 15218
@@ -875,6 +920,103 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
             </div>
 
           </div>
+
+          {!isExportingPDF && (
+            <div className="print:hidden">
+              <OrderTimeline order={order} />
+            </div>
+          )}
+
+          {/* Smart WhatsApp Templates Interactive Panel */}
+          {!isExportingPDF && showTemplatesPanel && (
+            <div className="print:hidden bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={16} className="text-emerald-700" />
+                  <h4 className="text-xs sm:text-sm font-black text-emerald-950">
+                    قوالب رسائل واتساب ذكية للعميل (مضاف لها التتبع والفاتورة تلقائياً)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplatesPanel(false)}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800"
+                >
+                  إخفاء ✕
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {ORDER_MESSAGE_TEMPLATES.map((tpl) => {
+                  const active = selectedTemplateId === tpl.id;
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTemplateId(tpl.id);
+                        const liveOrderSnapshot: FirebaseOrder = {
+                          ...order,
+                          status,
+                          totalPrice: grandTotal,
+                          quantity: totalItemCount,
+                          items: {
+                            ...(rawItemsData || {}),
+                            orderedItems: items,
+                            deliveryAddress,
+                            city,
+                            deliveryTimeWindow,
+                          } as any,
+                        };
+                        setCustomTemplateText(tpl.build(buildOrderMessageContext(liveOrderSnapshot)));
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition flex items-center gap-1 ${
+                        active
+                          ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                          : 'bg-white text-slate-700 border-emerald-200 hover:bg-emerald-100'
+                      }`}
+                    >
+                      <span>{tpl.emoji}</span>
+                      <span>{tpl.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <textarea
+                rows={5}
+                value={customTemplateText}
+                onChange={(e) => setCustomTemplateText(e.target.value)}
+                className="w-full p-3 rounded-xl border border-emerald-300 bg-white text-xs text-slate-900 font-medium leading-relaxed outline-none focus:ring-2 focus:ring-emerald-600"
+              />
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(customTemplateText);
+                      setTemplateCopied(true);
+                      setTimeout(() => setTemplateCopied(false), 2500);
+                    } catch {}
+                  }}
+                  className="px-3.5 py-2 bg-white hover:bg-gray-100 text-slate-800 border border-gray-300 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                >
+                  <Copy size={13} />
+                  <span>{templateCopied ? 'تم النسخ ✅' : 'نسخ النص'}</span>
+                </button>
+                <a
+                  href={buildCustomerWhatsAppUrl(order.customerPhone, customTemplateText)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs"
+                >
+                  <Send size={13} />
+                  <span>فتح واتساب العميل بالرسالة الآن</span>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Bottom Actions (Hidden when printing) */}
@@ -899,6 +1041,39 @@ export const SmartOrderPricingModal: React.FC<Props> = ({
                   <span>تصدير الفاتورة PDF (كارت ذكي) 📄</span>
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const tpl =
+                  ORDER_MESSAGE_TEMPLATES.find((t) => t.id === selectedTemplateId) ||
+                  suggestTemplateForStatus(status);
+                const liveOrderSnapshot: FirebaseOrder = {
+                  ...order,
+                  status,
+                  totalPrice: grandTotal,
+                  quantity: totalItemCount,
+                  items: {
+                    ...(rawItemsData || {}),
+                    orderedItems: items,
+                    deliveryAddress,
+                    city,
+                    deliveryTimeWindow,
+                  } as any,
+                };
+                setCustomTemplateText(tpl.build(buildOrderMessageContext(liveOrderSnapshot)));
+                setShowTemplatesPanel((prev) => !prev);
+              }}
+              className={`border font-black text-xs px-3 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-2xs ${
+                showTemplatesPanel
+                  ? 'bg-emerald-700 text-white border-emerald-700'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+              }`}
+              title="معاينة وإرسال قوالب رسائل واتساب الجاهزة مع رابط التتبع"
+            >
+              <MessageCircle size={15} />
+              <span>قوالب واتساب ذكية</span>
             </button>
 
             <button

@@ -14,11 +14,12 @@ export const whatsappClickService = {
     ]);
   },
 
-  async getAll(): Promise<WhatsAppClick[]> {
+  async getAll(limit = 200): Promise<WhatsAppClick[]> {
     const { data, error } = await supabase
       .from(TABLE)
-      .select('*')
-      .order('clicked_at', { ascending: false });
+      .select('id,product_id,product_name_ar,user_ip,clicked_at')
+      .order('clicked_at', { ascending: false })
+      .limit(limit);
 
     if (error) throw error;
     return data || [];
@@ -27,7 +28,7 @@ export const whatsappClickService = {
   async getCount(): Promise<number> {
     const { count, error } = await supabase
       .from(TABLE)
-      .select('*', { head: true, count: 'exact' });
+      .select('id', { head: true, count: 'exact' });
 
     if (error) throw error;
     return count || 0;

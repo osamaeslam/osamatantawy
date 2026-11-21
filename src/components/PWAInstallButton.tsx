@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { useApp } from '../context/AppContext';
 import { Download, Smartphone, X, CheckCircle, Share, PlusSquare } from 'lucide-react';
+import { STOREFRONT_TEXT } from '../i18n/translations';
 
 export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
-  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+  const { isInstallable, isInstalled, install } = usePWAInstall();
+  const { language } = useApp();
+  const t = STOREFRONT_TEXT[language].pwa;
+  const isRtl = language === 'ar';
   const [showGuide, setShowGuide] = useState(false);
 
-  // If already running standalone
   if (isInstalled) {
     return (
-      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 whitespace-nowrap shrink-0">
         <CheckCircle size={13} />
-        <span>تطبيق مثبت</span>
+        <span>{t.installed}</span>
       </span>
     );
   }
@@ -28,30 +32,29 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
     <>
       <button
         onClick={handleInstallClick}
-        className={`flex items-center gap-1.5 font-bold transition rounded-full ${
+        className={`flex items-center gap-1.5 font-bold transition rounded-full whitespace-nowrap shrink-0 ${
           compact
             ? 'p-2 bg-blue-50 text-blue-700 hover:bg-blue-100'
-            : 'bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs px-3.5 py-1.5 shadow-xs'
+            : 'bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs px-3 py-1 shadow-xs'
         }`}
-        title="تثبيت تطبيق طنطاوي جروب على الهاتف"
+        title={t.guideTitle}
       >
-        <Download size={compact ? 18 : 14} className="animate-bounce" />
-        {!compact && <span>تثبيت التطبيق 📲</span>}
+        <Download size={compact ? 18 : 13} className="animate-bounce shrink-0" />
+        {!compact && <span className="hidden sm:inline">{t.installBtn}</span>}
       </button>
 
-      {/* Guide Modal for iOS or manual install */}
       {showGuide && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setShowGuide(false)}
         >
-          <div 
+          <div
             className="relative bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowGuide(false)}
-              className="absolute top-4 left-4 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition"
+              className="absolute top-4 end-4 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition"
             >
               <X size={16} />
             </button>
@@ -61,21 +64,23 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
             </div>
 
             <div>
-              <h3 className="text-base font-black text-gray-900">تثبيت تطبيق طنطاوي جروب</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                يعمل التطبيق مباشرة على هاتفك مثل تطبيقات App Store و Google Play وبدون استهلاك للذاكرة!
-              </p>
+              <h3 className="text-base font-black text-gray-900">{t.guideTitle}</h3>
+              <p className="text-xs text-gray-500 mt-1">{t.guideSub}</p>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl p-4 text-xs text-right space-y-3 border border-gray-200">
+            <div className={`bg-gray-50 rounded-2xl p-4 text-xs space-y-3 border border-gray-200 ${isRtl ? 'text-right' : 'text-left'}`}>
               <div className="flex items-start gap-2.5">
                 <div className="p-1.5 bg-blue-100 text-blue-700 rounded-lg shrink-0 mt-0.5">
                   <Share size={15} />
                 </div>
                 <div>
-                  <span className="font-bold text-gray-800 block">1. على آيفون (Safari):</span>
+                  <span className="font-bold text-gray-800 block">
+                    {isRtl ? '1. على آيفون (Safari):' : '1. On iPhone (Safari):'}
+                  </span>
                   <span className="text-gray-500 text-[11px]">
-                    اضغط على زر المشاركة (Share) في أسفل شاشة المتصفح.
+                    {isRtl
+                      ? 'اضغط على زر المشاركة (Share) في أسفل شاشة المتصفح.'
+                      : 'Tap the Share icon at the bottom bar of your browser.'}
                   </span>
                 </div>
               </div>
@@ -85,9 +90,13 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
                   <PlusSquare size={15} />
                 </div>
                 <div>
-                  <span className="font-bold text-gray-800 block">2. إضافة إلى الشاشة الرئيسية:</span>
+                  <span className="font-bold text-gray-800 block">
+                    {isRtl ? '2. إضافة إلى الشاشة الرئيسية:' : '2. Add to Home Screen:'}
+                  </span>
                   <span className="text-gray-500 text-[11px]">
-                    اختر <strong>إضافة إلى الشاشة الرئيسية (Add to Home Screen)</strong>.
+                    {isRtl
+                      ? 'اختر إضافة إلى الشاشة الرئيسية (Add to Home Screen).'
+                      : 'Select "Add to Home Screen" from the menu.'}
                   </span>
                 </div>
               </div>
@@ -97,9 +106,13 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
                   <Smartphone size={15} />
                 </div>
                 <div>
-                  <span className="font-bold text-gray-800 block">3. على أندرويد (Chrome):</span>
+                  <span className="font-bold text-gray-800 block">
+                    {isRtl ? '3. على أندرويد (Chrome):' : '3. On Android (Chrome):'}
+                  </span>
                   <span className="text-gray-500 text-[11px]">
-                    اضغط على خيارات المتصفح (⋮) ثم اضغط "تثبيت التطبيق" أو "Install App".
+                    {isRtl
+                      ? 'اضغط على خيارات المتصفح (⋮) ثم اضغط "تثبيت التطبيق" أو "Install App".'
+                      : 'Tap the browser menu (⋮) and choose "Install App".'}
                   </span>
                 </div>
               </div>
@@ -109,7 +122,7 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
               onClick={() => setShowGuide(false)}
               className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl text-xs transition"
             >
-              فهمت، حسناً
+              {t.gotItBtn}
             </button>
           </div>
         </div>
